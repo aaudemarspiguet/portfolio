@@ -1,69 +1,111 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { ContactPanel } from "@/components/ContactPanel";
+import { CopyEmail } from "@/components/CopyEmail";
+import { ProjectCard } from "@/components/ProjectCard";
+import { Availability, NameTooltip, NowChip, SectionHeader, Squiggle } from "@/components/marks";
+import { projects } from "@/content/projects";
+import { site } from "@/content/site";
 
 export default function Home() {
+  const { experience, about, stack } = site;
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <section id="top" className="ln-hero">
+        <div className="ln-wrap">
+          <div className="ln-hero__intro">
+            <Availability>
+              {site.role} · {site.city} · {site.availability}
+            </Availability>
+            <NameTooltip pronunciation={site.say.pronunciation} meaning={site.say.meaning}>
+              <h1 className="ln-hero__name">
+                {site.name}
+                <span className="ln-dot">.</span>
+              </h1>
+            </NameTooltip>
+          </div>
+          <div className="ln-hero__body">
+            <p className="ln-hero__lede">
+              <Squiggle>{site.lede.highlight}</Squiggle>
+              {site.lede.rest}
+            </p>
+            <NowChip>{site.now}</NowChip>
+            <div className="ln-btn-row ln-hero__actions">
+              <a href="#contact" className="ln-btn ln-btn--primary">Email me</a>
+              <a href={site.links.resume} className="ln-btn">Résumé</a>
+              <a href={site.links.github} className="ln-btn ln-btn--text">GitHub ↗</a>
+              <a href={site.links.linkedin} className="ln-btn ln-btn--text">LinkedIn ↗</a>
+            </div>
+            <CopyEmail email={site.email} />
+          </div>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section id="work" className="ln-section">
+        <div className="ln-wrap ln-stack-y">
+          <SectionHeader label={`Selected work · ${projects.length} projects`} heading={site.work.heading} />
+          <div className="ln-grid">
+            {projects.map((p, i) => (
+              <ProjectCard key={p.slug} project={p} lead={i === 0} />
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section id="experience" className="ln-section">
+        <div className="ln-wrap ln-stack-y">
+          <SectionHeader label={`Experience · ${experience.roles.length} roles`} heading={experience.heading} />
+          <div className="ln-surface ln-list">
+            {[...experience.roles, experience.education].map((r, i) => (
+              <div key={i} className="ln-list__row">
+                <span className="ln-caption ln-list__when">{r.when}</span>
+                <div className="ln-list__what">
+                  <span className="ln-list__role">{r.title}</span>
+                  <span className="ln-list__line">{r.line}</span>
+                </div>
+                <span className="ln-caption">{r.where}</span>
+              </div>
+            ))}
+          </div>
+          <a href={site.links.resume} className="ln-btn ln-btn--text ln-after-list">Full résumé (PDF) ↗</a>
+        </div>
+      </section>
+
+      <section id="about" className="ln-section">
+        <div className="ln-wrap ln-stack-y">
+          <SectionHeader label="About" heading={about.heading} />
+          <div className="ln-about">
+            <div className="ln-about__photo">
+              <div className="ln-photo">
+                <span className="ln-label">[Photo]</span>
+                <span className="ln-sticker">{about.hometown}</span>
+              </div>
+            </div>
+            <div className="ln-about__text">
+              {about.paragraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" className="ln-section">
+        <div className="ln-wrap ln-stack-y" style={{ gap: 32 }}>
+          <SectionHeader label="Stack" heading={stack.heading} />
+          <div className="ln-stack">
+            {stack.groups.map((g) => (
+              <div key={g.label} className="ln-stack__row">
+                <span className="ln-label">{g.label}</span>
+                {g.items.map((item) => (
+                  <span key={item} className="ln-chip">{item}</span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <ContactPanel heading={site.contact.heading} />
+    </>
   );
 }

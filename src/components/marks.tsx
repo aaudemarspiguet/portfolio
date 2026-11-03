@@ -1,0 +1,81 @@
+// Small presentational pieces from the design system's "Friendly touches"
+// and "Scarlet marks" groups.
+
+import type { ReactNode } from "react";
+
+let wave = "M0 4 Q5 0 10 4";
+for (let x = 20; x <= 200; x += 10) wave += ` T${x} 4`;
+
+/** Scarlet hand-drawn underline under one phrase. */
+export function Squiggle({ children }: { children: ReactNode }) {
+  return (
+    <span className="ln-squiggle">
+      {children}
+      <svg viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
+        <path d={wave} />
+      </svg>
+    </span>
+  );
+}
+
+/** Eyebrow with the glowing scarlet availability dot. */
+export function Availability({ children }: { children: ReactNode }) {
+  return (
+    <span className="ln-live ln-label">
+      <span className="ln-live__dot" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
+export function NowChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="ln-now">
+      <b>Now</b>
+      {children}
+    </span>
+  );
+}
+
+/** Hero name with a hover/focus tooltip that says how to pronounce it. */
+export function NameTooltip({ pronunciation, meaning, children }: { pronunciation: string; meaning?: string; children: ReactNode }) {
+  return (
+    <div className="ln-say" tabIndex={0} aria-describedby="ln-say-tip">
+      {children}
+      <span id="ln-say-tip" role="tooltip" className="ln-say__tip">
+        Say it: {pronunciation}
+        {meaning && <span className="ln-say__muted"> · means “{meaning}”</span>}
+      </span>
+    </div>
+  );
+}
+
+export function SectionHeader({ label, heading }: { label: string; heading: string }) {
+  return (
+    <header className="ln-section-head">
+      <span className="ln-label">{label}</span>
+      <h2>{heading}</h2>
+    </header>
+  );
+}
+
+export function Tags({ items }: { items: string[] }) {
+  return (
+    <div className="ln-tags">
+      {items.map((t) => (
+        <span key={t} className="ln-tag">{t}</span>
+      ))}
+    </div>
+  );
+}
+
+/** A headline number. `lead` sets it in scarlet: use it once per view. */
+export function Metric({ label, value, base, lead }: { label?: string; value: string; base: string; lead?: boolean }) {
+  return (
+    <div className={lead ? "ln-metric ln-metric--lead" : "ln-metric"}>
+      {label && <span className="ln-label">{label}</span>}
+      <span className="ln-metric__value">{value}</span>
+      <span className="ln-metric__base">{base}</span>
+    </div>
+  );
+}

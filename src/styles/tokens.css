@@ -1,0 +1,137 @@
+/*
+  Lab Notebook tokens (design system v3).
+  Source: https://claude.ai/artifact/CTHt2p3SY6onsctFExQ3G5 (tokens.json)
+  The theme script in layout.tsx always sets data-theme on <html>, from the
+  saved choice or the system preference, so dark only needs one selector.
+*/
+
+:root {
+  color-scheme: light;
+
+  /* Color */
+  --paper: #f5f5f7;
+  --paper-raised: #ffffff;
+  --paper-sunk: #ececf0;
+  --glass: rgba(255, 255, 255, 0.62);
+  --ink: #1d1d1f;
+  --ink-muted: #6e6e73;
+  --rule: rgba(0, 0, 0, 0.08);
+  --rule-strong: #86868b;
+  --link: #0066cc;
+  --link-hover: #004f9e;
+  --link-tint: #e6eff9;
+  --fill-link: #0066cc;
+  --fill-link-hover: #0058b0;
+  --on-link: #ffffff;
+  --accent: #ff3b1f;
+  --accent-tint: #ffe4df;
+  --panel: #1d1d1f;
+  --on-panel: #f5f5f7;
+  --on-panel-muted: #a1a1a6;
+  --fill-primary: #1d1d1f;
+  --on-primary: #ffffff;
+  --tip-muted: #a1a1a6;
+
+  /* Surfaces with a sheen */
+  --card-bg: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+  --ctrl-bg: linear-gradient(180deg, #ffffff 0%, #f4f4f6 100%);
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%);
+  --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 45%);
+
+  /* Shadow */
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.05), 0 14px 28px -14px rgba(0, 0, 0, 0.14), 0 36px 72px -32px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(0, 0, 0, 0.07), 0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 22px 40px -18px rgba(0, 0, 0, 0.2), 0 48px 90px -36px rgba(0, 0, 0, 0.2);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 30, 80, 0.3), 0 1px 2px rgba(0, 40, 100, 0.3), 0 8px 20px -6px rgba(0, 102, 204, 0.55);
+  --shadow-button-hover: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -1px 0 rgba(0, 30, 80, 0.25), 0 2px 4px rgba(0, 40, 100, 0.3), 0 10px 26px -8px rgba(255, 59, 31, 0.55);
+  --shadow-glow: 0 0 0 4px rgba(255, 59, 31, 0.16), 0 0 14px rgba(255, 59, 31, 0.6);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 1), 0 0 0 1px rgba(0, 0, 0, 0.09), 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 10px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.07), 0 12px 32px -12px rgba(0, 0, 0, 0.2);
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 40px 80px -36px rgba(0, 0, 0, 0.45);
+
+  /* Type */
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-30: 120px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --layout-max: 1080px;
+  --layout-measure: 640px;
+  --layout-nav: 52px;
+
+  /* Responsive sizes: desktop set (phone set below) */
+  --gut: 32px;
+  --sec: 120px;
+  --hero-top: 96px;
+  --hero: 96px;
+  --lede: 20px;
+  --h2: 40px;
+  --h2-case: 36px;
+  --big: 56px;
+  --panel-pad: 64px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gut: 16px;
+    --sec: 72px;
+    --hero-top: 48px;
+    --hero: 52px;
+    --lede: 18px;
+    --h2: 30px;
+    --h2-case: 28px;
+    --big: 34px;
+    --panel-pad: 28px;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #000000;
+  --paper-raised: #1c1c1e;
+  --paper-sunk: #2c2c2e;
+  --glass: rgba(28, 28, 30, 0.6);
+  --ink: #f5f5f7;
+  --ink-muted: #98989d;
+  --rule: rgba(255, 255, 255, 0.12);
+  --rule-strong: #6e6e73;
+  --link: #2997ff;
+  --link-hover: #5eb0ff;
+  --link-tint: #0b2440;
+  --fill-link: #0a6fd8;
+  --fill-link-hover: #1a7ff0;
+  --accent-tint: #3d120b;
+  --panel: #1c1c1e;
+  --fill-primary: #f5f5f7;
+  --on-primary: #1d1d1f;
+  --tip-muted: #6e6e73;
+
+  --card-bg: linear-gradient(180deg, #232326 0%, #1c1c1e 100%);
+  --ctrl-bg: linear-gradient(180deg, #2c2c2e 0%, #222224 100%);
+
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 28px -14px rgba(0, 0, 0, 0.7), 0 36px 72px -32px rgba(0, 0, 0, 0.8);
+  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.12), 0 22px 40px -18px rgba(0, 0, 0, 0.75), 0 48px 90px -36px rgba(0, 0, 0, 0.85);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 8px 22px -6px rgba(10, 111, 216, 0.6);
+  --shadow-button-hover: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 10px 28px -8px rgba(255, 59, 31, 0.6);
+  --shadow-glow: 0 0 0 4px rgba(255, 59, 31, 0.22), 0 0 16px rgba(255, 59, 31, 0.7);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 32px -12px rgba(0, 0, 0, 0.8);
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 40px 80px -36px rgba(0, 0, 0, 0.8);
+}
