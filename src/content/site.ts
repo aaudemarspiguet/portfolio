@@ -3,16 +3,12 @@
 // titles, dates and places are real.
 import { placeholder } from "./placeholder";
 
-export type Logo = { light: string; dark?: string; alt: string };
-
 export type Role = {
   title: string;
   org: string;
   when: string;
   where: string;
   line: string;
-  /** Square marks in public/logos (Handlab: the app's favicon). Falls back to a monogram tile when missing (#7). */
-  logo?: Logo;
   /** Slug of a `kind: "work"` case study in projects.ts. */
   caseStudy?: string;
 };
@@ -21,27 +17,23 @@ export type Education = {
   school: string;
   degree: string;
   when: string;
-  where: string;
   line: string;
-  logo?: Logo;
 };
 
 const roleLine = () =>
   placeholder("One line on what I built and the result, with the number from the claims ledger and the main tool.");
 
 const roles: Role[] = [
-  { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: roleLine(), caseStudy: "ebara-data", logo: { light: "/logos/ebara-elliott.jpg", alt: "Ebara Elliott Energy logo" } },
-  { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: roleLine(), caseStudy: "handlab", logo: { light: "/logos/handlab.svg", alt: "Handlab logo" } },
-  { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: roleLine(), logo: { light: "/logos/spencers.jpg", alt: "Spencer's logo" } },
+  { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: roleLine(), caseStudy: "ebara-data" },
+  { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: roleLine(), caseStudy: "handlab" },
+  { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: roleLine() },
 ];
 
 const education: Education = {
   school: "UW–Madison",
   degree: "BS, Computer Science and Data Science",
   when: "Graduating Dec 2026",
-  where: "Madison, WI",
   line: placeholder("Relevant coursework, in one line."),
-  logo: { light: "/logos/uw-madison.jpg", alt: "UW–Madison crest" },
 };
 
 export const site = {
