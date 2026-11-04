@@ -20,7 +20,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: `${site.name} · ${site.role}`, template: `%s · ${site.name}` },
   description: site.description,
-  robots: { index: true, follow: true },
+  // Template mode (#4): keep the placeholder site out of search until content sync (#10).
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
