@@ -422,7 +422,7 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
                 >
                   <Link href={`/work/${project.slug}`} className="ln-card ln-card--media" draggable={false} tabIndex={readable ? undefined : -1}>
                     <ProjectCover project={project} decorative={!readable} parallax />
-                    <ProjectCardBody project={project} />
+                    <ProjectCardBody project={project} lead={index === 0} />
                   </Link>
                 </div>
               );

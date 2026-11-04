@@ -86,7 +86,7 @@ export default function Home() {
       </section>
 
       <section id="stack" className="ln-section">
-        <div className="ln-wrap ln-stack-y" style={{ gap: 32 }}>
+        <div className="ln-wrap ln-stack-y">
           <SectionHeader heading={stack.heading} />
           <div className="ln-stack">
             {stack.groups.map((g) => (
