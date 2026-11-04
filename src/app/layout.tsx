@@ -25,10 +25,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  // The page starts light for everyone, so the browser toolbar does too.
+  themeColor: "#f5f5f7",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

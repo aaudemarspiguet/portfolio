@@ -13,7 +13,6 @@ export function ContactPanel({ heading, compact }: { heading: string; compact?: 
             <path d="M0 290 C 200 170, 350 420, 560 270 S 880 140, 1000 240" strokeWidth="2" opacity="0.55" />
             <path d="M0 330 C 220 220, 370 450, 580 310 S 900 190, 1000 290" strokeWidth="1.5" opacity="0.3" />
           </svg>
-          <span className="ln-label">Contact</span>
           <h2 id="contact-heading">{heading}</h2>
           <div className="ln-btn-row">
             <a href={`mailto:${site.email}`} className="ln-btn ln-btn--primary">Email me</a>

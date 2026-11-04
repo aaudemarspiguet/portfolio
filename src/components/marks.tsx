@@ -18,7 +18,7 @@ export function Squiggle({ children }: { children: ReactNode }) {
   );
 }
 
-/** Eyebrow with the glowing scarlet availability dot. */
+/** Supporting status with the glowing scarlet availability dot. */
 export function Availability({ children }: { children: ReactNode }) {
   return (
     <span className="ln-live ln-label">
@@ -50,11 +50,11 @@ export function NameTooltip({ pronunciation, meaning, children }: { pronunciatio
   );
 }
 
-export function SectionHeader({ label, heading }: { label: string; heading: string }) {
+export function SectionHeader({ label, heading }: { label?: string; heading: string }) {
   return (
     <header className="ln-section-head">
-      <span className="ln-label">{label}</span>
       <h2>{heading}</h2>
+      {label && <span className="ln-label">{label}</span>}
     </header>
   );
 }

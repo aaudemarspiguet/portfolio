@@ -40,10 +40,10 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
         <div className="ln-wrap ln-case">
           <Link href="/#work" className="ln-link ln-case__back">← All work</Link>
           <header className="ln-case__intro">
+            <h1 className="ln-case__title">{cs.title}</h1>
             <span className="ln-label">
               Case study · {project.area} · {project.year}
             </span>
-            <h1 className="ln-case__title">{cs.title}</h1>
             <p className="ln-case__lede">{cs.lede}</p>
           </header>
 
@@ -78,19 +78,16 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
 
         <div className="ln-wrap ln-wrap--measure ln-case__body">
           <section className="ln-case__section">
-            <span className="ln-label">Context</span>
             <h2>{cs.context.heading}</h2>
             <p>{cs.context.body}</p>
           </section>
 
           <section className="ln-case__section">
-            <span className="ln-label">Problem</span>
             <h2>{cs.problem.heading}</h2>
             <p>{cs.problem.body}</p>
           </section>
 
           <section className="ln-case__section">
-            <span className="ln-label">Approach</span>
             <h2>{cs.approach.heading}</h2>
             <p>{cs.approach.body}</p>
             <ol>
@@ -104,10 +101,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
           </section>
 
           <section className="ln-case__section ln-case__section--result">
-            <div className="ln-case__section">
-              <span className="ln-label">Result</span>
-              <h2>{cs.result.heading}</h2>
-            </div>
+            <h2>{cs.result.heading}</h2>
             <div className="ln-surface ln-results">
               {cs.result.metrics.map((m, i) => (
                 <Metric key={m.label} {...m} lead={i === 0} />
@@ -123,14 +117,13 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
           </section>
 
           <section className="ln-case__section">
-            <span className="ln-label">What I&apos;d do differently</span>
             <h2>{cs.lesson.heading}</h2>
             <p>{cs.lesson.body}</p>
           </section>
 
           <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
-            <span className="ln-label">Next case study →</span>
             <span className="ln-next__title">{next.title}</span>
+            <span className="ln-label">Next case study →</span>
           </Link>
         </div>
       </article>
