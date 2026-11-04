@@ -44,3 +44,6 @@ next-env.d.ts
 /.claude/
 /.codex-task-deps/
 /tmp/
+
+# private copy-process notes (kept on disk, not published)
+/docs/

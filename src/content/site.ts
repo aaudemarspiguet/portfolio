@@ -1,4 +1,4 @@
-// Copy is grounded in the base resume and its truth ledger.
+// Home page copy. Case studies live in projects.ts.
 export const site = {
   name: "Amogh Paruvelli",
   role: "Software engineer",
