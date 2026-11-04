@@ -30,7 +30,7 @@ const roleLine = () =>
 
 const roles: Role[] = [
   { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: roleLine(), caseStudy: "ebara-data", logo: { light: "/logos/ebara-elliott.jpg" } },
-  { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: roleLine(), caseStudy: "handlab", logo: { light: "/logos/handlab.svg" } },
+  { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: "Built zip uploads for a poker hand tracker with plain-English search, so a folder of 11 session files imports 505 hands at once.", caseStudy: "handlab", logo: { light: "/logos/handlab.svg" } },
   { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: roleLine(), logo: { light: "/logos/spencers.jpg" } },
 ];
 
@@ -84,7 +84,7 @@ export const site = {
   stack: {
     heading: placeholder("Tools I've worked with"),
     groups: [
-      { label: "AI", items: ["PyTorch", "Pinecone", "Pydantic", "Amazon Bedrock", "MCP"] },
+      { label: "AI", items: ["PyTorch", "Pydantic", "Amazon Bedrock", "MCP"] },
       { label: "Data", items: ["SQL / PostgreSQL", "PySpark", "Databricks", "Redis"] },
       { label: "Software", items: ["Python / FastAPI", "TypeScript / React", "Java / Spring MVC", "AWS", "Docker"] },
     ],

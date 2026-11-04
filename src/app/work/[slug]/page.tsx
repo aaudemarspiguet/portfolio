@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
+import { Architecture } from "@/components/Architecture";
 import { ContactPanel } from "@/components/ContactPanel";
 import { Metric } from "@/components/marks";
-import { caseStudies, getProject, nextProject } from "@/content/projects";
+import { caseStudies, getProject, nextProject, type Body, type Section } from "@/content/projects";
 import { site } from "@/content/site";
 
 // Prerender known projects. Unknown slugs use Next.js's not-found UI.
@@ -22,6 +24,19 @@ export async function generateMetadata({ params }: PageProps<"/work/[slug]">): P
   };
 }
 
+function Paragraphs({ body }: { body: Body }) {
+  return (typeof body === "string" ? [body] : body).map((p) => <p key={p}>{p}</p>);
+}
+
+function CaseSection({ section }: { section: Section }) {
+  return (
+    <section className="ln-case__section">
+      <h2>{section.heading}</h2>
+      <Paragraphs body={section.body} />
+    </section>
+  );
+}
+
 export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]">) {
   const { slug } = await params;
   const project = getProject(slug);
@@ -29,15 +44,86 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
 
   const cs = project.caseStudy;
   const diagram = cs.diagram;
+  const arch = cs.architecture;
   const next = nextProject(slug);
   const links = project.links;
   const isWork = project.kind === "work";
+  const partners = cs.meta.partners;
   const meta = [
     ["Role", cs.meta.role],
     ["Timeline", cs.meta.timeline],
-    ["Team", cs.meta.team],
+    ...(!partners && cs.meta.team ? [["Team", cs.meta.team]] : []),
     ["Stack", cs.meta.stack],
   ];
+  // Figures are numbered in page order: the strip diagram, the architecture, then images.
+  const archFigure = diagram ? 2 : 1;
+  const firstFigure = 1 + (diagram ? 1 : 0) + (arch ? 1 : 0);
+  // Walkthrough steps that end in "nothing happens" share the diagram's stop colour.
+  const stopSteps = new Set(arch?.edges.filter((e) => e.stop && e.step).map((e) => e.step));
+
+  const opening = <>
+    {cs.context && <CaseSection section={cs.context} />}
+    {cs.problem && <CaseSection section={cs.problem} />}
+    {cs.explainer && <CaseSection section={cs.explainer} />}
+  </>;
+
+  const rest = <>
+    {cs.walkthrough && <section className="ln-case__section">
+      <h2>{cs.walkthrough.heading}</h2>
+      {cs.walkthrough.intro && <p>{cs.walkthrough.intro}</p>}
+      <ol className="ln-steps">
+        {cs.walkthrough.steps.map((s, i) => (
+          <li key={s} className={stopSteps.has(i + 1) ? "ln-steps__item ln-steps__item--stop" : "ln-steps__item"}>{s}</li>
+        ))}
+      </ol>
+    </section>}
+
+    <section className="ln-case__section">
+      <h2>{cs.approach.heading}</h2>
+      <Paragraphs body={cs.approach.body} />
+      {cs.approach.steps && <ol>
+        {cs.approach.steps.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>}
+    </section>
+
+    {cs.figures?.map((f, i) => (
+      <figure key={f.src} className="ln-figure">
+        <div className="ln-surface ln-figure__frame">
+          <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes="(max-width: 704px) 100vw, 640px" />
+        </div>
+        <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
+      </figure>
+    ))}
+
+    {cs.sections?.map((s) => <CaseSection key={s.heading} section={s} />)}
+
+    {cs.result && <section className="ln-case__section ln-case__section--result">
+      <h2>{cs.result.heading}</h2>
+      <div className="ln-surface ln-results">
+        {cs.result.metrics.map((m, i) => (
+          <Metric key={m.label} {...m} lead={i === 0} />
+        ))}
+      </div>
+      {cs.result.body && <p>{cs.result.body}</p>}
+    </section>}
+
+    {cs.lessons && <section className="ln-case__section">
+      <h2>Lessons</h2>
+      {cs.lessons.map((l) => (
+        <div key={l.title} className="ln-lesson">
+          <h3>{l.title}</h3>
+          <p>{l.body}</p>
+        </div>
+      ))}
+    </section>}
+
+    <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
+      <span className="ln-next__title">{next.title}</span>
+      <span className="ln-label">{isWork ? "Next role →" : "Next project →"}</span>
+    </Link>
+  </>;
 
   return (
     <>
@@ -61,6 +147,18 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
                 <dd>{v}</dd>
               </div>
             ))}
+            {/* Partners come last so a long list can span its own row (#10). */}
+            {partners && <div className={partners.length > 2 ? "ln-meta__wide" : undefined}>
+              <dt>Partners</dt>
+              <dd>
+                {partners.map((p, i) => (
+                  <Fragment key={p.name}>
+                    {i > 0 && ", "}
+                    {p.link ? <a href={p.link} className="ln-link" target="_blank" rel="noopener noreferrer">{p.name}</a> : p.name}
+                  </Fragment>
+                ))}
+              </dd>
+            </div>}
             {(links?.live || links?.repo) && <div>
               <dt>Links</dt>
               <dd className="ln-meta__links">
@@ -83,42 +181,24 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
           </figure>}
         </div>
 
-        <div className="ln-wrap ln-wrap--measure ln-case__body">
-          {cs.context && <section className="ln-case__section">
-            <h2>{cs.context.heading}</h2>
-            <p>{cs.context.body}</p>
-          </section>}
-
-          {cs.problem && <section className="ln-case__section">
-            <h2>{cs.problem.heading}</h2>
-            <p>{cs.problem.body}</p>
-          </section>}
-
-          <section className="ln-case__section">
-            <h2>{cs.approach.heading}</h2>
-            <p>{cs.approach.body}</p>
-            {cs.approach.steps && <ol>
-              {cs.approach.steps.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>}
-          </section>
-
-          {cs.result && <section className="ln-case__section ln-case__section--result">
-            <h2>{cs.result.heading}</h2>
-            <div className="ln-surface ln-results">
-              {cs.result.metrics.map((m, i) => (
-                <Metric key={m.label} {...m} lead={i === 0} />
-              ))}
-            </div>
-            {cs.result.body && <p>{cs.result.body}</p>}
-          </section>}
-
-          <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
-            <span className="ln-next__title">{next.title}</span>
-            <span className="ln-label">{isWork ? "Next role →" : "Next project →"}</span>
-          </Link>
-        </div>
+        {arch ? <>
+          <div className="ln-wrap ln-wrap--measure ln-case__body">{opening}</div>
+          {/* The system diagram needs the full width, so it breaks out of the reading column. */}
+          <div className="ln-wrap ln-case__wide">
+            <figure className="ln-figure">
+              <div className="ln-surface ln-arch__scroll">
+                <Architecture arch={arch} labelId="arch-caption" />
+              </div>
+              <figcaption id="arch-caption">
+                Fig. {archFigure} · {arch.caption}
+                <span className="ln-arch__hint"> Swipe sideways to see the whole diagram.</span>
+              </figcaption>
+            </figure>
+          </div>
+          <div className="ln-wrap ln-wrap--measure ln-case__body">{rest}</div>
+        </> : (
+          <div className="ln-wrap ln-wrap--measure ln-case__body">{opening}{rest}</div>
+        )}
       </article>
 
       <ContactPanel heading={site.contact.caseStudyHeading} compact />
