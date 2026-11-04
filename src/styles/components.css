@@ -124,7 +124,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .ln-card__body { flex: 1; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4); }
 .ln-card:hover { box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: no-preference) { .ln-card:hover { transform: translateY(-2px); } }
-.ln-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-muted); }
+.ln-card__head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-muted); }
 .ln-card__area { display: inline-flex; align-items: center; gap: 8px; }
 .ln-card__org { flex: none; width: 18px; height: 18px; border-radius: 4px; object-fit: cover; }
 .ln-card__cta { color: var(--link); }
@@ -176,6 +176,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .ln-logo--mono { background: var(--paper-sunk); color: var(--ink-muted); font-size: 15px; line-height: 1; font-weight: 600; letter-spacing: 0.02em; }
 .ln-list__role { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -0.015em; }
 .ln-list__line { font-size: 15px; line-height: 1.45; color: var(--ink-muted); }
+.ln-list__what > .ln-link { font-size: 15px; line-height: 1.45; }
 .ln-after-list { align-self: flex-start; margin-top: calc(-1 * var(--space-4)); padding: 0; }
 
 /* About */
@@ -191,6 +192,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .ln-stack { display: flex; flex-direction: column; gap: 14px; }
 .ln-stack__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ln-stack__row .ln-label { flex: 0 0 120px; }
+@media (max-width: 640px) { .ln-stack__row .ln-label { flex-basis: 100%; } }
 
 /* Contact panel */
 .ln-contact { padding-bottom: var(--gut); }
