@@ -46,7 +46,7 @@ export const site = {
   name: "Amogh Paruvelli",
   /** Nav wordmark (#5). */
   brand: "amoghmade.dev",
-  role: "Software engineer",
+  role: "Software Engineer",
   city: "Madison, WI",
   availability: "Graduating December 2026",
   timeZone: "America/Chicago",
