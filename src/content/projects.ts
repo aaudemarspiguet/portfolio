@@ -160,7 +160,7 @@ export const caseStudies: Project[] = [
       },
       approach: {
         heading: "Messages and Git refs, nothing else",
-        body: "The room_post tool takes free text plus branch names or commit SHAs, and its own description says those are the only pointers to code. That keeps shared state small, keeps code review in Git where it already lives, and makes the boundary easy to test: anything that looks like pasted code is a bug. Each member also sets a mode for their own agent on each thread (view, comment or edit), and nobody can set another member's mode.",
+        body: "The room_post tool takes free text plus branch names or commit SHAs, and its own description says those are the only pointers to code. Code review stays in Git, where it already lives, and the boundary is easy to test: anything that looks like pasted code is a bug. Each member also sets a mode for their own agent on each thread (view, comment or edit), and nobody can set another member's mode.",
         steps: [
           "I built the relay's Docker deployment: a Node 20 Alpine image with the SQLite file on a mounted volume, so state survives restarts.",
           "I made saw up work with an npm-installed claude on Windows, and added a test that proves the relay stores token hashes, never tokens.",
@@ -168,7 +168,7 @@ export const caseStudies: Project[] = [
       },
       figures: [
         { src: "/projects/saw/04-bob-sees-unread-thread.jpg", alt: "Bob's SAW page with the work-item thread in bold and an unread marker", caption: "Alice's post reaches Bob through the relay, and his thread list marks it unread.", width: 800, height: 600 },
-        { src: "/projects/saw/07-agent-mode-editing-commenting-viewing.jpg", alt: "The per-thread mode picker with Editing, Commenting and Viewing options", caption: "Each person sets their own agent's mode per thread. It governs the agent, not the human.", width: 800, height: 600 },
+        { src: "/projects/saw/07-agent-mode-editing-commenting-viewing.jpg", alt: "The per-thread mode picker with Editing, Commenting and Viewing options", caption: "Each person sets their own agent's mode per thread, and only they can change it.", width: 800, height: 600 },
       ],
       result: {
         heading: "Where it stands",
@@ -177,7 +177,7 @@ export const caseStudies: Project[] = [
           { label: "MCP tools", value: "9", base: "registered for agents" },
           { label: "Claude Code hooks", value: "4", base: "session start, prompt, pre-tool-use, stop" },
         ],
-        body: "CI runs the suite on Ubuntu and Windows, and both runs gate merges. The screens here ran both members on one machine with demo data, not a live agent session.",
+        body: "CI runs the suite on Ubuntu and Windows, and both runs gate merges. The screens here come from two members on one machine with demo data. A live agent session hasn't been recorded yet.",
       },
     },
   },
@@ -246,7 +246,7 @@ export const caseStudies: Project[] = [
     tags: ["FastAPI", "RAG", "React"],
     caseStudy: {
       title: "A course Q&A board that answers from the course's own material",
-      lede: "Our first similarity threshold, 0.65, sounded careful and answered almost nothing: it matched 1 of 22 sweep questions, on the wrong source. So we swept the threshold before trusting it, and ran the live answers and the evaluation through one function.",
+      lede: "Our first similarity threshold, 0.65, sounded careful and answered almost nothing. In a sweep it matched 1 of 22 questions, and that one on the wrong source. After that we changed one setting at a time and measured each, with live answers and the evaluation running through the same function.",
       meta: { role: "Full-stack engineer", timeline: "October 2026", partners: [people.divij], stack: "FastAPI, MySQL, Redis, React, Ollama, Infinity, ChromaDB" },
       diagram: {
         steps: ["Student question", "Retrieve from ChromaDB", "Threshold check", "Generate with Ollama", "Answer with sources"],
@@ -273,7 +273,7 @@ export const caseStudies: Project[] = [
       },
       figures: [
         { src: "/projects/qna/06-source-viewer-cited-lines.jpg", alt: "The source viewer with lines 36 to 45 of a course rubric highlighted", caption: "The first citation opens the source on the exact lines, so a reader can check the answer quickly.", width: 1280, height: 800 },
-        { src: "/projects/qna/03-staff-ai-settings.jpg", alt: "The staff AI settings page with the similarity threshold, top-k, system prompt and generation model", caption: "Staff set the threshold, prompt and model per course. 0.65 was the default we started from.", width: 1280, height: 800 },
+        { src: "/projects/qna/03-staff-ai-settings.jpg", alt: "The staff AI settings page with the similarity threshold, top-k, system prompt and generation model", caption: "Staff tune the answerer per course on this page. 0.65 was the default we started from.", width: 1280, height: 800 },
       ],
       result: {
         heading: "How it turned out",
@@ -308,12 +308,12 @@ export const caseStudies: Project[] = [
     tags: ["Python", "FastAPI", "React"],
     caseStudy: {
       title: "A hand tracker you can ask questions",
-      lede: "Finding a spot in thousands of hand histories means scrolling. So we built a tracker where you import Pot-Limit Omaha hands, filter and replay them, and ask for spots in plain English.",
+      lede: "Finding a spot in thousands of hand histories means scrolling. So we built a Pot-Limit Omaha tracker you can ask in plain English, and it answers with the matching hands.",
       meta: { role: "Contract software engineer", timeline: "February to July 2026", partners: [people.shrey], stack: "Python, FastAPI, SQLite, React, TypeScript, an LLM query router" },
       diagram: {
         steps: ["Plain-English question", "LLM router", "Validated query plan", "SQL compilers", "Matching hands"],
         model: 1,
-        caption: "The LLM only decides what you meant. Deterministic code runs the query.",
+        caption: "The router turns a question into a plan. Everything after it is ordinary code.",
       },
       context: {
         heading: "The situation",
@@ -325,7 +325,7 @@ export const caseStudies: Project[] = [
       },
       approach: {
         heading: "The LLM decides, code executes",
-        body: "An LLM never runs the query. A question goes to a router that returns a typed, validated query plan, and deterministic compilers run that plan against SQLite. Results stay repeatable, and the query path can be tested without a model in the loop.",
+        body: "A question goes to a router that returns a typed, validated query plan, and deterministic compilers run that plan against SQLite. The model never touches the database, so results repeat and the query path can be tested without a model in the loop.",
         steps: [
           "I added multipart and zip uploads, so a whole folder of session files loads at once, and fixed the duplicate player-fact crash that overlapping uploads caused.",
           "I added a cache for the hands workspace that prefetches five hands at a time and clears on upload.",
