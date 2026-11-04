@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
 import { ExperienceRow } from "@/components/ExperienceRow";
@@ -42,6 +43,9 @@ export default function Home() {
 
       <section id="projects" className="ln-section">
         <ProjectCarousel projects={highlightedProjects} header={<SectionHeader label="Highlighted projects" heading={site.projects.heading} />} />
+        <div className="ln-wrap ln-section-foot">
+          <Link href="/projects" className="ln-link ln-more">All projects →</Link>
+        </div>
       </section>
 
       <section id="experience" className="ln-section">
