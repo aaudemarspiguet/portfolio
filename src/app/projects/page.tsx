@@ -23,8 +23,8 @@ export default function ProjectsPage() {
           <span className="ln-label">{count}</span>
         </header>
         <div className="ln-grid">
-          {projects.map((p, i) => (
-            <ProjectCard key={p.slug} project={p} lead={i === 0} />
+          {projects.map((p) => (
+            <ProjectCard key={p.slug} project={p} />
           ))}
         </div>
       </div>
