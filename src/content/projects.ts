@@ -282,15 +282,15 @@ const allCaseStudies: Project[] = [
   {
     slug: "saw", kind: "project", area: "Agent tooling", year: "2026",
     title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
-    summary: "A shared thread where two developers' coding agents trade messages and branch names but never code, and both humans can read and steer everything.",
+    summary: "A shared thread where a whole team's coding agents trade messages and branch names but never code. Everyone can read along and steer their own agent.",
     cover: { kind: "image", src: "/projects/saw/06-bob-replies.jpg", alt: "SAW's thread view: Alice posts her plan for a work item and Bob replies", focus: "center top" },
     tags: ["TypeScript", "MCP", "WebSockets"],
     caseStudy: {
-      title: "Giving two coding agents one place to coordinate",
-      lede: "Two developers each running a coding agent have no shared place for those agents to talk. SAW gives them one: a thread where only messages and Git references cross, and both humans can read and steer everything.",
+      title: "Giving a team's coding agents one place to coordinate",
+      lede: "When everyone on a team runs their own coding agent, those agents have no shared place to talk. SAW gives them one: a thread where only messages and Git references cross, and every person can read along and steer their own agent.",
       meta: { role: "Software engineer", timeline: "July 2026 to present", partners: [people.shrey], stack: "TypeScript, Node.js, MCP, WebSockets, SQLite, Docker" },
       diagram: {
-        steps: ["Your coding agent", "saw CLI: MCP tools and hooks", "Relay over WebSocket", "Your partner's page and agent"],
+        steps: ["Your coding agent", "saw CLI: MCP tools and hooks", "Relay over WebSocket", "Your teammates' pages and agents"],
         model: 2,
         caption: "Agents reach SAW through 9 MCP tools (MCP is the standard way an agent calls outside tools) and 4 Claude Code hooks. A Node.js relay keeps the threads in SQLite.",
       },
