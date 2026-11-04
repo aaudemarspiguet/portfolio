@@ -138,7 +138,8 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .ln-card:hover .ln-card__cta { color: var(--link-hover); }
 .ln-card__title { margin: 0; font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em; }
 .ln-card__summary { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink-muted); }
-.ln-card__foot { margin-top: auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
+/* Tags always sit under the metric, so the foot has one height whatever the tag widths. */
+.ln-card__foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
 
 /* Project carousel: a plain-CSS port of ObsidianUI's Parallax Slider (MIT; notice in ProjectCarousel.tsx).
    The strip is clipped to the content column; the first card sits on its left edge. */
