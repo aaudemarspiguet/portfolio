@@ -14,24 +14,27 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
+// "home" while the hero is in view: nothing in the pill is selected, and the
+// mobile menu selects Home.
+type Current = SectionId | "home";
 
-// Home: the pill follows the section in view. The all-projects page and case
+// Home: the pill follows the section in view, starting at the hero. The all-projects page and case
 // studies keep Projects, or Experience for a work case study, selected.
-function useCurrentSection(pathname: string, caseStudySlug: string | null): SectionId | null {
+function useCurrentSection(pathname: string, caseStudySlug: string | null): Current | null {
   const onHome = pathname === "/";
-  const [spied, setSpied] = useState<SectionId>("projects");
+  const [spied, setSpied] = useState<Current>("home");
 
   useEffect(() => {
     if (!onHome) return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) setSpied(entry.target.id as SectionId);
+          if (entry.isIntersecting) setSpied(entry.target.id === "top" ? "home" : (entry.target.id as SectionId));
         }
       },
       { rootMargin: "-45% 0px -50% 0px" },
     );
-    for (const { id } of SECTIONS) {
+    for (const id of ["top", ...SECTIONS.map((s) => s.id)]) {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     }
@@ -78,7 +81,7 @@ export function NavBar() {
 
 // Closed: the pill keeps the wordmark, a theme icon and a hamburger. Open: a
 // full-screen modal <dialog>, which keeps focus inside and closes on Escape.
-function MobileMenu({ current, href }: { current: SectionId | null; href: (id: string) => string }) {
+function MobileMenu({ current, href }: { current: Current | null; href: (id: string) => string }) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -145,7 +148,7 @@ function MobileMenu({ current, href }: { current: SectionId | null; href: (id: s
           </div>
         </div>
         <nav aria-label="Main" className="ln-sheet__links">
-          <HomeLink onClick={hide}>Home</HomeLink>
+          <HomeLink onClick={hide} current={current === "home"}>Home</HomeLink>
           {SECTIONS.map(({ id, label }) => (
             <a key={id} href={href(id)} aria-current={current === id ? "location" : undefined} onClick={hide}>
               {label}
