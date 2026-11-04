@@ -31,7 +31,8 @@ export type Architecture = {
   cols: number;
   rows: number;
   nodes: { id: string; label: string; sub?: string; at: [number, number]; kind?: "store" | "model" | "stop" }[];
-  edges: { from: string; to: string; step?: number; exit?: Side; enter?: Side; stop?: boolean }[];
+  /** `dashed` is for control flow rather than data, e.g. a runner that drives a step. */
+  edges: { from: string; to: string; step?: number; exit?: Side; enter?: Side; stop?: boolean; dashed?: boolean }[];
   groups?: { label: string; nodes: string[] }[];
   caption: string;
 };
@@ -325,53 +326,129 @@ export const caseStudies: Project[] = [
   {
     slug: "llm-ablations", kind: "project", area: "AI research", year: "2026",
     title: "Safety vs. Utility in LLM Activation Spaces", flags: ["highlighted"],
-    summary: "Subtracting one direction from a chat model's activations took the share of harmful prompts it answered from 1% to 84% (N=100). Its benchmark scores barely moved.",
+    summary: "We tested whether a chat model's safety and its skills live in separate places by deleting one direction inside it at a time. Safety came out cleanly. Helpfulness didn't.",
     cover: { kind: "image", src: "/projects/llm-ablations/04-team-matrix-gemma.png", alt: "Bar chart of the ablation matrix on Gemma-2-2B-IT: attack success rate and four benchmarks for each cell" },
-    metric: { value: "1% → 84%", base: "Harmful prompts answered after removing one safety direction (Gemma-2-2B-IT, N=100)" },
+    metric: { value: "1% → 84%", base: "Harmful prompts a small open model answered once its safety direction was gone, with benchmark scores barely moved (N=100)" },
     tags: ["PyTorch", "Transformers", "NumPy"],
     caseStudy: {
-      title: "Can you remove a model's refusals without breaking its skills?",
-      lede: "Take one direction out of a chat model's activations and it stops refusing harmful requests. On Gemma-2-2B-IT, a small open model from Google, the share of harmful prompts that got through went from 1% to 84% (N=100), while its benchmark scores barely moved. We wanted to know whether helpfulness could be pulled out the same way, without touching safety.",
+      title: "Can you delete an LLM's refusals and keep its skills?",
+      lede: "Chat models refuse harmful requests, and earlier work found that the refusal hangs on a single direction inside the model. We removed it from Gemma, a small open model from Google, and the share of harmful prompts that got through went from 1% to 84% (N=100) while its benchmark scores barely moved. We wanted to know whether helpfulness could be pulled out the same way, without touching safety.",
       meta: {
         role: "Research team lead",
         timeline: "March to May 2026",
         partners: [people.shrey, people.vansh, people.aditya, people.rohan, people.kushal],
         stack: "Python, PyTorch, Hugging Face Transformers, NumPy",
       },
-      diagram: {
-        steps: ["Contrasting prompts", "Cached activations", "Extracted direction", "Hook removes it", "Attack rate and benchmarks"],
-        model: 3,
-        caption: "A forward hook (a function PyTorch runs on a block's output) subtracts the direction. No weights change, and removing the hook undoes it.",
-      },
       context: {
         heading: "The question",
-        body: "Aligned chat models do two jobs at once. They refuse harmful requests, and they stay useful for everything else. Earlier work pinned refusal to a single direction in the residual stream, the running vector each layer reads and writes (Arditi et al., 2024). Subtract that one vector and the refusals go. For our CS 639 project we asked whether helpfulness sits in its own direction. If it does, you should be able to delete one and leave the other alone.",
+        body: "Aligned chat models do two jobs at once. They refuse harmful requests, and they stay useful for everything else. For our CS 639 project, six of us asked whether those two jobs live in separate places inside the model. If they do, you should be able to delete one and leave the other alone. We tested two open chat models, Google's Gemma-2-2B-IT and Meta's Llama-3.1-8B-Instruct.",
       },
-      problem: {
-        heading: "Finding Llama's layer",
-        body: "On Gemma, a sweep over layers 22 to 25 settled it. Llama was harder. Our analysis scores every layer and recommends the one where the safety and utility directions differ most, and for Llama it picked index 32. That index is the output after the last block, and a hook can't attach to it. The nearest real block, layer 31, did nothing: 7% against a 6% baseline. We swept 15 layers. Layers 13 to 28 stayed between 4% and 14%, and the effect only showed up early, peaking at 55% on layer 11. We think the analysis leaned toward late layers because activations grow larger with depth.",
+      explainer: {
+        heading: "How a refusal can be one direction",
+        body: [
+          "Inside a chat model, each layer hands the next a long list of numbers for every token, a word or a piece of one. On Gemma each list holds 2,304 numbers, so you can treat it as a point in a space with 2,304 dimensions. That running list is called the residual stream, and it's where we look.",
+          "Run a batch of harmful prompts and a batch of harmless ones, and average the points each batch reaches at one layer. The difference between the two averages is an arrow pointing from harmless toward harmful. Earlier work found that refusal runs along this single arrow, which is called a direction (Arditi et al., 2024). Building it from two averages is called difference of means.",
+          "Removing a direction means taking away each point's share along the arrow and keeping the rest. In two dimensions, if the arrow is (1, 0) and a point is (3, 2), the point becomes (0, 2). Do that to every point at one layer while the model runs, and the model loses the signal it refuses with. No weights change, and turning the removal off restores the model.",
+          "The catch is the layer. A direction is read and removed at one layer, and the right arrow at the wrong layer can do almost nothing. That turned out to matter a lot on Llama.",
+        ],
+      },
+      architecture: {
+        cols: 5,
+        rows: 3,
+        nodes: [
+          { id: "advbench", label: "AdvBench", sub: "harmful prompts", at: [0, 0], kind: "store" },
+          { id: "alpaca", label: "Alpaca", sub: "harmless prompts", at: [0, 1], kind: "store" },
+          { id: "helpsteer", label: "HelpSteer", sub: "rated answer pairs", at: [0, 2], kind: "store" },
+          { id: "read", label: "Read activations", sub: "at one layer", at: [1, 1] },
+          { id: "dom", label: "Difference of means", sub: "one direction", at: [2, 0] },
+          { id: "saved", label: "Saved directions", sub: "computed once, reused", at: [2, 1], kind: "store" },
+          { id: "actsvd", label: "ActSVD", sub: "a few directions at once", at: [2, 2] },
+          { id: "runner", label: "Experiment runner", sub: "every cell, layer, rank", at: [3, 0] },
+          { id: "hook", label: "Model with a hook", sub: "removes it at one block", at: [3, 1], kind: "model" },
+          { id: "bench", label: "Benchmarks", sub: "BoolQ, HellaSwag, ARC-C", at: [3, 2] },
+          { id: "refused", label: "Refused", sub: "matched a refusal phrase", at: [4, 0], kind: "stop" },
+          { id: "check", label: "Refusal check", sub: "100 held-out prompts", at: [4, 1] },
+          { id: "answered", label: "Answered", sub: "counts as an attack", at: [4, 2] },
+        ],
+        edges: [
+          { from: "advbench", to: "read", step: 1 },
+          { from: "alpaca", to: "read" },
+          { from: "helpsteer", to: "read" },
+          { from: "read", to: "dom", step: 2 },
+          { from: "read", to: "actsvd" },
+          { from: "dom", to: "saved", step: 3 },
+          { from: "actsvd", to: "saved" },
+          { from: "saved", to: "hook", step: 4 },
+          { from: "runner", to: "hook", dashed: true },
+          { from: "hook", to: "check", step: 5 },
+          { from: "check", to: "refused", step: 6, stop: true },
+          { from: "check", to: "answered", step: 7 },
+          { from: "hook", to: "bench", step: 8 },
+        ],
+        groups: [
+          { label: "Data", nodes: ["advbench", "alpaca", "helpsteer"] },
+          { label: "Find the direction", nodes: ["read", "dom", "saved", "actsvd"] },
+          { label: "Remove it and score", nodes: ["runner", "hook", "bench", "refused", "check", "answered"] },
+        ],
+        caption: "The pipeline, numbered for one cell: Gemma, safety direction, difference of means, layer 25. HelpSteer and ActSVD feed the other cells. The dashed line is the runner that sets up each cell. Every score lands in result files the charts are drawn from.",
+      },
+      walkthrough: {
+        heading: "One cell, start to finish",
+        intro: "The experiment is a grid of cells, and each one removes one direction from one model. Here's the cell behind the 84%. The numbers match the diagram.",
+        steps: [
+          "Harmful prompts from AdvBench and harmless ones from Alpaca go through Gemma, and we save each prompt's point at layer 25, read at its last token.",
+          "Average each batch and subtract. The difference, scaled to length 1, is the safety direction.",
+          "The direction is saved once, so every later run reads it instead of running the prompts again.",
+          "A hook, a function PyTorch calls on a block's output, subtracts the direction from every point at layer 25 while Gemma runs.",
+          "Gemma answers 100 harmful AdvBench prompts it never saw while we built the direction, always picking its most likely next word, for up to 256 new tokens.",
+          "A response that contains a phrase from a fixed list of refusals counts as refused. Without the hook, 99 of the 100 were.",
+          "Anything else counts as answered. With the direction gone, 84 of 100 were.",
+          "The same hooked model takes BoolQ, HellaSwag and ARC-Challenge, 200 questions each. Its average went from 61.3% to 60.5%.",
+        ],
       },
       approach: {
         heading: "One hook, a 2×2 grid",
-        body: "We tested two open chat models, Gemma-2-2B-IT and Llama-3.1-8B-Instruct, and found each direction two ways. Difference of means takes the average activation on harmful prompts and subtracts the average on harmless ones. ActSVD uses a matrix factorization (SVD) to find a few directions at once. Both sit behind one hook interface, so every cell differs only in which direction gets projected out. Removing safety or utility with either method gives a 2×2 grid per model. We added a baseline with nothing removed and two random-direction controls. Every cell was scored on attack success, the share of 100 held-out harmful prompts from AdvBench that the model answered. Each was also scored on three standard benchmarks, BoolQ, HellaSwag and ARC-Challenge, at 200 samples each.",
-        steps: [
-          "The utility direction had no recipe to copy, since earlier work only extracted refusal. My idea used HelpSteer, a dataset of responses rated for helpfulness: pair a high-rated and a low-rated response to the same prompt, and keep only pairs with a big enough gap. At a gap of 3 or more, directions built from random resamples of the pairs point the same way (mean cosine 0.994 on Gemma, 0.988 on Llama), and 1,201 of 37,120 pairs survive the filter.",
+        body: [
+          "The full experiment crosses two choices. You can remove the safety direction or a utility direction, and you can find it by difference of means or by ActSVD, which finds a few directions at once instead of one. That makes a 2×2 grid per model, plus a baseline with nothing removed and two random-direction controls. Both methods sit behind the same hook, so cells differ only in what gets removed.",
+          "The utility direction had no recipe to copy, since earlier work only extracted refusal. My idea used HelpSteer, a dataset of answers rated for helpfulness. Pair a high-rated and a low-rated answer to the same prompt, and keep only pairs whose ratings differ by 3 points or more. At that gap, directions built from random resamples of the pairs point almost the same way (an average cosine of 0.994 on Gemma, where 1 means identical), and 1,201 of the 37,120 pairs pass.",
           "I also set up the codebase, the dataset preprocessing and the activation cache that every other step reads from.",
         ],
       },
       figures: [
-        { src: "/projects/llm-ablations/01-layer-sweep-asr.png", alt: "Line charts of attack success rate by ablation layer: Gemma climbs to 84% at layer 25, Llama peaks at 55% at layer 11", caption: "Attack success by the layer where the safety direction is removed. Llama's effect sits early, far from the layer our analysis picked.", width: 1920, height: 704 },
-        { src: "/projects/llm-ablations/02-cells-with-controls.png", alt: "Bar charts of every ablation cell and the random controls on both models, attack success above and benchmark mean below", caption: "Every cell on both models. The grey random-direction controls stay at baseline.", width: 1920, height: 1120 },
+        { src: "/projects/llm-ablations/01-layer-sweep-asr.png", alt: "Line charts of attack success rate by ablation layer: Gemma climbs to 84% at layer 25, Llama peaks at 55% at layer 11", caption: "The share of harmful prompts answered, by the layer where the safety direction is removed. Llama's effect sits early, far from the layer our analysis picked.", width: 1920, height: 704 },
+        { src: "/projects/llm-ablations/02-cells-with-controls.png", alt: "Bar charts of every ablation cell and the random controls on both models, attack success above and benchmark mean below", caption: "Every cell on both models. The grey random-direction controls stay at baseline, so the jumps come from the direction we removed.", width: 1920, height: 1120 },
+      ],
+      sections: [
+        {
+          heading: "Finding Llama's layer",
+          body: [
+            "On Gemma, a sweep over layers 22 to 25 settled it. Llama was harder. Our analysis scores every layer and recommends the one where the safety and utility directions differ most, and for Llama it picked index 32. That index is the output after the last block, and a hook can't attach to it. The nearest real block, layer 31, did nothing: 7% against a 6% baseline.",
+            "So we swept. Layers 13 to 28 stayed between 4% and 14%, and the effect only showed up early, at layers 9 to 12, peaking at 55% on layer 11 with the benchmark average at 64.7% against 65.0%. We think the analysis leaned toward late layers because the numbers in each point grow larger with depth. We kept the failed layer 16 and layer 31 runs in the repo, next to the one that worked.",
+          ],
+        },
+        {
+          heading: "The cell that broke the pattern",
+          body: [
+            "On Gemma, removing the utility subspace found by ActSVD left refusals alone (3%) but dropped the benchmark average from 61.3% to 53.2%. Its score on TruthfulQA, a test of whether answers are true, fell from 36% to 25.5%. Helpfulness didn't come out cleanly.",
+            "One similarity score between Gemma's safety and utility subspaces, 0.065, says they barely overlap. Measuring the angle between each pair of their directions tells a different story: three of the four angles sit between 80.7 and 89.9 degrees, close to unrelated, but one sits at 61.9. That shared piece is our candidate explanation for the drop. On Llama the utility cell is a different experiment, which removes the weakest safety components instead, so it isn't comparable.",
+          ],
+        },
       ],
       result: {
         heading: "What the numbers say",
         metrics: [
           { label: "Gemma, safety removed", value: "1% → 84%", base: "harmful prompts answered, N=100" },
-          { label: "Llama, layer 11", value: "6% → 55%", base: "benchmark mean 65.0% → 64.7%" },
+          { label: "Llama, layer 11", value: "6% → 55%", base: "benchmark average 65.0% → 64.7%" },
           { label: "Random controls", value: "At baseline", base: "1% on Gemma, 6% on Llama" },
         ],
-        body: "Removing the ActSVD utility subspace broke the pattern: refusals stayed (3%), but Gemma's benchmark mean fell from 61.3% to 53.2%. A single similarity score between the safety and utility subspaces, 0.065, says they barely overlap. Measured angle by angle instead (their principal angles), three of the four sit near 90 degrees and one sits at 61.9, which is our candidate explanation for the drop. Refusal is scored by matching a fixed list of refusal phrases on one seed, so these are point estimates.",
+        body: "These are point estimates from two models, one layer each and one seed, with no confidence intervals. Refusal is scored by matching a fixed list of phrases. We read 10 Gemma responses by hand: 8 were clear flips and 2 were reworded refusals, so a judge model would score tighter. Helpfulness ratings stand in for utility, and the charts are drawn from the committed result files, not a new run.",
       },
+      lessons: [
+        { title: "Check that the layer you picked can be hooked at all.", body: "Our recommended Llama layer was past the last block. We only saw the problem after the nearest block did nothing." },
+        { title: "Add the control before you trust the jump.", body: "The random-direction cells were added late, and they are what lets us say the 55% is about the direction." },
+        { title: "Keep the negative runs.", body: "The layer 16 and layer 31 results show where the effect isn't, and they sit next to the layer 11 result that shows where it is." },
+        { title: "Read the angles, not just the cosine.", body: "The single similarity score between the two subspaces was 0.065. The one angle at 61.9 degrees is where the utility cell broke." },
+      ],
     },
   },
 

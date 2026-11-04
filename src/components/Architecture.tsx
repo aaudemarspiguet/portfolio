@@ -102,7 +102,7 @@ export function Architecture({ arch, labelId }: { arch: Arch; labelId: string })
         const pts = route(port(a, exit), exit, port(b, enter), enter);
         const line = trim(pts, enter);
         return (
-          <g key={`${e.from}-${e.to}`} className={e.stop ? "ln-arch__edge ln-arch__edge--stop" : "ln-arch__edge"}>
+          <g key={`${e.from}-${e.to}`} className={`ln-arch__edge${e.stop ? " ln-arch__edge--stop" : ""}${e.dashed ? " ln-arch__edge--dashed" : ""}`}>
             <polyline points={line.map((p) => p.join(",")).join(" ")} />
             <polygon points={arrowHead(pts[pts.length - 1], enter)} />
           </g>
