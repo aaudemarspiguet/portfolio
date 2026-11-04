@@ -140,7 +140,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 
 /* Org logo: a plain square mark, LinkedIn-style, or a monogram when there is none */
 .ln-logo { grid-area: logo; position: relative; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; overflow: hidden; border-radius: 4px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--rule); }
-.ln-logo img { width: 100%; height: 100%; padding: 4px; box-sizing: border-box; object-fit: contain; }
+.ln-logo img { width: 100%; height: 100%; object-fit: cover; }
 .ln-logo .ln-logo__dark { display: none; }
 :root[data-theme="dark"] .ln-logo:has(.ln-logo__dark) { background: var(--paper-sunk); }
 :root[data-theme="dark"] .ln-logo .ln-logo__light { display: none; }
