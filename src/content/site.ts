@@ -74,7 +74,7 @@ export const site = {
     /** Portrait in public/, 4:5. Until it exists the frame shows a placeholder (#8). */
     photo: undefined as { src: string; alt: string } | undefined,
     /** Sticker on the photo's corner (#8). */
-    hometown: placeholder("Hometown"),
+    hometown: "Pittsburgh, PA",
     paragraphs: [
       placeholder("Where I study, when I graduate, and the thread that connects the work. Two or three sentences in my own voice, not a summary of the résumé."),
       placeholder("One paragraph on the problem I've enjoyed most and what it taught me. Specific enough to start a conversation in an interview."),
