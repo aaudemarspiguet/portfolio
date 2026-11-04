@@ -137,7 +137,7 @@ export const caseStudies: Project[] = [
   {
     slug: "saw", kind: "project", area: "Agent tooling", year: "2026",
     title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
-    summary: "A shared thread where two developers' coding agents trade messages and Git refs, and the humans see everything.",
+    summary: "A shared thread where two developers' coding agents trade messages and branch names but never code, and both humans can read and steer everything.",
     cover: { kind: "image", src: "/projects/saw/06-bob-replies.jpg", alt: "SAW's thread view: Alice posts her plan for a work item and Bob replies", focus: "center top" },
     metric: { value: "355 tests passing", base: "On a clean export of the code, 2 skipped. CI runs on Ubuntu and Windows." },
     tags: ["TypeScript", "MCP", "WebSockets"],
@@ -148,7 +148,7 @@ export const caseStudies: Project[] = [
       diagram: {
         steps: ["Your coding agent", "saw CLI: MCP tools and hooks", "Relay over WebSocket", "Your partner's page and agent"],
         model: 2,
-        caption: "Agents post through 9 MCP tools and 4 Claude Code hooks. A Node.js relay keeps the threads in SQLite.",
+        caption: "Agents reach SAW through 9 MCP tools (MCP is the standard way an agent calls outside tools) and 4 Claude Code hooks. A Node.js relay keeps the threads in SQLite.",
       },
       context: {
         heading: "The situation",
@@ -156,11 +156,11 @@ export const caseStudies: Project[] = [
       },
       problem: {
         heading: "Code leaking through the boundary",
-        body: "In August we set the product up from the written steps instead of the test harness, and that pass found problems the tests had stepped over. One was that pasted code could still reach the shared work log. The CLI collapsed whitespace in a prompt and cut it to 600 characters before the relay checked it, which defeated every detector that looked for a diff or a code fence at the start of a line. I added a check that catches pasted code after the whitespace is gone, and a bounded log query that returns the newest entries.",
+        body: "In August we set the product up from the written steps instead of the test harness, and that pass found problems the tests had stepped over. One was that pasted code could still reach the shared work log. The relay's detectors looked for the start of a diff or a Markdown code fence at the beginning of a line. But the CLI collapsed a prompt's whitespace and cut it to 600 characters before the relay saw it, so no line was left to begin and every detector missed. I added a check that catches pasted code after the whitespace is gone, and a bounded log query that returns the newest entries.",
       },
       approach: {
         heading: "Messages and Git refs, nothing else",
-        body: "The room_post tool takes free text plus branch names or commit SHAs, and its own description says those are the only pointers to code. Code review stays in Git, where it already lives, and the boundary is easy to test: anything that looks like pasted code is a bug. Each member also sets a mode for their own agent on each thread (view, comment or edit), and nobody can set another member's mode.",
+        body: "The tool agents post with, room_post, takes free text plus branch names or commit SHAs, and its own description says those are the only pointers to code. That rule is strict on purpose. Code review stays in Git, where it already lives, and the boundary is easy to test, since anything that looks like pasted code is a bug. Each member also sets a mode for their own agent on each thread. Edit lets it change files and push branches, comment lets it post without touching files, and view makes it read-only. Nobody can set another member's mode.",
         steps: [
           "I built the relay's Docker deployment: a Node 20 Alpine image with the SQLite file on a mounted volume, so state survives restarts.",
           "I made saw up work with an npm-installed claude on Windows, and added a test that proves the relay stores token hashes, never tokens.",
@@ -186,13 +186,13 @@ export const caseStudies: Project[] = [
   {
     slug: "llm-ablations", kind: "project", area: "AI research", year: "2026",
     title: "Safety vs. Utility in LLM Activation Spaces", flags: ["highlighted"],
-    summary: "Removing one direction from Gemma-2-2B-IT's activations took harmful-prompt success from 1% to 84% (N=100), with benchmarks flat.",
+    summary: "Subtracting one direction from a chat model's activations took the share of harmful prompts it answered from 1% to 84% (N=100). Its benchmark scores barely moved.",
     cover: { kind: "image", src: "/projects/llm-ablations/04-team-matrix-gemma.png", alt: "Bar chart of the ablation matrix on Gemma-2-2B-IT: attack success rate and four benchmarks for each cell" },
     metric: { value: "1% → 84%", base: "Harmful prompts answered after removing one safety direction (Gemma-2-2B-IT, N=100)" },
     tags: ["PyTorch", "Transformers", "NumPy"],
     caseStudy: {
       title: "Can you remove a model's refusals without breaking its skills?",
-      lede: "Take one direction out of a language model's activations and it stops refusing harmful requests. On Gemma-2-2B-IT, the share of harmful prompts that got through went from 1% to 84% (N=100), while benchmark scores barely moved.",
+      lede: "Take one direction out of a chat model's activations and it stops refusing harmful requests. On Gemma-2-2B-IT, a small open model from Google, the share of harmful prompts that got through went from 1% to 84% (N=100), while its benchmark scores barely moved. We wanted to know whether helpfulness could be pulled out the same way, without touching safety.",
       meta: {
         role: "Research team lead",
         timeline: "March to May 2026",
@@ -202,21 +202,21 @@ export const caseStudies: Project[] = [
       diagram: {
         steps: ["Contrasting prompts", "Cached activations", "Extracted direction", "Hook removes it", "Attack rate and benchmarks"],
         model: 3,
-        caption: "A forward hook on one block subtracts the direction. No weights change, and removing the hook undoes it.",
+        caption: "A forward hook (a function PyTorch runs on a block's output) subtracts the direction. No weights change, and removing the hook undoes it.",
       },
       context: {
         heading: "The question",
-        body: "Aligned chat models do two jobs at once. They refuse harmful requests, and they stay useful for everything else. Earlier work pinned refusal to a single direction in the residual stream (Arditi et al., 2024). For our CS 639 project we asked whether helpfulness sits in its own direction. If it does, you should be able to delete one and leave the other alone.",
+        body: "Aligned chat models do two jobs at once. They refuse harmful requests, and they stay useful for everything else. Earlier work pinned refusal to a single direction in the residual stream, the running vector each layer reads and writes (Arditi et al., 2024). Subtract that one vector and the refusals go. For our CS 639 project we asked whether helpfulness sits in its own direction. If it does, you should be able to delete one and leave the other alone.",
       },
       problem: {
         heading: "Finding Llama's layer",
-        body: "On Gemma, a sweep over layers 22 to 25 settled it. On Llama, our layer-picking analysis recommended index 32, the output after the last block, which a hook can't attach to. The nearest real block, layer 31, did nothing: 7% against a 6% baseline. We swept 15 layers. Layers 13 to 28 stayed between 4% and 14%, and the effect only showed up early, peaking at 55% on layer 11. We think the statistic leaned toward late layers because activation norms grow with depth.",
+        body: "On Gemma, a sweep over layers 22 to 25 settled it. Llama was harder. Our analysis scores every layer and recommends the one where the safety and utility directions differ most, and for Llama it picked index 32. That index is the output after the last block, and a hook can't attach to it. The nearest real block, layer 31, did nothing: 7% against a 6% baseline. We swept 15 layers. Layers 13 to 28 stayed between 4% and 14%, and the effect only showed up early, peaking at 55% on layer 11. We think the analysis leaned toward late layers because activations grow larger with depth.",
       },
       approach: {
         heading: "One hook, a 2×2 grid",
-        body: "We tested Gemma-2-2B-IT and Llama-3.1-8B-Instruct with two ways of finding a direction, difference of means and ActSVD, behind one hook interface, so every cell differs only in which direction gets projected out. Removing safety or utility with either method gives a 2×2 grid per model. We added a no-ablation baseline and two random-direction controls, and scored every cell on attack success over 100 held-out AdvBench prompts, plus BoolQ, HellaSwag and ARC-Challenge at 200 samples each.",
+        body: "We tested two open chat models, Gemma-2-2B-IT and Llama-3.1-8B-Instruct, and found each direction two ways. Difference of means takes the average activation on harmful prompts and subtracts the average on harmless ones. ActSVD uses a matrix factorization (SVD) to find a few directions at once. Both sit behind one hook interface, so every cell differs only in which direction gets projected out. Removing safety or utility with either method gives a 2×2 grid per model. We added a baseline with nothing removed and two random-direction controls. Every cell was scored on attack success, the share of 100 held-out harmful prompts from AdvBench that the model answered. Each was also scored on three standard benchmarks, BoolQ, HellaSwag and ARC-Challenge, at 200 samples each.",
         steps: [
-          "The utility direction had no recipe to copy. My idea was to pair a high-rated and a low-rated HelpSteer response to the same prompt and keep only pairs with a big enough helpfulness gap. At a gap of 3 or more, directions from repeated bootstrap samples agree (mean cosine 0.994 on Gemma, 0.988 on Llama), and 1,201 of 37,120 pairs survive the filter.",
+          "The utility direction had no recipe to copy, since earlier work only extracted refusal. My idea used HelpSteer, a dataset of responses rated for helpfulness: pair a high-rated and a low-rated response to the same prompt, and keep only pairs with a big enough gap. At a gap of 3 or more, directions built from random resamples of the pairs point the same way (mean cosine 0.994 on Gemma, 0.988 on Llama), and 1,201 of 37,120 pairs survive the filter.",
           "I also set up the codebase, the dataset preprocessing and the activation cache that every other step reads from.",
         ],
       },
@@ -231,7 +231,7 @@ export const caseStudies: Project[] = [
           { label: "Llama, layer 11", value: "6% → 55%", base: "benchmark mean 65.0% → 64.7%" },
           { label: "Random controls", value: "At baseline", base: "1% on Gemma, 6% on Llama" },
         ],
-        body: "Removing the ActSVD utility subspace broke the pattern: refusals stayed (3%), but Gemma's benchmark mean fell from 61.3% to 53.2%. One of the four principal angles between the subspaces sits at 61.9 degrees, which a single similarity score of 0.065 hides. Refusal is scored by substring matching on one seed, so these are point estimates.",
+        body: "Removing the ActSVD utility subspace broke the pattern: refusals stayed (3%), but Gemma's benchmark mean fell from 61.3% to 53.2%. A single similarity score between the safety and utility subspaces, 0.065, says they barely overlap. Measured angle by angle instead (their principal angles), three of the four sit near 90 degrees and one sits at 61.9, which is our candidate explanation for the drop. Refusal is scored by matching a fixed list of refusal phrases on one seed, so these are point estimates.",
       },
     },
   },
@@ -240,13 +240,13 @@ export const caseStudies: Project[] = [
   {
     slug: "qna", kind: "project", area: "Course project", year: "2026",
     title: "QnA: a course Q&A board with a cited AI answerer", flags: ["highlighted"],
-    summary: "We added a RAG answerer to a Piazza-style board and measured five ways to configure it.",
+    summary: "We added an AI that answers students from the course's own material and cites its sources, then measured five ways to configure it.",
     cover: { kind: "image", src: "/projects/qna/04-student-ai-answer-with-sources.jpg", alt: "A student's question on the QnA board with an AI-generated answer and three numbered sources", focus: "center top" },
-    metric: { value: "17×", base: "Wall clock of a 70× larger embedder, for no retrieval gain (N=14)" },
+    metric: { value: "17×", base: "Time per question with a 70× larger embedding model, which found the right sources no more often (N=14)" },
     tags: ["FastAPI", "RAG", "React"],
     caseStudy: {
       title: "A course Q&A board that answers from the course's own material",
-      lede: "Our first similarity threshold, 0.65, sounded careful and answered almost nothing. In a sweep it matched 1 of 22 questions, and that one on the wrong source. After that we changed one setting at a time and measured each, with live answers and the evaluation running through the same function.",
+      lede: "Our answerer replies only when a passage from the course scores close enough to the question. The first cutoff, 0.65, sounded careful and answered almost nothing. In a sweep it matched 1 of 22 questions, and that one on the wrong source. After that we changed one setting at a time and measured each, with live answers and the evaluation running through the same function.",
       meta: { role: "Full-stack engineer", timeline: "October 2026", partners: [people.divij], stack: "FastAPI, MySQL, Redis, React, Ollama, Infinity, ChromaDB" },
       diagram: {
         steps: ["Student question", "Retrieve from ChromaDB", "Threshold check", "Generate with Ollama", "Answer with sources"],
@@ -255,20 +255,20 @@ export const caseStudies: Project[] = [
       },
       context: {
         heading: "The situation",
-        body: "QnA is a Piazza-style board for a course. A student posts a question, anyone in the course can reply, and staff mark one answer as verified. The starter had no AI in it. Our assignment was to add an assistant that answers a new question from the course's own material (a syllabus page, a schedule, a repo of rubrics and slides, past threads) and says where each part of the answer came from.",
+        body: "QnA is a Piazza-style board for a course. A student posts a question, anyone in the course can reply, and staff mark one answer as verified. The starter had no AI in it. Our assignment was to add an assistant that answers a new question from the course's own material (a syllabus page, a schedule, a repo of rubrics and slides, past threads) and says where each part of the answer came from. The usual way to build that is to find the passages closest to the question, then have a model answer from only those, which is called retrieval-augmented generation (RAG).",
       },
       problem: {
         heading: "What made it hard",
-        body: "The model host was a 4-vCPU VM with no GPU, so every model size was a cost on every question, and the generator was a 1.5B model. The board had to keep working when the AI services were down. A wrong answer under a student's question was worse than no answer, so the system needed a way to stay quiet. On the VM, ingestion with the large embedding model failed on a 120-second batch timeout a laptop never hit, and I raised it to 600 seconds.",
+        body: "The model host was a 4-vCPU VM with no GPU, so every model size was a cost on every question, and the model writing answers had 1.5 billion parameters, small by current standards. The board had to keep working when the AI services were down. A wrong answer under a student's question was worse than no answer, so the system needed a way to stay quiet. Loading the course material broke on the VM too. Each batch sent to the large embedding model, which turns text into searchable vectors, had a 120-second timeout a laptop never hit, and I raised it to 600 seconds.",
       },
       approach: {
         heading: "Fixed at ingestion, chosen per question",
-        body: "Chunking and the embedding model are baked into the stored vectors, so they live in an ingestion profile. The threshold, system prompt and generation model are request parameters, so three of our five comparison axes cost one request each. One function, run_rag, serves both the worker that answers students and the staff compare page, so the numbers we report describe the code students use. Divij built the schema, the worker, the retrieval pipeline and the compare endpoint. I built the Compose services, repository ingestion, the staff pages and citation UI, the deploy pipeline and the evaluation run.",
+        body: "How the material is split into passages (chunking) and which embedding model reads them are baked into the stored vectors, so we grouped them into an ingestion profile. Changing either means loading the course again. The similarity threshold, the cutoff from the top of this page, is a request parameter instead, along with the system prompt and the generation model, so three of our five comparison axes cost one request each. One function, run_rag, serves both the worker that answers students and the staff compare page, so the numbers we report describe the code students use. Divij built the schema, the worker, the retrieval pipeline and the compare endpoint. I built the Compose services, repository ingestion, the staff pages and citation UI, the deploy pipeline and the evaluation run.",
         steps: [
           "A new question creates an answer job in the same transaction, with a snapshot of the course's settings.",
-          "A worker embeds the question and takes the 3 nearest chunks from each live resource.",
+          "A worker embeds the question and takes the 3 nearest passages from each live resource.",
           "Below the threshold, the job ends with no match and nothing is posted.",
-          "Otherwise the model answers at temperature 0, and the post and one citation per chunk are saved together.",
+          "Otherwise the model answers at temperature 0, its least random setting, and the post and one citation per passage are saved together.",
         ],
       },
       figures: [
@@ -282,7 +282,7 @@ export const caseStudies: Project[] = [
           { label: "Retrieval hit rate", value: "77%", base: "baseline, N=13" },
           { label: "Calibrated threshold", value: "83% / 91%", base: "precision and recall at 0.40" },
         ],
-        body: "No single change beat the baseline. The generator mattered most: a correct retrieval didn't guarantee a correct answer from a 1.5B model. The ground truth is 14 questions with one negative, and we chose the threshold on the same questions we report on, so these numbers are optimistic.",
+        body: "No single change beat the baseline. I expected the bigger embedding model to matter most, and it tied the small one once each had its own calibrated threshold. The generator mattered most instead. On one question about a project's architecture, the right passage came back and the 1.5B model still wrote the answer backwards. The ground truth is 14 questions with one negative, and we chose the threshold on the same questions we report on, so these numbers are optimistic.",
       },
     },
   },
@@ -302,13 +302,13 @@ export const caseStudies: Project[] = [
   {
     slug: "handlab", kind: "work", area: "AI search", year: "2026",
     title: "Handlab Poker Intelligence",
-    summary: "Import PLO hand histories, filter and replay hands, and search in plain English through an LLM query router.",
+    summary: "A poker tracker that imports your hand records, filters and replays them, and finds the hands you describe in plain English.",
     cover: { kind: "image", src: "/projects/handlab/02-hands-all-505.jpg", alt: "The hands list with 505 imported hands and filters down the side" },
     metric: { value: "510 tests passing", base: "Backend suite on a clean export of the code" },
     tags: ["Python", "FastAPI", "React"],
     caseStudy: {
       title: "A hand tracker you can ask questions",
-      lede: "Finding a spot in thousands of hand histories means scrolling. So we built a Pot-Limit Omaha tracker you can ask in plain English, and it answers with the matching hands.",
+      lede: "Poker sites keep a record of every hand you play, and finding one situation in thousands of them means scrolling. So we built a tracker you can ask in plain English, and it answers with the matching hands.",
       meta: { role: "Contract software engineer", timeline: "February to July 2026", partners: [people.shrey], stack: "Python, FastAPI, SQLite, React, TypeScript, an LLM query router" },
       diagram: {
         steps: ["Plain-English question", "LLM router", "Validated query plan", "SQL compilers", "Matching hands"],
@@ -317,22 +317,22 @@ export const caseStudies: Project[] = [
       },
       context: {
         heading: "The situation",
-        body: "The app is a Python and FastAPI backend with a React frontend. It reads hand histories from GGPoker and CoinPoker, or a DriveHUD export, parses them into SQLite, and serves a hands list with filters, a hand replay, saved sets and a Copilot chat. It ships no hand data: every player brings their own.",
+        body: "It's built for Pot-Limit Omaha (PLO), a poker game where each player holds four cards. Players call those per-hand records hand histories. The app reads them from GGPoker and CoinPoker, or from a DriveHUD export (a desktop tracking tool), and parses them into SQLite. It serves a hands list you can filter by board, action, position and pot type, a step-by-step hand replay, saved sets and a Copilot chat. The backend is Python and FastAPI with a React frontend, and it ships no hand data: every player brings their own.",
       },
       problem: {
         heading: "What we were up against",
-        body: "Hand histories arrive as text, XML, zip files or a database export, from more than one site. And the questions players ask don't fit a filter: \"hands where I check-raised a monotone flop\" is a pattern over actions, not a column.",
+        body: "Hand histories arrive as text, XML, zip files or a database export, from more than one site. And the questions players ask don't fit a filter. Take \"hands where I check-raised a monotone flop\": the player checked, then raised after an opponent bet, when the first three shared cards were all one suit. That's a pattern over a sequence of actions, not a column you can filter on.",
       },
       approach: {
         heading: "The LLM decides, code executes",
-        body: "A question goes to a router that returns a typed, validated query plan, and deterministic compilers run that plan against SQLite. The model never touches the database, so results repeat and the query path can be tested without a model in the loop.",
+        body: "Earlier versions tried an exact-match catalog of known questions and a regex rewriter, and the README records that both were measured to add nothing. So a model reads the question, and code does the rest. A router returns a typed, validated query plan (a structured description of which hands to find), and deterministic compilers turn that plan into SQL. The model never touches the database, so the same plan always returns the same hands, and the query path can be tested without a model in the loop.",
         steps: [
           "I added multipart and zip uploads, so a whole folder of session files loads at once, and fixed the duplicate player-fact crash that overlapping uploads caused.",
           "I added a cache for the hands workspace that prefetches five hands at a time and clears on upload.",
         ],
       },
       figures: [
-        { src: "/projects/handlab/03-filter-4bet-66-hands.jpg", alt: "The hands list filtered to 4-bet pots, showing 66 hands", caption: "One filter, 4-bet pots, takes the sample set from 505 hands to 66.", width: 800, height: 600 },
+        { src: "/projects/handlab/03-filter-4bet-66-hands.jpg", alt: "The hands list filtered to 4-bet pots, showing 66 hands", caption: "One filter, 4-bet pots (hands where a re-raise was raised again), takes the sample set from 505 hands to 66.", width: 800, height: 600 },
         { src: "/projects/handlab/05-replay-river-result.jpg", alt: "A hand replay at the river with the full board, all-in players and the winner", caption: "A replay at step 19 of 19: the full board, the all-ins and who won. Players show as hashed ids.", width: 800, height: 600 },
       ],
       result: {
