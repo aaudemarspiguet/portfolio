@@ -31,10 +31,13 @@
   --fill-primary: #1d1d1f;
   --on-primary: #ffffff;
   --tip-muted: #a1a1a6;
+  --panel-rule: rgba(255, 255, 255, 0.14);
+  --logo-tile: #ffffff;
 
   /* Surfaces with a sheen */
   --card-bg: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
   --ctrl-bg: linear-gradient(180deg, #ffffff 0%, #f4f4f6 100%);
+  --ctrl-bg-hover: linear-gradient(180deg, #f9f9fb 0%, #ececf0 100%);
   --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%);
   --panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 45%);
 
@@ -58,13 +61,16 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
+  --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
   --space-30: 120px;
 
   /* Radius */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -78,7 +84,7 @@
 
   /* Responsive sizes: desktop set (phone set below) */
   --gut: 32px;
-  --sec: 120px;
+  --sec: var(--space-30);
   --hero-top: 96px;
   --hero: 96px;
   --lede: 20px;
@@ -86,6 +92,11 @@
   --h2-case: 36px;
   --big: 56px;
   --panel-pad: 64px;
+}
+
+/* Wide-gamut screens get the scarlet closer to fluorescent; sRGB stays the fallback. */
+@supports (color: color(display-p3 1 1 1)) {
+  :root { --accent: color(display-p3 1 0.23 0.1); }
 }
 
 @media (max-width: 640px) {
@@ -126,6 +137,7 @@
 
   --card-bg: linear-gradient(180deg, #232326 0%, #1c1c1e 100%);
   --ctrl-bg: linear-gradient(180deg, #2c2c2e 0%, #222224 100%);
+  --ctrl-bg-hover: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 100%);
 
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 28px -14px rgba(0, 0, 0, 0.7), 0 36px 72px -32px rgba(0, 0, 0, 0.8);
   --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.12), 0 22px 40px -18px rgba(0, 0, 0, 0.75), 0 48px 90px -36px rgba(0, 0, 0, 0.85);
