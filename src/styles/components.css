@@ -182,9 +182,10 @@ html.ln-locked { overflow: hidden; }
 
 /* Experience list (#31): text-only rows, dates | role and result | place */
 .ln-list { display: flex; flex-direction: column; margin: 0; padding: 0 var(--space-6); list-style: none; }
-.ln-list__row { display: grid; grid-template-columns: 10.5rem minmax(0, 1fr) minmax(0, max-content); align-items: baseline; gap: 4px 24px; padding: 20px 0; }
+.ln-list__row { display: grid; grid-template-columns: 10.5rem minmax(0, 1fr) minmax(0, max-content); align-items: baseline; gap: 4px 48px; padding: 20px 0; }
 .ln-list__row + .ln-list__row { border-top: 1px solid var(--rule); }
-.ln-list__what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* Capped so the result text keeps clear of the place column (about 70 characters). */
+.ln-list__what { min-width: 0; max-width: 36rem; display: flex; flex-direction: column; gap: 2px; }
 .ln-list__where { max-width: 12rem; text-align: right; }
 .ln-list__role { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -0.015em; }
 .ln-list__line { font-size: 15px; line-height: 1.45; color: var(--ink-muted); }
