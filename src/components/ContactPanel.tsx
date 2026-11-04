@@ -16,7 +16,6 @@ export function ContactPanel({ heading, compact }: { heading: string; compact?: 
           <h2 id="contact-heading">{heading}</h2>
           <div className="ln-btn-row">
             <a href={`mailto:${site.email}`} className="ln-btn ln-btn--primary">Email me</a>
-            <a href={site.links.resume} className="ln-btn">Résumé</a>
             {!compact && <CopyEmail email={site.email} />}
           </div>
           <div className="ln-panel__foot">

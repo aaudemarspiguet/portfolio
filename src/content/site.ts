@@ -61,7 +61,6 @@ export const site = {
   now: placeholder("What I'm working on this month"),
   email: "amoghparuvelli@gmail.com",
   links: {
-    resume: "/Amogh_Paruvelli_Resume.pdf",
     github: "https://github.com/aaudemarspiguet",
     linkedin: "https://www.linkedin.com/in/amogh-paruvelli",
     source: "https://github.com/aaudemarspiguet/portfolio",
