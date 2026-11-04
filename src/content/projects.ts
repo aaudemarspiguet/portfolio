@@ -17,6 +17,14 @@ export type CaseStudy = {
 };
 
 /**
+ * Project flags. Add either or both to a `kind: "project"` entry.
+ * - `highlighted`: shown in the home page carousel, in list order.
+ * - `current`: still being worked on. Gets a "Current" chip on its cover, and the
+ *   first highlighted current project starts in the middle of the carousel.
+ */
+export type ProjectFlag = "current" | "highlighted";
+
+/**
  * A case study. `kind: "project"` entries are the home page's project cards.
  * `kind: "work"` entries belong to a job and are linked from its experience row.
  */
@@ -28,6 +36,9 @@ export type Project = {
   title: string;
   summary: string;
   cover: Media;
+  /** Org tied to the project, shown as a small square logo before `area` on the card. */
+  org?: { name: string; logo: string };
+  flags?: ProjectFlag[];
   links?: { live?: string; repo?: string };
   metric: Metric;
   tags: string[];
@@ -87,8 +98,9 @@ function caseStudy(meta: CaseStudy["meta"], s: Sections): CaseStudy {
 export const caseStudies: Project[] = [
   {
     slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026 · In progress",
-    title: "Find the Outfit",
+    title: "Find the Outfit", flags: ["current", "highlighted"],
     summary: summary(), cover: cover("Find the Outfit"), metric: metric(),
+    org: { name: "Amazon", logo: "/logos/amazon.jpg" },
     tags: ["TypeScript", "AWS Lambda", "Bedrock"],
     caseStudy: caseStudy(
       { role: "Backend contributor and Scrum Master", timeline: "September 2026 to present", team: "Five students, with Shopbop mentors", stack: "TypeScript, Expo, AWS Lambda, API Gateway, S3, Bedrock, Amplify" },
@@ -97,7 +109,7 @@ export const caseStudies: Project[] = [
   },
   {
     slug: "saw", kind: "project", area: "Agent tooling", year: "2026 · In progress",
-    title: "SAW: Shared Agent Workspace",
+    title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
     summary: summary(), cover: cover("SAW"), metric: metric(),
     tags: ["TypeScript", "MCP", "WebSockets"],
     caseStudy: caseStudy(
@@ -107,7 +119,7 @@ export const caseStudies: Project[] = [
   },
   {
     slug: "llm-ablations", kind: "project", area: "Course research", year: "2026",
-    title: "Safety and utility in LLMs",
+    title: "Safety and utility in LLMs", flags: ["highlighted"],
     summary: summary(), cover: cover("Safety and utility in LLMs"), metric: metric(),
     tags: ["PyTorch", "Gemma", "Llama"],
     caseStudy: caseStudy(
@@ -117,7 +129,7 @@ export const caseStudies: Project[] = [
   },
   {
     slug: "curio", kind: "project", area: "Education", year: "2024–25",
-    title: "Curio",
+    title: "Curio", flags: ["highlighted"],
     summary: summary(), cover: cover("Curio"), metric: metric(),
     tags: ["FastAPI", "React", "Pydantic"],
     caseStudy: caseStudy(
@@ -149,6 +161,11 @@ export const caseStudies: Project[] = [
 
 /** The home page's project cards. Work case studies are reached from Experience. */
 export const projects = caseStudies.filter((p) => p.kind === "project");
+
+export const hasFlag = (p: Project, flag: ProjectFlag) => p.flags?.includes(flag) ?? false;
+
+/** The home page carousel. */
+export const highlightedProjects = projects.filter((p) => hasFlag(p, "highlighted"));
 
 export function getProject(slug: string) {
   return caseStudies.find((p) => p.slug === slug);
