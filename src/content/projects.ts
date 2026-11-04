@@ -97,7 +97,7 @@ function caseStudy(meta: CaseStudy["meta"], s: Sections): CaseStudy {
 
 export const caseStudies: Project[] = [
   {
-    slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026 · In progress",
+    slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026",
     title: "Find the Outfit", flags: ["current", "highlighted"],
     summary: summary(), cover: cover("Find the Outfit"), metric: metric(),
     org: { name: "Amazon", logo: "/logos/amazon.jpg" },
@@ -108,7 +108,7 @@ export const caseStudies: Project[] = [
     ),
   },
   {
-    slug: "saw", kind: "project", area: "Agent tooling", year: "2026 · In progress",
+    slug: "saw", kind: "project", area: "Agent tooling", year: "2026",
     title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
     summary: summary(), cover: cover("SAW"), metric: metric(),
     tags: ["TypeScript", "MCP", "WebSockets"],
