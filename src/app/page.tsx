@@ -3,7 +3,8 @@ import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
 import { ExperienceRow } from "@/components/ExperienceRow";
 import { ProjectCarousel } from "@/components/ProjectCarousel";
-import { Availability, NameTooltip, NowChip, SectionHeader, Squiggle } from "@/components/marks";
+import { NameTooltip } from "@/components/NameTooltip";
+import { Availability, NowChip, SectionHeader, Squiggle } from "@/components/marks";
 import { highlightedProjects } from "@/content/projects";
 import { site } from "@/content/site";
 

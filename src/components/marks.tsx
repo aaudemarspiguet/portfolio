@@ -37,19 +37,6 @@ export function NowChip({ children }: { children: ReactNode }) {
   );
 }
 
-/** Hero name with a hover/focus tooltip that says how to pronounce it. */
-export function NameTooltip({ pronunciation, meaning, children }: { pronunciation: string; meaning?: string; children: ReactNode }) {
-  return (
-    <div className="ln-say" tabIndex={0} aria-describedby="ln-say-tip">
-      {children}
-      <span id="ln-say-tip" role="tooltip" className="ln-say__tip">
-        Say it: {pronunciation}
-        {meaning && <span className="ln-say__muted"> · means “{meaning}”</span>}
-      </span>
-    </div>
-  );
-}
-
 export function SectionHeader({ label, heading }: { label?: string; heading: string }) {
   return (
     <header className="ln-section-head">
