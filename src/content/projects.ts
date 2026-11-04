@@ -649,6 +649,9 @@ const allCaseStudies: Project[] = [
 /** Every case study this build serves. Drafts drop out of production, so their pages 404 and nothing links to them. */
 export const caseStudies = allCaseStudies.filter((p) => showDrafts || !p.draft);
 
+/** Prerender draft paths too, so their production not-found responses are static HTTP 404s. */
+export const caseStudySlugs = allCaseStudies.map((p) => p.slug);
+
 /** Every heading on a case study page that renders with an anchor id. */
 function headingIds(cs: CaseStudy) {
   const sections = [cs.context, cs.problem, cs.explainer, cs.walkthrough, cs.approach, ...(cs.sections ?? [])];

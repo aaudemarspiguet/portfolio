@@ -6,14 +6,14 @@ import { Fragment } from "react";
 import { Architecture } from "@/components/Architecture";
 import { ContactPanel } from "@/components/ContactPanel";
 import { Metric } from "@/components/marks";
-import { caseStudies, getProject, nextProject, sectionId, type Body, type Section } from "@/content/projects";
+import { caseStudySlugs, getProject, nextProject, sectionId, type Body, type Section } from "@/content/projects";
 import { site } from "@/content/site";
 
-// Prerender known projects. Unknown slugs use Next.js's not-found UI.
+// Prerender every known path, including draft paths that become static 404s in production.
 export const instant = false;
 
 export function generateStaticParams() {
-  return caseStudies.map((p) => ({ slug: p.slug }));
+  return caseStudySlugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/work/[slug]">): Promise<Metadata> {
