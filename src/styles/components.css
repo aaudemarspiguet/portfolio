@@ -102,7 +102,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 
 /* Section header */
 .ln-section-head { display: flex; flex-direction: column; gap: 10px; }
-.ln-section-head h2 { margin: 0; max-width: 760px; font-size: var(--h2); line-height: 1.1; font-weight: 500; letter-spacing: -0.035em; text-wrap: balance; }
+.ln-section-head h1, .ln-section-head h2 { margin: 0; max-width: 760px; font-size: var(--h2); line-height: 1.1; font-weight: 500; letter-spacing: -0.035em; text-wrap: balance; }
 
 /* Tag and stack chips */
 .ln-tags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -214,7 +214,9 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 
 /* Case study */
 .ln-case { padding-top: 40px; display: flex; flex-direction: column; gap: var(--space-8); }
-.ln-case__back { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
+/* Standalone pages (all projects) and case studies share the top spacing and back link. */
+.ln-page { padding-top: 40px; display: flex; flex-direction: column; gap: var(--space-8); }
+.ln-back, .ln-case__back { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
 .ln-case__intro { display: flex; flex-direction: column; gap: var(--space-4); max-width: 820px; }
 .ln-case__title { margin: 0; font-size: var(--big); line-height: 1.04; font-weight: 500; letter-spacing: -0.04em; text-wrap: balance; }
 .ln-case__lede { margin: 0; max-width: var(--layout-measure); font-size: var(--lede); line-height: 1.45; letter-spacing: -0.012em; color: var(--ink-muted); }
