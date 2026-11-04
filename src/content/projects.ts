@@ -13,7 +13,11 @@ export type Figure = { src: string; alt: string; caption: string; width: number;
 
 /** One paragraph, or several. */
 export type Body = string | string[];
-export type Section = { heading: string; body: Body };
+/** `more` adds one link after the body, e.g. to the case study that already teaches a term. */
+export type Section = { heading: string; body: Body; more?: { href: string; label: string } };
+
+/** The anchor id for a case-study heading, so other pages can link to a section. */
+export const sectionId = (heading: string) => heading.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** A side of a box in the architecture diagram: left, right, top, bottom. */
 export type Side = "l" | "r" | "t" | "b";
@@ -96,6 +100,10 @@ const people = {
   aditya: { name: "Aditya Machiroutu" },
   rohan: { name: "Rohan Abraham" },
   kushal: { name: "Kushal" },
+  nischal: { name: "Nischal Bista" },
+  sharath: { name: "Sharath Kowdle" },
+  triya: { name: "Triya Poondra" },
+  kavya: { name: "Kavya Kanungo" },
 } satisfies Record<string, Person>;
 
 // ---- Template copy (#4) ---------------------------------------------------
@@ -148,19 +156,131 @@ function caseStudy(meta: CaseStudy["meta"], s: Sections): CaseStudy {
 
 // ---- Entries ----------------------------------------------------------------
 // Synced entries (#10) come from the evidence kits; every number traces to a kit's
-// claims ledger. Find the Outfit, Curio and Ebara are still template copy.
+// claims ledger. Curio and Ebara are still template copy.
 
 export const caseStudies: Project[] = [
+  // Kit: evidence/find-the-outfit
   {
     slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026",
     title: "Find the Outfit", flags: ["current", "highlighted"],
-    summary: summary(), cover: cover("Find the Outfit"), metric: metric(),
+    summary: "Guess a Shopbop item from a corner of its photo. An AI model scores how close your description is in meaning, and the photo widens as you go.",
+    cover: { kind: "image", src: "/projects/find-the-outfit/06-you-found-it.jpg", alt: "The game's win screen: \"You found it.\" above the full photo of a black dress with a floral panel", focus: "center 22%" },
+    metric: { value: "181 tests", base: "Covering the scoring, the game's API and the puzzle builder, run on every pull request" },
     org: { name: "Amazon", logo: "/logos/amazon.jpg" },
     tags: ["TypeScript", "AWS Lambda", "Bedrock"],
-    caseStudy: caseStudy(
-      { role: "Backend contributor and Scrum Master", timeline: "September 2026 to present", team: "Five students, with Shopbop mentors", stack: "TypeScript, Expo, AWS Lambda, API Gateway, S3, Bedrock, Amplify" },
-      { diagram: true, context: true, problem: true, steps: true, result: 2, resultBody: true },
-    ),
+    caseStudy: {
+      title: "Scoring fashion guesses by meaning with Bedrock embeddings",
+      lede: "Nobody can name a dress from a corner of its photo, so our daily fashion puzzle can't wait for the exact words. It scores each guess by how close it is in meaning. Out of the box, those scores bunched between about 0.05 and 0.75, which put nearly every guess in the cold half of the meter.",
+      meta: { role: "Scrum Master and software engineer", timeline: "September 2026 to present", partners: [people.nischal, people.sharath, people.triya, people.kavya], stack: "TypeScript, Expo, AWS Lambda, API Gateway, S3, Amazon Bedrock, AWS Amplify" },
+      context: {
+        heading: "The situation",
+        body: "Shopbop wants a daily game, in the spirit of Wordle, built on its own catalog. There's one hidden item a day, the same for every player. You see a tight crop of its photo, type what you think it is, and get back warmer or colder. You get six guesses, the photo widens every two of them, and a win ends with a link to the product. Five of us are building it as a UW-Madison capstone, and Shopbop mentors review our demos.",
+      },
+      problem: {
+        heading: "What made it hard",
+        body: [
+          "Players type whatever comes to mind. \"Ivory slip dress\" and \"cream satin gown\" share no words, but both should land near the same answer, so matching keywords alone can't be the score.",
+          "The answer also can't reach the browser, because a player who opens the developer tools should find nothing there. And there's one puzzle per day on one clock. The app and the API both use Chicago time, so they agree on what today means.",
+        ],
+      },
+      explainer: {
+        heading: "From a similarity score to a meter",
+        body: [
+          "To score meaning, the game turns the guess and a description of the hidden item into vectors, lists of numbers placed so that texts with similar meanings sit close together. Comparing two vectors gives a similarity score, and the higher it is, the closer the meanings. These vectors are called embeddings, and Amazon Bedrock's Titan model makes ours.",
+          "The catch is the range. Notes in our code record what the model returns: about 0.05 to 0.20 for an unrelated guess, 0.30 to 0.50 for the right kind of garment, 0.50 to 0.60 once the color is right too, and 0.65 to 0.75 for a close description. Used as is, nearly every guess would land in the cold half of the meter, and even a close description would top out around 0.7.",
+          "So we stretch it. A score of 0.15 or below counts as no resemblance, 0.70 or above counts as a perfect description, and everything between is spread evenly over the meter. Meaning gives the meter its warmer feel but tells a player nothing specific, so it makes up 60% of the heat. The other 40% comes from four tiles (category, color, pattern and length) that check the guess for the item's own words.",
+          "Here's one guess worked through by the real scoring code, on a made-up black leopard-print mini dress. We didn't call Bedrock for this, so the raw score of 0.45 is an assumed value. Stretched, 0.45 becomes 0.55. \"Black silk dress\" gets the category and the color, two of four tiles, so the tiles give 0.5. The heat is 0.6 × 0.55 + 0.4 × 0.5, about 0.53, which the game shows as cool.",
+        ],
+        more: { href: "/work/qna#how-a-bot-finds-the-right-page", label: "How embeddings find a match, in the QnA case study" },
+      },
+      architecture: {
+        cols: 5,
+        rows: 3,
+        nodes: [
+          { id: "amplify", label: "AWS Amplify", sub: "hosts the web app", at: [0, 0] },
+          { id: "browser", label: "Player's browser", sub: "runs the game", at: [0, 1] },
+          { id: "today", label: "Puzzle Lambda", sub: "today's puzzle, no answer", at: [1, 0] },
+          { id: "gateway", label: "API Gateway", sub: "the game's two endpoints", at: [1, 1] },
+          { id: "guess", label: "Guess Lambda", sub: "scores each guess", at: [2, 1] },
+          { id: "tiles", label: "Tiles-only score", sub: "if Bedrock fails", at: [2, 2], kind: "stop" },
+          { id: "s3", label: "S3", sub: "puzzles and photo crops", at: [3, 0], kind: "store" },
+          { id: "bedrock", label: "Amazon Bedrock", sub: "Titan embeddings", at: [3, 1], kind: "model" },
+          { id: "builder", label: "Puzzle builder", sub: "a person approves each", at: [4, 0] },
+          { id: "shopbop", label: "Shopbop catalog", sub: "products and photos", at: [4, 1], kind: "store" },
+        ],
+        edges: [
+          { from: "amplify", to: "browser" },
+          { from: "browser", to: "gateway", step: 1 },
+          { from: "gateway", to: "today" },
+          { from: "today", to: "s3" },
+          { from: "gateway", to: "guess", step: 2 },
+          { from: "guess", to: "s3", step: 3, exit: "t", enter: "b" },
+          { from: "guess", to: "bedrock", step: 4 },
+          { from: "guess", to: "tiles", step: 5, stop: true },
+          { from: "shopbop", to: "builder" },
+          { from: "builder", to: "s3" },
+        ],
+        groups: [
+          { label: "Server side, on AWS", nodes: ["today", "gateway", "guess", "tiles", "s3", "bedrock"] },
+          { label: "Daily setup", nodes: ["builder", "shopbop"] },
+        ],
+        caption: "One guess's trip through the game, numbered to match the steps below. The reply in step 6 goes back the way the guess came. The setup on the right runs before any player shows up.",
+      },
+      walkthrough: {
+        heading: "One guess, start to finish",
+        intro: "Before the first guess, the browser loads the app from Amplify and asks the puzzle Lambda for today's puzzle. That Lambda strips out the answer, so nothing in the browser can give the item away. Here's what happens on the second guess, \"black silk dress\". The numbers match the diagram.",
+        steps: [
+          "The app sends \"black silk dress\" to API Gateway along with the first guess, \"red striped skirt\". The server keeps no game state, so every request carries the history.",
+          "API Gateway hands it to the guess Lambda, which re-scores \"red striped skirt\" with the tiles alone. That costs nothing and tells it this is guess 2, which hint comes next, and whether the game is over.",
+          "The Lambda loads the full puzzle from S3, answer and scoring keywords included. None of it goes back to the browser until the game ends.",
+          "Bedrock's Titan model turns the guess and the item's description into vectors, and the Lambda stretches their similarity onto the meter.",
+          "If Bedrock fails, the Lambda skips step 4 and scores the guess from the tiles alone, so a cloud outage doesn't stop the game.",
+          "The Lambda blends the two scores and replies with the tiles, the heat and the next hint. Here the category and color tiles match, and pattern and length show as not said. The full photo and the product link come back only when the game ends.",
+        ],
+      },
+      approach: {
+        heading: "Two scores, and the answer stays on the server",
+        body: [
+          "Meaning alone would catch \"cream satin gown\", but it gives a player nothing concrete to fix, and the game would stop whenever Bedrock did. The tiles answer both. They say which part of a guess was right, and they still score when Bedrock is down.",
+          "A script builds each day's puzzle from the Shopbop catalog. It picks an in-stock item from a different clothing family each weekday, writes the scoring keywords and cuts five photo crops, from tight to full. A person approves each puzzle before the API will serve it. I'm the team's Scrum Master and run our weekly sprints in Jira.",
+        ],
+      },
+      figures: [
+        { src: "/projects/find-the-outfit/04-two-tiles-found.jpg", alt: "The game after two guesses: a cropped photo of a dark dress, the heat meter, and the category and color tiles matched under \"black silk dress\"", caption: "Step 6 on screen. \"Black silk dress\" matches the category and color tiles, and the meter moves well past guess 1. These captures run on the app's built-in sample puzzle with local scoring, so no Bedrock call is behind them.", width: 657, height: 1421 },
+        { src: "/projects/find-the-outfit/05-photo-zooms-out.jpg", alt: "Guess 3, \"mini dress with a leopard print\", with category and pattern matched and length missed, and a wider crop of the photo", caption: "Guess 3 finds the pattern but misses on length, and the photo widens. The meter still marks guess 2 as the best so far.", width: 657, height: 1421 },
+      ],
+      sections: [
+        {
+          heading: "Scoring what players actually say",
+          body: [
+            "Players rarely type \"solid\" or \"regular length\". So when the item has a plain pattern or an ordinary length, those tiles count as found even if the guess never mentions them. Found tiles stay found across guesses, and naming the item's exact category or its product name wins outright. A different length in a later guess still counts against you.",
+            "We also changed what the item is embedded as. Its text starts with the answer values (color, pattern, length and category), then the product name and its description bullets, with care and sourcing lines dropped. Leading with the answer keeps one shared word, like \"blue\" in \"blue jeans\", from pulling an unrelated guess close.",
+          ],
+        },
+        {
+          heading: "Testing it",
+          body: [
+            "The repo has 181 tests in 17 files, covering the scoring, both Lambdas, the Shopbop client, the puzzle builder, the photo crops and the app's saved games. GitHub Actions runs them, with lint and type checks, on every pull request, and the latest run on main passed. On a default Windows machine 169 pass. The other 12 sit in two files that won't load because of a Windows line ending, and once that's fixed, all but 2 pass.",
+            "We didn't run the live Bedrock scoring for this write-up. The similarity ranges above come from notes in the code, not from a rerun.",
+          ],
+        },
+      ],
+      result: {
+        heading: "How it turned out",
+        metrics: [
+          { label: "Tests", value: "181", base: "in 17 files, run on every pull request" },
+          { label: "Puzzles published", value: "7", base: "October 20 to 26, each approved by a person" },
+          { label: "Pull requests", value: "15", base: "14 merged, each with a CI check" },
+        ],
+        body: "It's still rough in places. Puzzles are built and published in batches by script, and there's no nightly job yet, so a day with no published puzzle has nothing to serve. The stretch and the 60/40 blend come from a handful of live puzzles, not a labelled set. And the tiles' keywords are extracted by simple matching, which is why a person reviews each puzzle before it goes live.",
+      },
+      lessons: [
+        { title: "Calibrate the score on real examples before you trust it.", body: "The model's similarity range was nowhere near 0 to 1, and the meter looked broken until we rescaled it." },
+        { title: "Score what players actually say.", body: "Almost nobody types \"solid\", so we stopped requiring it." },
+        { title: "Keep the answer on the server.", body: "The app sends its guess history and gets back a verdict. Nothing in the browser can reveal the item early." },
+        { title: "Make the failure mode a feature.", body: "With Bedrock down, a guess falls back to the tiles and the game goes on." },
+      ],
+    },
   },
 
   // Kit: evidence/saw
@@ -458,6 +578,23 @@ export const caseStudies: Project[] = [
     ),
   },
 ];
+
+/** Every heading on a case study page that renders with an anchor id. */
+function headingIds(cs: CaseStudy) {
+  const sections = [cs.context, cs.problem, cs.explainer, cs.walkthrough, cs.approach, ...(cs.sections ?? [])];
+  return new Set(sections.flatMap((s) => (s ? [sectionId(s.heading)] : [])));
+}
+
+// Fail the build if a "more" link points at a case study or section that doesn't exist.
+for (const p of caseStudies) {
+  const cs = p.caseStudy;
+  for (const s of [cs.context, cs.problem, cs.explainer, ...(cs.sections ?? [])]) {
+    if (!s?.more) continue;
+    const m = /^\/work\/([^#]+)#(.+)$/.exec(s.more.href);
+    const target = m && caseStudies.find((q) => q.slug === m[1]);
+    if (!m || !target || !headingIds(target.caseStudy).has(m[2])) throw new Error(`${p.slug}: "${s.heading}" links to ${s.more.href}, which isn't a case-study section`);
+  }
+}
 
 // Fail the build if a diagram and its walkthrough drift apart: every edge must join two
 // real boxes, every grid cell must hold one box, and badge n needs walkthrough item n.
