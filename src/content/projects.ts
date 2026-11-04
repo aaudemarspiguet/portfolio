@@ -166,7 +166,6 @@ export const caseStudies: Project[] = [
     title: "Find the Outfit", flags: ["current", "highlighted"],
     summary: "Guess a Shopbop item from a corner of its photo. An AI model scores how close your description is in meaning, and the photo widens as you go.",
     cover: { kind: "image", src: "/projects/find-the-outfit/06-you-found-it.jpg", alt: "The game's win screen: \"You found it.\" above the full photo of a black dress with a floral panel", focus: "center 22%" },
-    metric: { value: "181 tests", base: "Covering the scoring, the game's API and the puzzle builder, run on every pull request" },
     org: { name: "Amazon", logo: "/logos/amazon.jpg" },
     tags: ["TypeScript", "AWS Lambda", "Bedrock"],
     caseStudy: {
@@ -258,22 +257,13 @@ export const caseStudies: Project[] = [
             "We also changed what the item is embedded as. Its text starts with the answer values (color, pattern, length and category), then the product name and its description bullets, with care and sourcing lines dropped. Leading with the answer keeps one shared word, like \"blue\" in \"blue jeans\", from pulling an unrelated guess close.",
           ],
         },
-        {
-          heading: "Testing it",
-          body: [
-            "The repo has 181 tests in 17 files, covering the scoring, both Lambdas, the Shopbop client, the puzzle builder, the photo crops and the app's saved games. GitHub Actions runs them, with lint and type checks, on every pull request, and the latest run on main passed. On a default Windows machine 169 pass. The other 12 sit in two files that won't load because of a Windows line ending, and once that's fixed, all but 2 pass.",
-            "We didn't run the live Bedrock scoring for this write-up. The similarity ranges above come from notes in the code, not from a rerun.",
-          ],
-        },
       ],
       result: {
         heading: "How it turned out",
         metrics: [
-          { label: "Tests", value: "181", base: "in 17 files, run on every pull request" },
           { label: "Puzzles published", value: "7", base: "October 20 to 26, each approved by a person" },
-          { label: "Pull requests", value: "15", base: "14 merged, each with a CI check" },
         ],
-        body: "It's still rough in places. Puzzles are built and published in batches by script, and there's no nightly job yet, so a day with no published puzzle has nothing to serve. The stretch and the 60/40 blend come from a handful of live puzzles, not a labelled set. And the tiles' keywords are extracted by simple matching, which is why a person reviews each puzzle before it goes live.",
+        body: "We didn't run the live Bedrock scoring for this write-up, so the similarity ranges above come from notes in the code, not from a rerun. It's still rough in places, too. Puzzles are built and published in batches by script, and there's no nightly job yet, so a day with no published puzzle has nothing to serve. The stretch and the 60/40 blend come from a handful of live puzzles, not a labelled set. And the tiles' keywords are extracted by simple matching, which is why a person reviews each puzzle before it goes live.",
       },
       lessons: [
         { title: "Calibrate the score on real examples before you trust it.", body: "The model's similarity range was nowhere near 0 to 1, and the meter looked broken until we rescaled it." },
