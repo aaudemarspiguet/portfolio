@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getProject } from "@/content/projects";
 import { site } from "@/content/site";
+import { HomeLink } from "./HomeLink";
 import { ThemeToggle, setTheme, useTheme } from "./ThemeToggle";
 
 const SECTIONS = [
@@ -53,9 +53,9 @@ export function NavBar() {
   return (
     <header className="ln-header">
       <div className="ln-nav">
-        <Link href={onHome ? "#top" : "/"} className="ln-nav__brand">
+        <HomeLink className="ln-nav__brand">
           {site.brand}
-        </Link>
+        </HomeLink>
         <nav aria-label="Main" className="ln-nav__links">
           {SECTIONS.map(({ id, label }) => (
             <a key={id} href={href(id)} className="ln-nav__item" aria-current={current === id ? "location" : undefined}>
@@ -64,11 +64,9 @@ export function NavBar() {
           ))}
         </nav>
         <div className="ln-nav__actions">
-          <a href={site.links.resume} className="ln-btn ln-btn--sm">Résumé</a>
           <ThemeToggle />
         </div>
         <div className="ln-nav__phone">
-          <a href={site.links.resume} className="ln-btn ln-btn--sm">Résumé</a>
           <MobileMenu current={current} href={href} />
         </div>
       </div>

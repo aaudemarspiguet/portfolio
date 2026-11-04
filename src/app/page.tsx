@@ -32,7 +32,6 @@ export default function Home() {
             <NowChip>{site.now}</NowChip>
             <div className="ln-btn-row ln-hero__actions">
               <a href={`mailto:${site.email}`} className="ln-btn ln-btn--primary">Email me</a>
-              <a href={site.links.resume} className="ln-btn">Résumé</a>
               <a href={site.links.github} className="ln-btn ln-btn--text">GitHub ↗</a>
               <a href={site.links.linkedin} className="ln-btn ln-btn--text">LinkedIn ↗</a>
             </div>
@@ -59,7 +58,6 @@ export default function Home() {
               <ExperienceRow org={education.school} title={`${education.degree} · ${education.school}`} line={education.line} when={education.when} where={education.where} logo={education.logo} />
             </ul>
           </div>
-          <a href={site.links.resume} className="ln-btn ln-btn--text ln-after-list">Full résumé (PDF) ↗</a>
         </div>
       </section>
 

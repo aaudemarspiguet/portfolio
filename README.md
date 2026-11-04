@@ -29,7 +29,7 @@ Open http://localhost:3000.
 - `src/styles/components.css`: the `.ln-*` component styles.
 - `src/components/`: React components. Only the nav, theme toggle, copy-email button and clock run on the client.
 
-To change copy, edit the two files in `src/content/`. Each case study has a cover and can have an optional diagram and optional live or repo links. The résumé download lives in `public/Amogh_Paruvelli_Resume.pdf`.
+To change copy, edit the two files in `src/content/`. Each case study has a cover and can have an optional diagram and optional live or repo links.
 
 ## Design
 
