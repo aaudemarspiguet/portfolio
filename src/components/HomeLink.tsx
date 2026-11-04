@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, type MouseEvent, type ReactNode } from "react";
 
 /** A Home action that also works when Next.js sees the same #top URL again. */
-export function HomeLink({ children, className }: { children: ReactNode; className?: string }) {
+export function HomeLink({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
   const onHome = usePathname() === "/";
   const pendingHome = useRef(false);
 
@@ -17,6 +17,7 @@ export function HomeLink({ children, className }: { children: ReactNode; classNa
   }, [onHome]);
 
   function goHome(event: MouseEvent<HTMLAnchorElement>) {
+    onClick?.();
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (!onHome) {
       pendingHome.current = true;
