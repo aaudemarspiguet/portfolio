@@ -65,7 +65,7 @@ export const site = {
     linkedin: "https://www.linkedin.com/in/amogh-paruvelli",
     source: "https://github.com/aaudemarspiguet/portfolio",
   },
-  work: { heading: placeholder("A few things I've built") },
+  projects: { heading: placeholder("A few things I've built") },
   experience: {
     heading: placeholder("Where I've worked"),
     roles,

@@ -46,9 +46,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="work" className="ln-section">
+      <section id="projects" className="ln-section">
         <div className="ln-wrap ln-stack-y">
-          <SectionHeader label={`Selected work · ${projects.length} projects`} heading={site.work.heading} />
+          <SectionHeader label={`Projects · ${projects.length}`} heading={site.projects.heading} />
           <div className="ln-grid">
             {projects.map((p, i) => (
               <ProjectCard key={p.slug} project={p} lead={i === 0} />
