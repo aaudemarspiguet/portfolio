@@ -2,7 +2,7 @@
 
 Personal site for a software engineer working on applied AI and data. Built with Next.js and deployed on Vercel.
 
-Live at https://portfolio-alpha-umber-43.vercel.app.
+Live at https://amoghmade.dev.
 
 ## Run it
 
