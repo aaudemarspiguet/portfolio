@@ -267,6 +267,42 @@ html.ln-locked { overflow: hidden; }
 .ln-case__section p, .ln-case__section ol { margin: 0; }
 .ln-case__section ol { padding-left: 22px; display: flex; flex-direction: column; gap: var(--space-2); }
 .ln-case__section--result { gap: var(--space-5); }
+.ln-case__wide { padding-top: var(--space-16); }
+
+/* Architecture diagram (#10). Inline SVG coloured by tokens, so dark mode follows the theme. */
+.ln-arch__scroll { overflow-x: auto; padding: var(--space-4); }
+.ln-arch { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--font-sans); }
+.ln-arch text { text-anchor: middle; }
+.ln-arch__hint { display: none; }
+@media (max-width: 760px) { .ln-arch__hint { display: inline; } }
+.ln-arch__group rect { fill: none; stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 4 5; }
+.ln-arch__group text { text-anchor: start; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; fill: var(--ink-muted); }
+.ln-arch__node rect { fill: var(--paper-raised); stroke: var(--rule-strong); stroke-width: 1; }
+.ln-arch__node path { fill: none; stroke: var(--rule-strong); stroke-width: 1; }
+.ln-arch__node--store rect { fill: var(--paper-sunk); }
+/* Red is reserved for the "stays quiet" branch, so the model box is marked in ink. */
+.ln-arch__node--model rect { stroke: var(--ink); stroke-width: 2; }
+.ln-arch__node--stop rect { fill: none; stroke: var(--accent); stroke-dasharray: 5 4; }
+.ln-arch__label { font-size: 14px; font-weight: 600; fill: var(--ink); }
+.ln-arch__sub { font-size: 12px; fill: var(--ink-muted); }
+.ln-arch__edge polyline { fill: none; stroke: var(--ink-muted); stroke-width: 1.5; }
+.ln-arch__edge polygon { fill: var(--ink-muted); }
+.ln-arch__edge--stop polyline { stroke: var(--accent); stroke-dasharray: 5 4; }
+.ln-arch__edge--stop polygon { fill: var(--accent); }
+.ln-arch__badge circle { fill: var(--fill-primary); stroke: var(--paper-raised); stroke-width: 2; }
+.ln-arch__badge text { font-size: 11px; font-weight: 700; fill: var(--on-primary); }
+.ln-arch__badge--stop circle { fill: var(--accent); }
+.ln-arch__badge--stop text { fill: #fff; }
+
+/* Walkthrough list: numbers drawn as the diagram's badges. */
+.ln-steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--space-4); }
+.ln-steps__item { counter-increment: step; position: relative; padding-left: 36px; }
+.ln-steps__item::before { content: counter(step); position: absolute; left: 0; top: 2px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--fill-primary); color: var(--on-primary); }
+.ln-steps__item--stop::before { background: var(--accent); color: #fff; }
+.ln-lesson { display: flex; flex-direction: column; gap: var(--space-1); }
+.ln-lesson h3 { margin: 0; font-size: 17px; line-height: 1.35; font-weight: 600; }
+.ln-lesson p { margin: 0; }
+.ln-lesson + .ln-lesson { margin-top: var(--space-3); }
 .ln-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: var(--space-6); padding: var(--space-6); }
 .ln-code { margin: var(--space-2) 0 0; padding: 18px 20px; overflow-x: auto; background: var(--fill-primary); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 13px; line-height: 20px; letter-spacing: 0; color: var(--on-primary); }
 .ln-next { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); color: var(--ink); text-decoration: none; transition: box-shadow .2s, transform .2s; }

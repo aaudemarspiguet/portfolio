@@ -11,6 +11,27 @@ export type Person = { name: string; link?: string };
 /** A captioned image in a case study. Width and height are the file's pixels, so the frame reserves its space. */
 export type Figure = { src: string; alt: string; caption: string; width: number; height: number };
 
+/** One paragraph, or several. */
+export type Body = string | string[];
+export type Section = { heading: string; body: Body };
+
+/** A side of a box in the architecture diagram: left, right, top, bottom. */
+export type Side = "l" | "r" | "t" | "b";
+
+/**
+ * A system diagram drawn from the evidence kit's `visuals/architecture`.
+ * Boxes sit on a grid (`at` is [column, row]); edges route at right angles.
+ * An edge with `step` shows a numbered badge that matches the walkthrough's list item.
+ */
+export type Architecture = {
+  cols: number;
+  rows: number;
+  nodes: { id: string; label: string; sub?: string; at: [number, number]; kind?: "store" | "model" | "stop" }[];
+  edges: { from: string; to: string; step?: number; exit?: Side; enter?: Side; stop?: boolean }[];
+  groups?: { label: string; nodes: string[] }[];
+  caption: string;
+};
+
 export type CaseStudy = {
   title: string;
   lede: string;
@@ -19,12 +40,21 @@ export type CaseStudy = {
    * Team work lists `partners` (shown as "Partners"). `team` is free text for the rest.
    */
   meta: { role: string; timeline: string; team?: string; partners?: Person[]; stack: string };
+  /** The one-line strip under the meta row. Superseded by `architecture` where a kit has a system diagram. */
   diagram?: { steps: string[]; model: number; caption: string };
-  context?: { heading: string; body: string };
-  problem?: { heading: string; body: string };
-  approach: { heading: string; body: string; steps?: string[] };
+  context?: Section;
+  problem?: Section;
+  /** Teaches the one idea a reader needs before the system makes sense. */
+  explainer?: Section;
+  architecture?: Architecture;
+  /** One request's trip through the architecture. Item n matches badge n. */
+  walkthrough?: { heading: string; intro?: string; steps: string[] };
+  approach: { heading: string; body: Body; steps?: string[] };
   figures?: Figure[];
+  /** Deeper sections after the figures: the hard part, the evaluation. */
+  sections?: Section[];
   result?: { heading: string; metrics: Metric[]; body?: string };
+  lessons?: { title: string; body: string }[];
 };
 
 /**
@@ -242,48 +272,118 @@ export const caseStudies: Project[] = [
     title: "QnA: a course Q&A board with a cited AI answerer", flags: ["highlighted"],
     summary: "We added an AI that answers students from the course's own material and cites its sources, then measured five ways to configure it.",
     cover: { kind: "image", src: "/projects/qna/04-student-ai-answer-with-sources.jpg", alt: "A student's question on the QnA board with an AI-generated answer and three numbered sources", focus: "center top" },
-    metric: { value: "17×", base: "Time per question with a 70× larger embedding model, which found the right sources no more often (N=14)" },
+    metric: { value: "17×", base: "Time per question with a 70× larger search model, which found the right sources no more often (N=14)" },
     tags: ["FastAPI", "RAG", "React"],
     caseStudy: {
-      title: "A course Q&A board that answers from the course's own material",
-      lede: "Our answerer replies only when a passage from the course scores close enough to the question. The first cutoff, 0.65, sounded careful and answered almost nothing. In a sweep it matched 1 of 22 questions, and that one on the wrong source. After that we changed one setting at a time and measured each, with live answers and the evaluation running through the same function.",
+      title: "Teaching a course bot when to stay quiet",
+      lede: "A wrong answer under a student's question is worse than no answer. So our course bot answers only when it finds a passage in the course material that's close enough to the question. The first cutoff we picked, 0.65, sounded careful and answered almost nothing: it matched 1 of 22 test questions, and that one on the wrong source.",
       meta: { role: "Full-stack engineer", timeline: "October 2026", partners: [people.divij], stack: "FastAPI, MySQL, Redis, React, Ollama, Infinity, ChromaDB" },
-      diagram: {
-        steps: ["Student question", "Retrieve from ChromaDB", "Threshold check", "Generate with Ollama", "Answer with sources"],
-        model: 2,
-        caption: "Below the threshold the job ends with no answer, and the question waits for a human.",
-      },
       context: {
         heading: "The situation",
-        body: "QnA is a Piazza-style board for a course. A student posts a question, anyone in the course can reply, and staff mark one answer as verified. The starter had no AI in it. Our assignment was to add an assistant that answers a new question from the course's own material (a syllabus page, a schedule, a repo of rubrics and slides, past threads) and says where each part of the answer came from. The usual way to build that is to find the passages closest to the question, then have a model answer from only those, which is called retrieval-augmented generation (RAG).",
+        body: "QnA is a Piazza-style board for a course. A student posts a question, anyone in the course can reply, and staff mark one answer as verified. The starter code had no AI in it. Our assignment was to add a bot that answers a new question from the course's own material (the syllabus, the schedule, a repo of rubrics and slides, and past threads) and shows where each part of its answer came from.",
       },
       problem: {
         heading: "What made it hard",
-        body: "The model host was a 4-vCPU VM with no GPU, so every model size was a cost on every question, and the model writing answers had 1.5 billion parameters, small by current standards. The board had to keep working when the AI services were down. A wrong answer under a student's question was worse than no answer, so the system needed a way to stay quiet. Loading the course material broke on the VM too. Each batch sent to the large embedding model, which turns text into searchable vectors, had a 120-second timeout a laptop never hit, and I raised it to 600 seconds.",
+        body: [
+          "The AI models ran on a virtual machine with 4 CPU cores and no GPU, so a bigger model cost time on every single question. The model writing the answers was small, with 1.5 billion parameters.",
+          "The board also had to keep working when the AI was down, and a wrong answer was worse than none. The bot needed a way to say nothing.",
+        ],
+      },
+      explainer: {
+        heading: "How a bot finds the right page",
+        body: [
+          "Before it can answer, the bot has to find the part of the course that holds the answer. When we load a course, every page, rubric and past thread is cut into short passages. An embedding model then turns each passage into a long list of numbers, a vector, built so that passages with similar meanings get vectors that sit close together.",
+          "A new question goes through the same model. A vector database returns the passages whose vectors are nearest to it, each with a similarity score: the higher the score, the closer the meaning. Only then does a language model write the answer, from those passages alone, which is how it can cite them. This find-then-write pattern is called retrieval-augmented generation, or RAG.",
+          "The catch is that every question has a nearest passage, even one the course can't answer. \"What grade did I get on the midterm?\" found one with a score of 0.571. So the bot needs a cutoff, called a similarity threshold. Below it, the bot stays quiet and leaves the question for a person.",
+        ],
+      },
+      architecture: {
+        cols: 5,
+        rows: 3,
+        nodes: [
+          { id: "browser", label: "Browser", sub: "students and staff", at: [0, 1] },
+          { id: "backend", label: "FastAPI backend", sub: "the board's API", at: [1, 1] },
+          { id: "redis", label: "Redis", sub: "queue of answer jobs", at: [2, 0], kind: "store" },
+          { id: "mysql", label: "MySQL", sub: "posts, jobs, citations", at: [2, 2], kind: "store" },
+          { id: "worker", label: "RAG worker", sub: "answers in the background", at: [3, 1] },
+          { id: "quiet", label: "No answer posted", sub: "a person answers instead", at: [3, 2], kind: "stop" },
+          { id: "infinity", label: "Infinity", sub: "turns text into vectors", at: [4, 0] },
+          { id: "chroma", label: "ChromaDB", sub: "finds nearest passages", at: [4, 1], kind: "store" },
+          { id: "ollama", label: "Ollama", sub: "runs the 1.5B model", at: [4, 2], kind: "model" },
+        ],
+        edges: [
+          { from: "browser", to: "backend", step: 1 },
+          { from: "backend", to: "mysql", step: 2, exit: "b", enter: "l" },
+          { from: "backend", to: "redis", step: 3, exit: "t", enter: "l" },
+          { from: "redis", to: "worker", exit: "r", enter: "t" },
+          { from: "worker", to: "infinity", step: 4 },
+          { from: "worker", to: "chroma", step: 5 },
+          { from: "worker", to: "quiet", step: 6, exit: "b", enter: "t", stop: true },
+          { from: "worker", to: "ollama", step: 7 },
+          { from: "worker", to: "mysql", step: 8, exit: "l", enter: "r" },
+        ],
+        groups: [
+          { label: "The board", nodes: ["backend", "redis", "mysql"] },
+          { label: "The AI answerer", nodes: ["worker", "quiet", "infinity", "chroma", "ollama"] },
+        ],
+        caption: "One question's trip through QnA, numbered to match the steps below. The admin app and the nginx proxy in front of the backend are left out for space.",
+      },
+      walkthrough: {
+        heading: "One question, start to finish",
+        intro: "Here's what happens when a student asks how many points the parallax bug fix is worth. The numbers match the diagram.",
+        steps: [
+          "The student posts the question from the browser, and the backend takes it like any other post.",
+          "The backend saves the question and an answer job in one database transaction, with a snapshot of the course's AI settings. A question can't be saved without its job.",
+          "The backend puts the job's reference on a Redis queue, and a single worker picks it up. The board doesn't wait for the AI: if the queue can't be reached, the job stays pending until the worker sweeps it up.",
+          "The worker sends the question to the embedding model, which turns it into a vector.",
+          "ChromaDB returns the 3 nearest passages from each live course resource, each with its similarity score. Here they include the project rubric.",
+          "If the best score is below the threshold, the job ends with no match. Nothing is posted, and the question waits for a person.",
+          "Otherwise the passages go into a prompt, each tagged with its type, and Ollama runs the 1.5B model with its randomness set to zero. It answers 14 points and lists the rubric's criteria.",
+          "The worker saves the answer, one citation per passage and the job's done status in one transaction. The student sees an \"AI-generated\" badge and three numbered sources, and the first one opens the rubric on the exact lines.",
+        ],
       },
       approach: {
-        heading: "Fixed at ingestion, chosen per question",
-        body: "How the material is split into passages (chunking) and which embedding model reads them are baked into the stored vectors, so we grouped them into an ingestion profile. Changing either means loading the course again. The similarity threshold, the cutoff from the top of this page, is a request parameter instead, along with the system prompt and the generation model, so three of our five comparison axes cost one request each. One function, run_rag, serves both the worker that answers students and the staff compare page, so the numbers we report describe the code students use. Divij built the schema, the worker, the retrieval pipeline and the compare endpoint. I built the Compose services, repository ingestion, the staff pages and citation UI, the deploy pipeline and the evaluation run.",
-        steps: [
-          "A new question creates an answer job in the same transaction, with a snapshot of the course's settings.",
-          "A worker embeds the question and takes the 3 nearest passages from each live resource.",
-          "Below the threshold, the job ends with no match and nothing is posted.",
-          "Otherwise the model answers at temperature 0, its least random setting, and the post and one citation per passage are saved together.",
+        heading: "Fixed when loaded, chosen per question",
+        body: [
+          "Some choices are baked in when a course is loaded: how the material is cut into passages and which embedding model reads it. Changing either means loading the course again. Others can change on every question, like the threshold, the instructions the model gets and which model writes the answer. We made those settings on each request, so three of the five things we wanted to compare cost one request each instead of a reload.",
+          "One function serves both the live worker and the staff comparison page, so every number below describes the code students actually use. Divij built the schema, the worker, web and Q&A ingestion, the retrieval pipeline and the comparison endpoint. I built the Docker Compose services, repository ingestion, the staff pages and citation UI, the deploy pipeline and the evaluation run.",
         ],
       },
       figures: [
-        { src: "/projects/qna/06-source-viewer-cited-lines.jpg", alt: "The source viewer with lines 36 to 45 of a course rubric highlighted", caption: "The first citation opens the source on the exact lines, so a reader can check the answer quickly.", width: 1280, height: 800 },
-        { src: "/projects/qna/03-staff-ai-settings.jpg", alt: "The staff AI settings page with the similarity threshold, top-k, system prompt and generation model", caption: "Staff tune the answerer per course on this page. 0.65 was the default we started from.", width: 1280, height: 800 },
+        { src: "/projects/qna/06-source-viewer-cited-lines.jpg", alt: "The source viewer with lines 36 to 45 of a course rubric highlighted", caption: "Step 8's first citation opens the rubric on lines 36 to 45, so anyone can check the 14-point answer in seconds.", width: 1280, height: 800 },
+        { src: "/projects/qna/03-staff-ai-settings.jpg", alt: "The staff AI settings page with the similarity threshold, top-k, system prompt and generation model", caption: "Staff tune the bot for each course on this page. The threshold field is where 0.65 started.", width: 1280, height: 800 },
+      ],
+      sections: [
+        {
+          heading: "Finding the cutoff",
+          body: [
+            "A threshold is a guess until you measure it. We swept it from 0.25 to 0.70 with a rule for picking the winner. The off-topic question had to stay unanswered. After that we took the cutoff that caught the most answerable questions, and then the one whose answers were most often right. Our test set had only one off-topic question, so the sweep added 8 more of its own to push against.",
+            "For the default embedding model the rule picked 0.40. At that cutoff the bot answered 12 questions and cited the right source for 10 of them, so 83% of its answers pointed to the right place. That share is called precision. It also found the right source for 10 of the 11 questions it should have matched, a recall of 91%. The one false match was the midterm-grade question. Drop the cutoff to 0.30 and four off-topic questions got answers instead of one.",
+          ],
+        },
+        {
+          heading: "Bigger wasn't better",
+          body: [
+            "Then we ran the course's 14 test questions against the deployed board 8 times, changing one setting each run. I expected the embedding model to matter most. A model 70 times larger, given its own calibrated threshold, found the right source exactly as often, for 77% of 13 answerable questions, and took 33.8 seconds per question instead of 2.0. The off-topic question stayed unanswered in all 8 runs, though that's a single question.",
+            "The model writing the answers mattered most. Swapping in an even smaller one, llama3.2:1b, dropped correct answers from about 10 of 13 to about 5, by my reading. And finding the right passage didn't guarantee a right answer. On a question about one project's architecture, the right passage came back and the 1.5B model still got the answer backwards.",
+          ],
+        },
       ],
       result: {
         heading: "How it turned out",
         metrics: [
-          { label: "Larger embedder", value: "33.8 s", base: "per question, against 2.0 s, for the same retrieval" },
-          { label: "Retrieval hit rate", value: "77%", base: "baseline, N=13" },
+          { label: "Bigger embedding model", value: "33.8 s", base: "per question, against 2.0 s, for the same retrieval" },
+          { label: "Right source found", value: "77%", base: "baseline, N=13" },
           { label: "Calibrated threshold", value: "83% / 91%", base: "precision and recall at 0.40" },
         ],
-        body: "No single change beat the baseline. I expected the bigger embedding model to matter most, and it tied the small one once each had its own calibrated threshold. The generator mattered most instead. On one question about a project's architecture, the right passage came back and the 1.5B model still wrote the answer backwards. The ground truth is 14 questions with one negative, and we chose the threshold on the same questions we report on, so these numbers are optimistic.",
+        body: "These numbers are optimistic. The test set is 14 questions with one off-topic, and we picked the threshold on the same questions we report on. The hit rate counts the right file, not the right passage, and answer quality is my own reading. On a CPU even zero randomness isn't fully repeatable: across two runs, 24 of 99 answers came out worded differently.",
       },
+      lessons: [
+        { title: "Calibrate a threshold before you trust it.", body: "0.65 sounded reasonable. The sweep showed it was nearly mute." },
+        { title: "Run the live path and the evaluation through one function.", body: "Our comparison numbers describe what students get because both paths call it." },
+        { title: "Have a fresh reader check the design.", body: "An AI session that saw only our design document, with no tools and no code, found 34 holes, including 2 real design bugs the two of us had missed." },
+        { title: "Set timeouts on the machine that serves the model.", body: "Each batch sent to the large embedding model had a 120-second limit. It never tripped on a laptop and failed on the 4-core server, so I raised it to 600 seconds." },
+      ],
     },
   },
 
@@ -358,6 +458,26 @@ export const caseStudies: Project[] = [
     ),
   },
 ];
+
+// Fail the build if a diagram and its walkthrough drift apart: every edge must join two
+// real boxes, every grid cell must hold one box, and badge n needs walkthrough item n.
+for (const p of caseStudies) {
+  const a = p.caseStudy.architecture;
+  if (!a) continue;
+  const ids = new Set(a.nodes.map((n) => n.id));
+  const cells = new Set<string>();
+  for (const n of a.nodes) {
+    const [c, r] = n.at;
+    if (c < 0 || r < 0 || c >= a.cols || r >= a.rows || cells.has(`${c},${r}`)) throw new Error(`${p.slug}: box "${n.id}" is off the grid or shares a cell`);
+    cells.add(`${c},${r}`);
+  }
+  for (const g of a.groups ?? []) for (const id of g.nodes) if (!ids.has(id)) throw new Error(`${p.slug}: group "${g.label}" names unknown box "${id}"`);
+  const steps = p.caseStudy.walkthrough?.steps.length ?? 0;
+  for (const e of a.edges) {
+    if (!ids.has(e.from) || !ids.has(e.to)) throw new Error(`${p.slug}: edge ${e.from} → ${e.to} names an unknown box`);
+    if (e.step && (e.step < 1 || e.step > steps)) throw new Error(`${p.slug}: badge ${e.step} has no walkthrough step`);
+  }
+}
 
 /** The home page's project cards. Work case studies are reached from Experience. */
 export const projects = caseStudies.filter((p) => p.kind === "project");
