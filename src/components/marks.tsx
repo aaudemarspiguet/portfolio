@@ -12,7 +12,7 @@ export function Squiggle({ children }: { children: ReactNode }) {
     <span className="ln-squiggle">
       {children}
       <svg viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
-        <path d={wave} />
+        <path d={wave} pathLength={1} />
       </svg>
     </span>
   );
