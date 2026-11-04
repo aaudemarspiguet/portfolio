@@ -97,7 +97,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
         <figure key={f.src} className="ln-figure">
           <div className="ln-surface ln-figure__frame">
             <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes={sizes} className={f.srcDark ? "ln-theme-light" : undefined} />
-            {f.srcDark && <Image src={f.srcDark} alt="" aria-hidden width={f.width} height={f.height} sizes={sizes} className="ln-theme-dark" />}
+            {f.srcDark && <Image src={f.srcDark} alt={f.alt} width={f.width} height={f.height} sizes={sizes} className="ln-theme-dark" />}
           </div>
           <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
         </figure>
