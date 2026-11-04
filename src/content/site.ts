@@ -46,8 +46,8 @@ const education: Education = {
 
 export const site = {
   name: "Amogh Paruvelli",
-  /** Nav wordmark (#5). The site name is still to be decided. */
-  brand: placeholder("sitename"),
+  /** Nav wordmark (#5). */
+  brand: "amoghmade.dev",
   role: "Software engineer",
   city: "Madison, WI",
   availability: "Graduating December 2026",
