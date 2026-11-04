@@ -102,6 +102,15 @@ html.ln-locked { overflow: hidden; }
 .ln-say__muted { color: var(--tip-muted); }
 /* :focus, not only :focus-visible, so a tap on a phone shows it too. */
 .ln-say:hover .ln-say__tip, .ln-say:focus .ln-say__tip { opacity: 1; transform: none; }
+.ln-say[data-align="end"] .ln-say__tip { left: auto; right: -4px; }
+
+/* Org mark before a role title (#31): as tall as the text, name on hover */
+.ln-org { width: var(--mark, 20px); height: var(--mark, 20px); border-radius: 4px; outline-offset: 3px; }
+.ln-org img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--rule); }
+.ln-org .ln-org__dark { display: none; }
+:root[data-theme="dark"] .ln-org .ln-org__light { display: none; }
+:root[data-theme="dark"] .ln-org .ln-org__dark { display: block; }
+.ln-org .ln-say__tip { left: -4px; }
 
 /* Copy email */
 .ln-copy-row { display: flex; align-items: center; gap: var(--space-2); }
@@ -171,31 +180,26 @@ html.ln-locked { overflow: hidden; }
 .ln-carousel__slide > .ln-card { position: relative; flex: 1; }
 .ln-carousel .ln-card__media { will-change: transform; pointer-events: none; }
 
-/* Experience list */
+/* Experience list (#31): text-only rows, dates | role and result | place */
 .ln-list { display: flex; flex-direction: column; margin: 0; padding: 0 var(--space-6); list-style: none; }
-.ln-list__row { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; grid-template-areas: "logo what meta"; align-items: start; gap: 4px 20px; padding: 20px 0; }
+.ln-list__row { display: grid; grid-template-columns: 10.5rem minmax(0, 1fr) 12rem; align-items: baseline; gap: 4px 48px; padding: 20px 0; }
 .ln-list__row + .ln-list__row { border-top: 1px solid var(--rule); }
-.ln-list__what { grid-area: what; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ln-list__meta { grid-area: meta; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; padding-top: 2px; }
-@media (max-width: 640px) {
-  .ln-list { padding: 0 var(--space-4); }
-  .ln-list__row { grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: "logo what" ". meta"; column-gap: 14px; }
-  .ln-list__meta { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0 12px; text-align: left; padding-top: 6px; }
-}
-.ln-edu { display: flex; flex-direction: column; gap: var(--space-3); margin-top: calc(-1 * var(--space-4)); }
-.ln-edu h3 { margin: 0; }
-
-/* Org logo: a plain square mark, LinkedIn-style, or a monogram when there is none */
-.ln-logo { grid-area: logo; position: relative; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; overflow: hidden; border-radius: 4px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--rule); }
-.ln-logo img { width: 100%; height: 100%; object-fit: cover; }
-.ln-logo .ln-logo__dark { display: none; }
-:root[data-theme="dark"] .ln-logo:has(.ln-logo__dark) { background: var(--paper-sunk); }
-:root[data-theme="dark"] .ln-logo .ln-logo__light { display: none; }
-:root[data-theme="dark"] .ln-logo .ln-logo__dark { display: block; }
-.ln-logo--mono { background: var(--paper-sunk); color: var(--ink-muted); font-size: 15px; line-height: 1; font-weight: 600; letter-spacing: 0.02em; }
+/* Capped so the result text keeps clear of the place column (about 70 characters). */
+.ln-list { --mark: 20px; --mark-gap: 10px; }
+.ln-list__what { min-width: 0; max-width: 36rem; display: grid; grid-template-columns: var(--mark) minmax(0, 1fr); gap: 2px var(--mark-gap); }
+.ln-list__what > * { grid-column: 2; }
+.ln-list__what > .ln-org { grid-column: 1; grid-row: 1; align-self: start; margin-top: 1.5px; }
+.ln-list__where { text-align: right; }
 .ln-list__role { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -0.015em; }
 .ln-list__line { font-size: 15px; line-height: 1.45; color: var(--ink-muted); }
 .ln-list__what > .ln-link { font-size: 15px; line-height: 1.45; }
+@media (max-width: 640px) {
+  .ln-list { padding: 0 var(--space-4); }
+  .ln-list__row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  /* Indent dates and place past the logo column so they line up with the title. */
+  .ln-list__when, .ln-list__where { padding-left: calc(var(--mark) + var(--mark-gap)); }
+  .ln-list__where { text-align: left; margin-top: 4px; }
+}
 .ln-after-list { align-self: flex-start; margin-top: calc(-1 * var(--space-4)); padding: 0; }
 
 /* About */

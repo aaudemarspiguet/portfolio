@@ -1,56 +1,30 @@
 import Link from "next/link";
 import type { Logo } from "@/content/site";
-
-/** Org initials for the monogram tile: first letters of the first two words, or the first two letters of a single word. */
-export function monogram(org: string) {
-  const words = org.split(/[\s/]+/).filter((w) => /[A-Za-z]/.test(w));
-  if (words.length === 1) return words[0].replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase();
-  return words.slice(0, 2).map((w) => w.match(/[A-Za-z]/)![0].toUpperCase()).join("");
-}
-
-export function OrgLogo({ org, logo }: { org: string; logo?: Logo }) {
-  if (!logo) {
-    return (
-      <span className="ln-logo ln-logo--mono" role="img" aria-label={`${org} logo`}>
-        <span aria-hidden="true">{monogram(org)}</span>
-      </span>
-    );
-  }
-  return (
-    <span className="ln-logo">
-      {/* eslint-disable-next-line @next/next/no-img-element -- small static marks, no optimization needed */}
-      <img src={logo.light} alt={logo.alt} width={48} height={48} className={logo.dark ? "ln-logo__light" : undefined} />
-      {logo.dark && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={logo.dark} alt={logo.alt} width={48} height={48} className="ln-logo__dark" />
-      )}
-    </span>
-  );
-}
+import { OrgMark } from "./OrgMark";
 
 type Props = {
-  org: string;
   title: string;
+  org: string;
+  logo?: Logo;
   line: string;
   when: string;
+  /** City, "Remote", or the "Education" label on the final row. */
   where: string;
-  logo?: Logo;
   caseStudy?: string;
 };
 
-export function ExperienceRow({ org, title, line, when, where, logo, caseStudy }: Props) {
+/** One row: dates left; the org's mark, role and result center; place right (#31). */
+export function ExperienceRow({ title, org, logo, line, when, where, caseStudy }: Props) {
   return (
     <li className="ln-list__row">
-      <OrgLogo org={org} logo={logo} />
+      <span className="ln-caption ln-list__when">{when}</span>
       <div className="ln-list__what">
-        <span className="ln-list__role">{title}</span>
+        {logo && <OrgMark org={org} logo={logo} />}
+        <span className="ln-list__role">{logo ? title : `${title} · ${org}`}</span>
         <span className="ln-list__line">{line}</span>
         {caseStudy && <Link href={`/work/${caseStudy}`} className="ln-link">Case study →</Link>}
       </div>
-      <div className="ln-list__meta">
-        <span className="ln-caption">{when}</span>
-        <span className="ln-caption">{where}</span>
-      </div>
+      <span className="ln-caption ln-list__where">{where}</span>
     </li>
   );
 }

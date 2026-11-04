@@ -54,15 +54,10 @@ export default function Home() {
           <SectionHeader label={`Experience · ${experience.roles.length} roles`} heading={experience.heading} />
           <ul className="ln-surface ln-list">
             {experience.roles.map((r) => (
-              <ExperienceRow key={`${r.org}-${r.when}`} org={r.org} title={`${r.title} · ${r.org}`} line={r.line} when={r.when} where={r.where} logo={r.logo} caseStudy={r.caseStudy} />
+              <ExperienceRow key={`${r.org}-${r.when}`} title={r.title} org={r.org} logo={r.logo} line={r.line} when={r.when} where={r.where} caseStudy={r.caseStudy} />
             ))}
+            <ExperienceRow title={education.degree} org={education.school} logo={education.logo} line={education.line} when={education.when} where="Education" />
           </ul>
-          <div className="ln-edu">
-            <h3 className="ln-label">Education</h3>
-            <ul className="ln-surface ln-list">
-              <ExperienceRow org={education.school} title={`${education.degree} · ${education.school}`} line={education.line} when={education.when} where={education.where} logo={education.logo} />
-            </ul>
-          </div>
         </div>
       </section>
 

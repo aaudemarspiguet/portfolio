@@ -11,7 +11,7 @@ export type Role = {
   when: string;
   where: string;
   line: string;
-  /** Square marks in public/logos (Handlab: the app's favicon). Falls back to a monogram tile when missing (#7). */
+  /** Square mark in public/logos, shown inline after the title; hovering it names the org (#31). Without one, the org name shows as text. */
   logo?: Logo;
   /** Slug of a `kind: "work"` case study in projects.ts. */
   caseStudy?: string;
@@ -21,7 +21,6 @@ export type Education = {
   school: string;
   degree: string;
   when: string;
-  where: string;
   line: string;
   logo?: Logo;
 };
@@ -36,19 +35,18 @@ const roles: Role[] = [
 ];
 
 const education: Education = {
-  school: "UW–Madison",
+  school: "University of Wisconsin–Madison",
   degree: "BS, Computer Science and Data Science",
   when: "Graduating Dec 2026",
-  where: "Madison, WI",
   line: placeholder("Relevant coursework, in one line."),
-  logo: { light: "/logos/uw-madison.jpg", alt: "UW–Madison crest" },
+  logo: { light: "/logos/uw-madison.jpg", alt: "University of Wisconsin–Madison crest" },
 };
 
 export const site = {
   name: "Amogh Paruvelli",
   /** Nav wordmark (#5). */
   brand: "amoghmade.dev",
-  role: "Software engineer",
+  role: "Software Engineer",
   city: "Madison, WI",
   availability: "Graduating December 2026",
   timeZone: "America/Chicago",
