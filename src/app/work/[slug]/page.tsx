@@ -43,7 +43,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
     <>
       <article>
         <div className="ln-wrap ln-case">
-          <Link href={isWork ? "/#experience" : "/#projects"} className="ln-link ln-case__back">
+          <Link href={isWork ? "/#experience" : "/projects"} className="ln-link ln-case__back">
             {isWork ? "← Experience" : "← All projects"}
           </Link>
           <header className="ln-case__intro">
