@@ -48,10 +48,10 @@ export const site = {
   say: { pronunciation: "uh-MOH-g", meaning: "unerring" },
   description: "Amogh Paruvelli is a software engineer studying computer science and data science at UW–Madison. Work in AI search, data engineering, and backend development.",
   lede: {
-    highlight: "I build AI tools and data systems.",
-    rest: " I've helped poker players search their hands and cut a data upload from an hour to three minutes.",
+    highlight: "I build LLM apps, evals and ETL pipelines.",
+    rest: " Recent work: a RAG bot that knows when to stay quiet, and an ingest job cut from 60 minutes to 3.",
   },
-  now: "Building a daily fashion puzzle with Shopbop mentors",
+  now: "Capstone for Amazon Fashion Labs",
   email: "amoghparuvelli@gmail.com",
   links: {
     github: "https://github.com/aaudemarspiguet",
