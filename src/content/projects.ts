@@ -275,7 +275,7 @@ export const caseStudies: Project[] = [
     metric: { value: "17×", base: "Time per question with a 70× larger search model, which found the right sources no more often (N=14)" },
     tags: ["FastAPI", "RAG", "React"],
     caseStudy: {
-      title: "Teaching a course bot when to stay quiet",
+      title: "Teaching a RAG course bot when to stay quiet",
       lede: "A wrong answer under a student's question is worse than no answer. So our course bot answers only when it finds a passage in the course material that's close enough to the question. The first cutoff we picked, 0.65, sounded careful and answered almost nothing: it matched 1 of 22 test questions, and that one on the wrong source.",
       meta: { role: "Full-stack engineer", timeline: "October 2026", partners: [people.divij], stack: "FastAPI, MySQL, Redis, React, Ollama, Infinity, ChromaDB" },
       context: {
