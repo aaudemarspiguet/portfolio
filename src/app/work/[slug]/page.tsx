@@ -7,8 +7,7 @@ import { Metric } from "@/components/marks";
 import { getProject, nextProject, projects } from "@/content/projects";
 import { site } from "@/content/site";
 
-// Every real slug is prerendered below. Unknown slugs may block and then 404,
-// which is better than streaming a placeholder shell that turns into a soft 404.
+// Prerender known projects. Unknown slugs use Next.js's not-found UI.
 export const instant = false;
 
 export function generateStaticParams() {
@@ -17,7 +16,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/work/[slug]">): Promise<Metadata> {
   const project = getProject((await params).slug);
-  return { title: project ? project.caseStudy.title : "Not found" };
+  return {
+    title: project ? project.caseStudy.title : "Not found",
+    description: project?.caseStudy.lede,
+  };
 }
 
 export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]">) {
@@ -26,6 +28,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
   if (!project) notFound();
 
   const cs = project.caseStudy;
+  const diagram = cs.diagram;
   const next = nextProject(slug);
   const meta = [
     ["Role", cs.meta.role],
@@ -54,72 +57,58 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
                 <dd>{v}</dd>
               </div>
             ))}
-            <div>
+            {(cs.meta.repo || cs.meta.demo) && <div>
               <dt>Links</dt>
               <dd className="ln-meta__links">
-                <a href={cs.meta.repo} className="ln-link">Repo ↗</a>
-                <a href={cs.meta.demo} className="ln-link">Demo ↗</a>
+                {cs.meta.repo && <a href={cs.meta.repo} className="ln-link">Repo ↗</a>}
+                {cs.meta.demo && <a href={cs.meta.demo} className="ln-link">Demo ↗</a>}
               </dd>
-            </div>
+            </div>}
           </dl>
 
-          <figure className="ln-figure">
+          {diagram && <figure className="ln-figure">
             <div className="ln-surface ln-diagram">
-              {cs.diagram.steps.map((step, i) => (
+              {diagram.steps.map((step, i) => (
                 <Fragment key={step}>
                   {i > 0 && <span className="ln-diagram__arrow" aria-hidden="true">→</span>}
-                  <span className={i === cs.diagram.model ? "ln-diagram__node ln-diagram__node--model" : "ln-diagram__node"}>{step}</span>
+                  <span className={i === diagram.model ? "ln-diagram__node ln-diagram__node--model" : "ln-diagram__node"}>{step}</span>
                 </Fragment>
               ))}
             </div>
-            <figcaption>Fig. 1 · {cs.diagram.caption}</figcaption>
-          </figure>
+            <figcaption>Fig. 1 · {diagram.caption}</figcaption>
+          </figure>}
         </div>
 
         <div className="ln-wrap ln-wrap--measure ln-case__body">
-          <section className="ln-case__section">
+          {cs.context && <section className="ln-case__section">
             <h2>{cs.context.heading}</h2>
             <p>{cs.context.body}</p>
-          </section>
+          </section>}
 
-          <section className="ln-case__section">
+          {cs.problem && <section className="ln-case__section">
             <h2>{cs.problem.heading}</h2>
             <p>{cs.problem.body}</p>
-          </section>
+          </section>}
 
           <section className="ln-case__section">
             <h2>{cs.approach.heading}</h2>
             <p>{cs.approach.body}</p>
-            <ol>
+            {cs.approach.steps && <ol>
               {cs.approach.steps.map((s) => (
                 <li key={s}>{s}</li>
               ))}
-            </ol>
-            <pre className="ln-code">
-              <code>{cs.approach.code}</code>
-            </pre>
+            </ol>}
           </section>
 
-          <section className="ln-case__section ln-case__section--result">
+          {cs.result && <section className="ln-case__section ln-case__section--result">
             <h2>{cs.result.heading}</h2>
             <div className="ln-surface ln-results">
               {cs.result.metrics.map((m, i) => (
                 <Metric key={m.label} {...m} lead={i === 0} />
               ))}
             </div>
-            <p>{cs.result.body}</p>
-            <figure className="ln-figure">
-              <div className="ln-well">
-                <span className="ln-label">[Chart: before vs after]</span>
-              </div>
-              <figcaption>Fig. 2 · {cs.result.chartCaption}</figcaption>
-            </figure>
-          </section>
-
-          <section className="ln-case__section">
-            <h2>{cs.lesson.heading}</h2>
-            <p>{cs.lesson.body}</p>
-          </section>
+            {cs.result.body && <p>{cs.result.body}</p>}
+          </section>}
 
           <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
             <span className="ln-next__title">{next.title}</span>

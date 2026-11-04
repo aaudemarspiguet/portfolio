@@ -42,3 +42,8 @@ next-env.d.ts
 
 # local tooling
 /.claude/
+/.codex-task-deps/
+/tmp/
+
+# private copy-process notes (kept on disk, not published)
+/docs/

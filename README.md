@@ -2,7 +2,7 @@
 
 Personal site for a software engineer working on applied AI and data. Built with Next.js and deployed on Vercel.
 
-**Status:** the layout and design are done. The copy is still placeholder text in `[brackets]` until the content phase.
+Live at https://portfolio-alpha-umber-43.vercel.app.
 
 ## Run it
 
@@ -23,12 +23,12 @@ Open http://localhost:3000.
 ## Where things live
 
 - `src/content/site.ts`: all home page copy (name, links, experience, about, stack, contact).
-- `src/content/projects.ts`: the four project slots and their case studies.
+- `src/content/projects.ts`: six projects and their case studies.
 - `src/styles/tokens.css`: design tokens (color, shadow, type, spacing, radius) for light and dark.
 - `src/styles/components.css`: the `.ln-*` component styles.
 - `src/components/`: React components. Only the nav, theme toggle, copy-email button and clock run on the client.
 
-To change copy, edit the two files in `src/content/`. The markup doesn't need to change.
+To change copy, edit the two files in `src/content/`. Each case study can have an optional diagram and optional repo or demo links. The résumé download lives in `public/Amogh_Paruvelli_Resume.pdf`.
 
 ## Design
 
@@ -46,5 +46,3 @@ Design references: [design system](https://claude.ai/artifact/CTHt2p3SY6onsctFEx
 - **Pushes to `main`** deploy to production through Vercel's Git integration.
 - **Other branches and pull requests** get a preview URL.
 - **GitHub Actions** (`.github/workflows/ci.yml`) runs lint, typecheck and build on every push.
-
-The site is set to `noindex` until the real content is in.
