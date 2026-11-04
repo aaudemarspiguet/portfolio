@@ -147,7 +147,7 @@ function MobileMenu({ current, href }: { current: Current | null; href: (id: str
             </button>
           </div>
         </div>
-        <nav aria-label="Main" className="ln-sheet__links">
+        <nav aria-label="Menu" className="ln-sheet__links">
           <HomeLink onClick={hide} current={current === "home"}>Home</HomeLink>
           {SECTIONS.map(({ id, label }) => (
             <a key={id} href={href(id)} aria-current={current === id ? "location" : undefined} onClick={hide}>
