@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
@@ -32,12 +33,15 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
   const next = nextProject(slug);
   const links = project.links;
   const isWork = project.kind === "work";
+  const partners = cs.meta.partners;
   const meta = [
     ["Role", cs.meta.role],
     ["Timeline", cs.meta.timeline],
-    ["Team", cs.meta.team],
+    ...(!partners && cs.meta.team ? [["Team", cs.meta.team]] : []),
     ["Stack", cs.meta.stack],
   ];
+  // Figures are numbered after the diagram, which is Fig. 1 when present.
+  const firstFigure = diagram ? 2 : 1;
 
   return (
     <>
@@ -61,6 +65,18 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
                 <dd>{v}</dd>
               </div>
             ))}
+            {/* Partners come last so a long list can span its own row (#10). */}
+            {partners && <div className={partners.length > 2 ? "ln-meta__wide" : undefined}>
+              <dt>Partners</dt>
+              <dd>
+                {partners.map((p, i) => (
+                  <Fragment key={p.name}>
+                    {i > 0 && ", "}
+                    {p.link ? <a href={p.link} className="ln-link" target="_blank" rel="noopener noreferrer">{p.name}</a> : p.name}
+                  </Fragment>
+                ))}
+              </dd>
+            </div>}
             {(links?.live || links?.repo) && <div>
               <dt>Links</dt>
               <dd className="ln-meta__links">
@@ -103,6 +119,15 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
               ))}
             </ol>}
           </section>
+
+          {cs.figures?.map((f, i) => (
+            <figure key={f.src} className="ln-figure">
+              <div className="ln-surface ln-figure__frame">
+                <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes="(max-width: 704px) 100vw, 640px" />
+              </div>
+              <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
+            </figure>
+          ))}
 
           {cs.result && <section className="ln-case__section ln-case__section--result">
             <h2>{cs.result.heading}</h2>
