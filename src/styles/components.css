@@ -48,11 +48,20 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .ln-theme__sun { display: none; }
 :root[data-theme="dark"] .ln-theme__sun { display: block; }
 :root[data-theme="dark"] .ln-theme__moon { display: none; }
-.ln-menu-btn { height: 36px; padding: 0 12px; background: transparent; border: 0; border-radius: var(--radius-pill); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
-/* Nested inside the nav's backdrop-filter, so its own blur can't see the page: keep it near-opaque. */
-.ln-menu { position: absolute; top: calc(100% + 8px); right: 0; left: 0; display: flex; flex-direction: column; padding: 8px; background: color-mix(in srgb, var(--paper-raised) 94%, transparent); box-shadow: var(--shadow-glass); border-radius: var(--radius-lg); }
-.ln-menu a, .ln-menu button { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink); font: inherit; font-size: 16px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
-.ln-menu a[aria-current] { background: var(--link-tint); color: var(--link); }
+/* Mobile menu: a full-screen sheet whose top bar sits exactly where the pill
+   was, so the close icon replaces the hamburger in place. */
+html.ln-locked { overflow: hidden; }
+.ln-sheet { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: calc(2 * var(--space-3)) var(--gut) var(--space-8); box-sizing: border-box; border: 0; background: var(--paper); color: var(--ink); overflow-y: auto; overscroll-behavior: contain; }
+.ln-sheet::backdrop { background: var(--paper); }
+.ln-sheet__bar { display: flex; align-items: center; justify-content: space-between; height: var(--layout-nav); padding: 0 8px 0 20px; }
+.ln-sheet__actions { display: flex; align-items: center; gap: 4px; }
+.ln-sheet__links { display: flex; flex-direction: column; padding: var(--space-8) 0 0; }
+.ln-sheet__links a { display: block; padding: 10px 20px; color: var(--ink); font-size: 40px; line-height: 48px; font-weight: 600; letter-spacing: -0.03em; text-decoration: none; border-radius: var(--radius-md); }
+.ln-sheet__links a[aria-current] { color: var(--link); }
+@media (prefers-reduced-motion: no-preference) {
+  .ln-sheet[open] { animation: ln-sheet-in .2s ease-out; }
+  @keyframes ln-sheet-in { from { opacity: 0; } }
+}
 @media (max-width: 640px) {
   .ln-nav__links, .ln-nav__actions { display: none; }
   .ln-nav__phone { display: flex; grid-column: 3; }
@@ -88,9 +97,11 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 
 /* Name tooltip */
 .ln-say { position: relative; display: inline-block; cursor: help; border-radius: var(--radius-md); outline-offset: 6px; }
-.ln-say__tip { position: absolute; left: 4px; bottom: calc(100% + 8px); padding: 6px 12px; border-radius: var(--radius-pill); background: var(--fill-primary); color: var(--on-primary); font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0; white-space: nowrap; opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .15s, transform .15s; }
+.ln-say__tip { position: absolute; left: 4px; bottom: calc(100% + 8px); padding: 6px 12px; border-radius: var(--radius-pill); background: var(--fill-primary); color: var(--on-primary); font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0; width: max-content; max-width: calc(100vw - 2 * var(--gut) - 8px); box-sizing: border-box; opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .15s, transform .15s; }
+.ln-say[data-place="below"] .ln-say__tip { bottom: auto; top: calc(100% + 8px); transform: translateY(-4px); }
 .ln-say__muted { color: var(--tip-muted); }
-.ln-say:hover .ln-say__tip, .ln-say:focus-visible .ln-say__tip { opacity: 1; transform: none; }
+/* :focus, not only :focus-visible, so a tap on a phone shows it too. */
+.ln-say:hover .ln-say__tip, .ln-say:focus .ln-say__tip { opacity: 1; transform: none; }
 
 /* Copy email */
 .ln-copy-row { display: flex; align-items: center; gap: var(--space-2); }

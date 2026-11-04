@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { getProject } from "@/content/projects";
 import { site } from "@/content/site";
 import { HomeLink } from "./HomeLink";
-import { ThemeToggle, setTheme, useTheme } from "./ThemeToggle";
+import { ThemeToggle } from "./ThemeToggle";
 
 const SECTIONS = [
   { id: "projects", label: "Projects" },
@@ -14,24 +14,27 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
+// "home" while the hero is in view: nothing in the pill is selected, and the
+// mobile menu selects Home.
+type Current = SectionId | "home";
 
-// Home: the pill follows the section in view. The all-projects page and case
+// Home: the pill follows the section in view, starting at the hero. The all-projects page and case
 // studies keep Projects, or Experience for a work case study, selected.
-function useCurrentSection(pathname: string, caseStudySlug: string | null): SectionId | null {
+function useCurrentSection(pathname: string, caseStudySlug: string | null): Current | null {
   const onHome = pathname === "/";
-  const [spied, setSpied] = useState<SectionId>("projects");
+  const [spied, setSpied] = useState<Current>("home");
 
   useEffect(() => {
     if (!onHome) return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) setSpied(entry.target.id as SectionId);
+          if (entry.isIntersecting) setSpied(entry.target.id === "top" ? "home" : (entry.target.id as SectionId));
         }
       },
       { rootMargin: "-45% 0px -50% 0px" },
     );
-    for (const { id } of SECTIONS) {
+    for (const id of ["top", ...SECTIONS.map((s) => s.id)]) {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     }
@@ -76,42 +79,83 @@ export function NavBar() {
   );
 }
 
-function MobileMenu({ current, href }: { current: SectionId | null; href: (id: string) => string }) {
+// Closed: the pill keeps the wordmark, a theme icon and a hamburger. Open: a
+// full-screen modal <dialog>, which keeps focus inside and closes on Escape.
+function MobileMenu({ current, href }: { current: Current | null; href: (id: string) => string }) {
   const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-  const theme = useTheme();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
+
+  function show() {
+    document.documentElement.classList.add("ln-locked");
+    dialog.current?.showModal();
+    dialog.current?.querySelector<HTMLElement>("[data-close]")?.focus();
+    setOpen(true);
+  }
+
+  // Every way out runs this directly rather than waiting for the dialog's
+  // close event, so scrolling unlocks before the browser follows a link.
+  function hide() {
+    document.documentElement.classList.remove("ln-locked");
+    if (dialog.current?.open) dialog.current.close();
+    setOpen(false);
+    trigger.current?.focus({ preventScroll: true });
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    hide();
+  }
+
+  // Close when the route changes or the viewport grows past the phone layout.
+  useEffect(() => {
+    if (!dialog.current?.open) return;
+    document.documentElement.classList.remove("ln-locked");
+    dialog.current.close();
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    const onClick = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("click", onClick);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("click", onClick);
-    };
+    const wide = window.matchMedia("(min-width: 641px)");
+    const onChange = () => wide.matches && hide();
+    wide.addEventListener("change", onChange);
+    return () => wide.removeEventListener("change", onChange);
   }, [open]);
 
   return (
-    <div ref={root}>
-      <button type="button" className="ln-menu-btn" aria-expanded={open} aria-controls="ln-menu" onClick={() => setOpen(!open)}>
-        {open ? "Close" : "Menu"}
+    <>
+      <ThemeToggle />
+      <button ref={trigger} type="button" className="ln-icon-btn" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={open} aria-controls="ln-sheet" onClick={show}>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
       </button>
-      {open && (
-        <nav id="ln-menu" aria-label="Main" className="ln-menu">
+      <dialog ref={dialog} id="ln-sheet" className="ln-sheet" aria-label="Menu" onKeyDown={onKeyDown} onCancel={(e) => { e.preventDefault(); hide(); }}>
+        <div className="ln-sheet__bar">
+          <HomeLink className="ln-nav__brand" onClick={hide}>
+            {site.brand}
+          </HomeLink>
+          <div className="ln-sheet__actions">
+            <ThemeToggle />
+            <button type="button" className="ln-icon-btn" aria-label="Close menu" data-close onClick={hide}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <nav aria-label="Main" className="ln-sheet__links">
+          <HomeLink onClick={hide} current={current === "home"}>Home</HomeLink>
           {SECTIONS.map(({ id, label }) => (
-            <a key={id} href={href(id)} aria-current={current === id ? "location" : undefined} onClick={() => setOpen(false)}>
+            <a key={id} href={href(id)} aria-current={current === id ? "location" : undefined} onClick={hide}>
               {label}
             </a>
           ))}
-          <button type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
         </nav>
-      )}
-    </div>
+      </dialog>
+    </>
   );
 }
