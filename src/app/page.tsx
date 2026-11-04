@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
+import { ExperienceRow } from "@/components/ExperienceRow";
 import { ProjectCarousel } from "@/components/ProjectCarousel";
 import { Availability, NameTooltip, NowChip, SectionHeader, Squiggle } from "@/components/marks";
 import { highlightedProjects } from "@/content/projects";
@@ -8,11 +8,6 @@ import { site } from "@/content/site";
 
 export default function Home() {
   const { experience, education, about, stack } = site;
-  // Education stays in this list until #7 gives it its own block.
-  const rows = [
-    ...experience.roles.map((r) => ({ when: r.when, title: `${r.title} · ${r.org}`, line: r.line, where: r.where, caseStudy: r.caseStudy })),
-    { when: education.when, title: `${education.degree} · ${education.school}`, line: education.line, where: education.where, caseStudy: undefined },
-  ];
 
   return (
     <>
@@ -53,18 +48,16 @@ export default function Home() {
       <section id="experience" className="ln-section">
         <div className="ln-wrap ln-stack-y">
           <SectionHeader label={`Experience · ${experience.roles.length} roles`} heading={experience.heading} />
-          <div className="ln-surface ln-list">
-            {rows.map((r, i) => (
-              <div key={i} className="ln-list__row">
-                <span className="ln-caption ln-list__when">{r.when}</span>
-                <div className="ln-list__what">
-                  <span className="ln-list__role">{r.title}</span>
-                  <span className="ln-list__line">{r.line}</span>
-                  {r.caseStudy && <Link href={`/work/${r.caseStudy}`} className="ln-link">Case study →</Link>}
-                </div>
-                <span className="ln-caption">{r.where}</span>
-              </div>
+          <ul className="ln-surface ln-list">
+            {experience.roles.map((r) => (
+              <ExperienceRow key={`${r.org}-${r.when}`} org={r.org} title={`${r.title} · ${r.org}`} line={r.line} when={r.when} where={r.where} logo={r.logo} caseStudy={r.caseStudy} />
             ))}
+          </ul>
+          <div className="ln-edu">
+            <h3 className="ln-label">Education</h3>
+            <ul className="ln-surface ln-list">
+              <ExperienceRow org={education.school} title={`${education.degree} · ${education.school}`} line={education.line} when={education.when} where={education.where} logo={education.logo} />
+            </ul>
           </div>
           <a href={site.links.resume} className="ln-btn ln-btn--text ln-after-list">Full résumé (PDF) ↗</a>
         </div>
