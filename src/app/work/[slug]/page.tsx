@@ -6,7 +6,7 @@ import { Fragment } from "react";
 import { Architecture } from "@/components/Architecture";
 import { ContactPanel } from "@/components/ContactPanel";
 import { Metric } from "@/components/marks";
-import { caseStudies, getProject, nextProject, type Body, type Section } from "@/content/projects";
+import { caseStudies, getProject, nextProject, sectionId, type Body, type Section } from "@/content/projects";
 import { site } from "@/content/site";
 
 // Prerender known projects. Unknown slugs use Next.js's not-found UI.
@@ -31,8 +31,9 @@ function Paragraphs({ body }: { body: Body }) {
 function CaseSection({ section }: { section: Section }) {
   return (
     <section className="ln-case__section">
-      <h2>{section.heading}</h2>
+      <h2 id={sectionId(section.heading)}>{section.heading}</h2>
       <Paragraphs body={section.body} />
+      {section.more && <p><Link href={section.more.href} className="ln-link">{section.more.label} →</Link></p>}
     </section>
   );
 }
@@ -58,6 +59,8 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
   // Figures are numbered in page order: the strip diagram, the architecture, then images.
   const archFigure = diagram ? 2 : 1;
   const firstFigure = 1 + (diagram ? 1 : 0) + (arch ? 1 : 0);
+  // Portrait phone captures sit side by side, so two of them don't fill two screens.
+  const phoneFigures = cs.figures?.every((f) => f.height > f.width) ?? false;
   // Walkthrough steps that end in "nothing happens" share the diagram's stop colour.
   const stopSteps = new Set(arch?.edges.filter((e) => e.stop && e.step).map((e) => e.step));
 
@@ -69,7 +72,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
 
   const rest = <>
     {cs.walkthrough && <section className="ln-case__section">
-      <h2>{cs.walkthrough.heading}</h2>
+      <h2 id={sectionId(cs.walkthrough.heading)}>{cs.walkthrough.heading}</h2>
       {cs.walkthrough.intro && <p>{cs.walkthrough.intro}</p>}
       <ol className="ln-steps">
         {cs.walkthrough.steps.map((s, i) => (
@@ -79,7 +82,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
     </section>}
 
     <section className="ln-case__section">
-      <h2>{cs.approach.heading}</h2>
+      <h2 id={sectionId(cs.approach.heading)}>{cs.approach.heading}</h2>
       <Paragraphs body={cs.approach.body} />
       {cs.approach.steps && <ol>
         {cs.approach.steps.map((s) => (
@@ -88,14 +91,16 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
       </ol>}
     </section>
 
-    {cs.figures?.map((f, i) => (
-      <figure key={f.src} className="ln-figure">
-        <div className="ln-surface ln-figure__frame">
-          <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes="(max-width: 704px) 100vw, 640px" />
-        </div>
-        <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
-      </figure>
-    ))}
+    {cs.figures && <div className={phoneFigures ? "ln-figures ln-figures--phones" : "ln-figures"}>
+      {cs.figures.map((f, i) => (
+        <figure key={f.src} className="ln-figure">
+          <div className="ln-surface ln-figure__frame">
+            <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes={phoneFigures ? "(max-width: 560px) 100vw, 320px" : "(max-width: 704px) 100vw, 640px"} />
+          </div>
+          <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
+        </figure>
+      ))}
+    </div>}
 
     {cs.sections?.map((s) => <CaseSection key={s.heading} section={s} />)}
 
