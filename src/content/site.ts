@@ -35,11 +35,11 @@ const roles: Role[] = [
 ];
 
 const education: Education = {
-  school: "UW–Madison",
+  school: "University of Wisconsin–Madison",
   degree: "BS, Computer Science and Data Science",
   when: "Graduating Dec 2026",
   line: placeholder("Relevant coursework, in one line."),
-  logo: { light: "/logos/uw-madison.jpg", alt: "UW–Madison crest" },
+  logo: { light: "/logos/uw-madison.jpg", alt: "University of Wisconsin–Madison crest" },
 };
 
 export const site = {
