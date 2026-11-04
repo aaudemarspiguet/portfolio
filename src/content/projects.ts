@@ -269,7 +269,7 @@ export const caseStudies: Project[] = [
   // Kit: evidence/qna-51
   {
     slug: "qna", kind: "project", area: "Course project", year: "2026",
-    title: "QnA: a course Q&A board with a cited AI answerer", flags: ["highlighted"],
+    title: "QnA: a course board with a cited AI answerer", flags: ["highlighted"],
     summary: "We added an AI that answers students from the course's own material and cites its sources, then measured five ways to configure it.",
     cover: { kind: "image", src: "/projects/qna/04-student-ai-answer-with-sources.jpg", alt: "A student's question on the QnA board with an AI-generated answer and three numbered sources", focus: "center top" },
     metric: { value: "17×", base: "Time per question with a 70× larger search model, which found the right sources no more often (N=14)" },
