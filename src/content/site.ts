@@ -1,7 +1,5 @@
 // Home page content. Case studies live in projects.ts.
-// Template mode (#4): prose goes through placeholder(). Names, links, orgs,
-// titles, dates and places are real.
-import { placeholder } from "./placeholder";
+// Copy is Amogh's own (tag copy-v1), with lines changed where an evidence kit disagrees.
 
 export type Logo = { light: string; dark?: string };
 
@@ -25,20 +23,17 @@ export type Education = {
   logo?: Logo;
 };
 
-const roleLine = () =>
-  placeholder("One line on what I built and the result, with the number from the claims ledger and the main tool.");
-
 const roles: Role[] = [
-  { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: roleLine(), caseStudy: "ebara-data", logo: { light: "/logos/ebara-elliott.jpg" } },
+  { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: "Built a self-service upload app that cut data ingestion from 60 minutes to 3. Consolidated records from 15 sources.", caseStudy: "ebara-data", logo: { light: "/logos/ebara-elliott.jpg" } },
   { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: "Built zip uploads for a poker hand tracker with plain-English search, so a folder of 11 session files imports 505 hands at once.", caseStudy: "handlab", logo: { light: "/logos/handlab.svg" } },
-  { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: roleLine(), logo: { light: "/logos/spencers.jpg" } },
+  { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: "Wrote the Java endpoint for selected-store pickup status, Redis lookup calls, and 12 JUnit tests ahead of Halloween.", logo: { light: "/logos/spencers.jpg" } },
 ];
 
 const education: Education = {
   school: "University of Wisconsin–Madison",
   degree: "BS, Computer Science and Data Science",
   when: "Graduating Dec 2026",
-  line: placeholder("Relevant coursework, in one line."),
+  line: "Coursework in operating systems, relational databases, matrix methods in ML, and deep learning for NLP.",
   logo: { light: "/logos/uw-madison.jpg" },
 };
 
@@ -51,38 +46,38 @@ export const site = {
   availability: "Graduating December 2026",
   timeZone: "America/Chicago",
   say: { pronunciation: "uh-MOH-g", meaning: "unerring" },
-  description: placeholder("One sentence for search results: who I am, what I build, and where I study."),
+  description: "Amogh Paruvelli is a software engineer studying computer science and data science at UW–Madison. Work in AI search, data engineering, and backend development.",
   lede: {
-    highlight: placeholder("A short claim about what I build."),
-    rest: placeholder(" One sentence of proof, naming two specific results from the work below."),
+    highlight: "I build LLM apps, evals and ETL pipelines.",
+    rest: " Recent work: a RAG bot that knows when to stay quiet, and an ingest job cut from 60 minutes to 3.",
   },
-  now: placeholder("What I'm working on this month"),
+  now: "Capstone for Amazon Fashion Labs",
   email: "amoghparuvelli@gmail.com",
   links: {
     github: "https://github.com/aaudemarspiguet",
     linkedin: "https://www.linkedin.com/in/amogh-paruvelli",
     source: "https://github.com/aaudemarspiguet/portfolio",
   },
-  projects: { heading: placeholder("A few things I've built") },
+  projects: { heading: "A few things I've built" },
   experience: {
-    heading: placeholder("Where I've worked"),
+    heading: "Where I've worked",
     roles,
   },
   education,
   about: {
-    heading: placeholder("A little about me"),
-    /** Portrait in public/, 4:5. Until it exists the frame shows a placeholder (#8). */
+    heading: "A little about me",
+    /** Portrait in public/, 4:5. Until it exists the About section shows text only. */
     photo: undefined as { src: string; alt: string } | undefined,
     /** Sticker on the photo's corner (#8). */
     hometown: "Pittsburgh, PA",
     paragraphs: [
-      placeholder("Where I study, when I graduate, and the thread that connects the work. Two or three sentences in my own voice, not a summary of the résumé."),
-      placeholder("One paragraph on the problem I've enjoyed most and what it taught me. Specific enough to start a conversation in an interview."),
-      placeholder("What I'm building right now and who with. Name the team and the part that's mine."),
+      "I'm studying computer science and data science at UW–Madison, graduating in December 2026. My work has taken me from Java e-commerce endpoints to poker search and industrial data pipelines.",
+      "At Handlab, I built zip uploads for a poker tracker that answers questions about your hands in plain English. An LLM turns each question into a checked plan, and ordinary code runs it.",
+      "This semester, I'm building Find the Outfit with a five-person capstone team and Shopbop mentors. I work on the backend and run our weekly sprints. I'm also building SAW, a shared workspace for AI coding agents.",
     ],
   },
   stack: {
-    heading: placeholder("Tools I've worked with"),
+    heading: "Tools I've worked with",
     groups: [
       { label: "AI", items: ["PyTorch", "Pydantic", "Amazon Bedrock", "MCP"] },
       { label: "Data", items: ["SQL / PostgreSQL", "PySpark", "Databricks", "Redis"] },
@@ -90,8 +85,8 @@ export const site = {
     ],
   },
   contact: {
-    heading: placeholder("One line on the role I'm looking for."),
-    caseStudyHeading: placeholder("Want to talk about the work?"),
+    heading: "I'm looking for my first full-time software role.",
+    caseStudyHeading: "Want to talk about the work?",
     year: "2026",
     builtWith: "Next.js and React",
   },

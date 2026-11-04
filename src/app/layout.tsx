@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { ThemeScript } from "@/components/ThemeToggle";
+import { showDrafts } from "@/content/env";
 import { site } from "@/content/site";
 import "./globals.css";
 
@@ -20,8 +21,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: `${site.name} – Portfolio`, template: `%s · ${site.name}` },
   description: site.description,
-  // Template mode (#4): keep the placeholder site out of search until content sync (#10).
-  robots: { index: false, follow: false },
+  // Production is indexed. Dev and preview builds, which can show draft case studies, are not.
+  robots: { index: !showDrafts, follow: !showDrafts },
 };
 
 export const viewport: Viewport = {
