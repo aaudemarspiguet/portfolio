@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -6,7 +7,12 @@ import { projects } from "@/content/projects";
 import { site } from "@/content/site";
 
 export default function Home() {
-  const { experience, about, stack } = site;
+  const { experience, education, about, stack } = site;
+  // Education stays in this list until #7 gives it its own block.
+  const rows = [
+    ...experience.roles.map((r) => ({ when: r.when, title: `${r.title} · ${r.org}`, line: r.line, where: r.where, caseStudy: r.caseStudy })),
+    { when: education.when, title: `${education.degree} · ${education.school}`, line: education.line, where: education.where, caseStudy: undefined },
+  ];
 
   return (
     <>
@@ -55,12 +61,13 @@ export default function Home() {
         <div className="ln-wrap ln-stack-y">
           <SectionHeader label={`Experience · ${experience.roles.length} roles`} heading={experience.heading} />
           <div className="ln-surface ln-list">
-            {[...experience.roles, experience.education].map((r, i) => (
+            {rows.map((r, i) => (
               <div key={i} className="ln-list__row">
                 <span className="ln-caption ln-list__when">{r.when}</span>
                 <div className="ln-list__what">
                   <span className="ln-list__role">{r.title}</span>
                   <span className="ln-list__line">{r.line}</span>
+                  {r.caseStudy && <Link href={`/work/${r.caseStudy}`} className="ln-link">Case study →</Link>}
                 </div>
                 <span className="ln-caption">{r.where}</span>
               </div>

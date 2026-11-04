@@ -4,14 +4,14 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { ContactPanel } from "@/components/ContactPanel";
 import { Metric } from "@/components/marks";
-import { getProject, nextProject, projects } from "@/content/projects";
+import { caseStudies, getProject, nextProject } from "@/content/projects";
 import { site } from "@/content/site";
 
 // Prerender known projects. Unknown slugs use Next.js's not-found UI.
 export const instant = false;
 
 export function generateStaticParams() {
-  return projects.map((p) => ({ slug: p.slug }));
+  return caseStudies.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/work/[slug]">): Promise<Metadata> {
@@ -30,6 +30,8 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
   const cs = project.caseStudy;
   const diagram = cs.diagram;
   const next = nextProject(slug);
+  const links = project.links;
+  const isWork = project.kind === "work";
   const meta = [
     ["Role", cs.meta.role],
     ["Timeline", cs.meta.timeline],
@@ -41,7 +43,9 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
     <>
       <article>
         <div className="ln-wrap ln-case">
-          <Link href="/#work" className="ln-link ln-case__back">← All work</Link>
+          <Link href={isWork ? "/#experience" : "/#work"} className="ln-link ln-case__back">
+            {isWork ? "← Experience" : "← All projects"}
+          </Link>
           <header className="ln-case__intro">
             <h1 className="ln-case__title">{cs.title}</h1>
             <span className="ln-label">
@@ -57,11 +61,11 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
                 <dd>{v}</dd>
               </div>
             ))}
-            {(cs.meta.repo || cs.meta.demo) && <div>
+            {(links?.live || links?.repo) && <div>
               <dt>Links</dt>
               <dd className="ln-meta__links">
-                {cs.meta.repo && <a href={cs.meta.repo} className="ln-link">Repo ↗</a>}
-                {cs.meta.demo && <a href={cs.meta.demo} className="ln-link">Demo ↗</a>}
+                {links.live && <a href={links.live} className="ln-link">Live ↗</a>}
+                {links.repo && <a href={links.repo} className="ln-link">Repo ↗</a>}
               </dd>
             </div>}
           </dl>
@@ -112,7 +116,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
 
           <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
             <span className="ln-next__title">{next.title}</span>
-            <span className="ln-label">Next case study →</span>
+            <span className="ln-label">{isWork ? "Next role →" : "Next project →"}</span>
           </Link>
         </div>
       </article>

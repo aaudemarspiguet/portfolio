@@ -22,13 +22,14 @@ Open http://localhost:3000.
 
 ## Where things live
 
-- `src/content/site.ts`: all home page copy (name, links, experience, about, stack, contact).
-- `src/content/projects.ts`: six projects and their case studies.
+- `src/content/site.ts`: home page copy (name, links, experience roles, education, about, stack, contact).
+- `src/content/projects.ts`: case studies. `kind: "project"` entries are the home page cards; `kind: "work"` entries are linked from their experience row.
+- `src/content/placeholder.ts`: the template-mode marker. `grep -rn "placeholder(" src/content` lists copy still to be written. The pre-template copy is at git tag `copy-v1`.
 - `src/styles/tokens.css`: design tokens (color, shadow, type, spacing, radius) for light and dark.
 - `src/styles/components.css`: the `.ln-*` component styles.
 - `src/components/`: React components. Only the nav, theme toggle, copy-email button and clock run on the client.
 
-To change copy, edit the two files in `src/content/`. Each case study can have an optional diagram and optional repo or demo links. The résumé download lives in `public/Amogh_Paruvelli_Resume.pdf`.
+To change copy, edit the two files in `src/content/`. Each case study has a cover and can have an optional diagram and optional live or repo links. The résumé download lives in `public/Amogh_Paruvelli_Resume.pdf`.
 
 ## Design
 
