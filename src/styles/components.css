@@ -103,6 +103,8 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 /* Section header */
 .ln-section-head { display: flex; flex-direction: column; gap: 10px; }
 .ln-section-head h1, .ln-section-head h2 { margin: 0; max-width: 760px; font-size: var(--h2); line-height: 1.1; font-weight: 500; letter-spacing: -0.035em; text-wrap: balance; }
+.ln-section-foot { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
+.ln-more { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
 
 /* Tag and stack chips */
 .ln-tags { display: flex; flex-wrap: wrap; gap: 6px; }
