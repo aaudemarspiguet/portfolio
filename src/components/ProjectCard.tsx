@@ -27,7 +27,11 @@ export function ProjectCardBody({ project, lead }: { project: Project; lead?: bo
     <div className="ln-card__body">
       <h3 className="ln-card__title">{project.title}</h3>
       <div className="ln-card__head">
-        <span>
+        <span className="ln-card__area">
+          {project.org && (
+            // eslint-disable-next-line @next/next/no-img-element -- small static mark
+            <img src={project.org.logo} alt={`${project.org.name} logo`} width={18} height={18} className="ln-card__org" />
+          )}
           {project.area} · {project.year}
         </span>
         <span className="ln-card__cta">Case study →</span>

@@ -36,6 +36,8 @@ export type Project = {
   title: string;
   summary: string;
   cover: Media;
+  /** Org tied to the project, shown as a small square logo before `area` on the card. */
+  org?: { name: string; logo: string };
   flags?: ProjectFlag[];
   links?: { live?: string; repo?: string };
   metric: Metric;
@@ -98,6 +100,7 @@ export const caseStudies: Project[] = [
     slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026 · In progress",
     title: "Find the Outfit", flags: ["current", "highlighted"],
     summary: summary(), cover: cover("Find the Outfit"), metric: metric(),
+    org: { name: "Amazon", logo: "/logos/amazon.jpg" },
     tags: ["TypeScript", "AWS Lambda", "Bedrock"],
     caseStudy: caseStudy(
       { role: "Backend contributor and Scrum Master", timeline: "September 2026 to present", team: "Five students, with Shopbop mentors", stack: "TypeScript, Expo, AWS Lambda, API Gateway, S3, Bedrock, Amplify" },
