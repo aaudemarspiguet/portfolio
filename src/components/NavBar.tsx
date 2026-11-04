@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { getProject } from "@/content/projects";
 import { site } from "@/content/site";
 import { ThemeToggle, setTheme, useTheme } from "./ThemeToggle";
 
 const SECTIONS = [
-  { id: "work", label: "Work" },
+  { id: "projects", label: "Projects" },
   { id: "experience", label: "Experience" },
   { id: "about", label: "About" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-// Home: the pill follows the section in view. Case studies: Work stays selected.
-function useCurrentSection(onHome: boolean, onCaseStudy: boolean): SectionId | null {
-  const [spied, setSpied] = useState<SectionId>("work");
+// Home: the pill follows the section in view. Case studies: Projects, or
+// Experience for a work case study, stays selected.
+function useCurrentSection(onHome: boolean, caseStudySlug: string | null): SectionId | null {
+  const [spied, setSpied] = useState<SectionId>("projects");
 
   useEffect(() => {
     if (!onHome) return;
@@ -36,20 +38,23 @@ function useCurrentSection(onHome: boolean, onCaseStudy: boolean): SectionId | n
   }, [onHome]);
 
   if (onHome) return spied;
-  return onCaseStudy ? "work" : null;
+  if (!caseStudySlug) return null;
+  return getProject(caseStudySlug)?.kind === "work" ? "experience" : "projects";
 }
 
+// Three zones: wordmark left, sections centered on the page, actions right.
 export function NavBar() {
   const pathname = usePathname();
   const onHome = pathname === "/";
-  const current = useCurrentSection(onHome, pathname.startsWith("/work/"));
+  const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
+  const current = useCurrentSection(onHome, caseStudySlug);
   const href = (id: string) => (onHome ? `#${id}` : `/#${id}`);
 
   return (
     <header className="ln-header">
       <div className="ln-nav">
-        <Link href={onHome ? "#top" : "/"} className="ln-nav__name">
-          {site.name}
+        <Link href={onHome ? "#top" : "/"} className="ln-nav__brand">
+          {site.brand}
         </Link>
         <nav aria-label="Main" className="ln-nav__links">
           {SECTIONS.map(({ id, label }) => (
@@ -57,9 +62,11 @@ export function NavBar() {
               {label}
             </a>
           ))}
+        </nav>
+        <div className="ln-nav__actions">
           <a href={site.links.resume} className="ln-btn ln-btn--sm">Résumé</a>
           <ThemeToggle />
-        </nav>
+        </div>
         <div className="ln-nav__phone">
           <a href={site.links.resume} className="ln-btn ln-btn--sm">Résumé</a>
           <MobileMenu current={current} href={href} />
