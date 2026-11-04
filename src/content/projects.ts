@@ -1,3 +1,4 @@
+import { showDrafts } from "./env";
 import { placeholder, placeholderMedia } from "./placeholder";
 
 export type Metric = { label?: string; value: string; base: string };
@@ -85,6 +86,8 @@ export type Project = {
   /** Org tied to the project, shown as a small square logo before `area` on the card. */
   org?: { name: string; logo: string };
   flags?: ProjectFlag[];
+  /** Still in template copy: hidden from the production site (see env.ts), shown in dev and previews. */
+  draft?: boolean;
   links?: { live?: string; repo?: string };
   /** The card's headline result. Leave it out rather than fill it with a count of tests or commits. */
   metric?: Metric;
@@ -160,7 +163,7 @@ function caseStudy(meta: CaseStudy["meta"], s: Sections): CaseStudy {
 // Synced entries (#10) come from the evidence kits; every number traces to a kit's
 // claims ledger. Curio and Ebara are still template copy.
 
-export const caseStudies: Project[] = [
+const allCaseStudies: Project[] = [
   // Kit: evidence/find-the-outfit
   {
     slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026",
@@ -574,7 +577,7 @@ export const caseStudies: Project[] = [
   },
 
   {
-    slug: "curio", kind: "project", area: "Education", year: "2024–25",
+    slug: "curio", kind: "project", area: "Education", year: "2024–25", draft: true,
     title: "Curio",
     summary: summary(), cover: cover("Curio"), metric: metric(),
     tags: ["FastAPI", "React", "Pydantic"],
@@ -632,7 +635,7 @@ export const caseStudies: Project[] = [
   },
 
   {
-    slug: "ebara-data", kind: "work", area: "Data engineering", year: "2026",
+    slug: "ebara-data", kind: "work", area: "Data engineering", year: "2026", draft: true,
     title: "Ebara Elliott Energy",
     summary: summary(), cover: cover("Ebara Elliott Energy"), metric: metric(),
     tags: ["Python", "Spark", "Databricks"],
@@ -642,6 +645,9 @@ export const caseStudies: Project[] = [
     ),
   },
 ];
+
+/** Every case study this build serves. Drafts drop out of production, so their pages 404 and nothing links to them. */
+export const caseStudies = allCaseStudies.filter((p) => showDrafts || !p.draft);
 
 /** Every heading on a case study page that renders with an anchor id. */
 function headingIds(cs: CaseStudy) {
