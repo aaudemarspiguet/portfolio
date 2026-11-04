@@ -102,6 +102,15 @@ html.ln-locked { overflow: hidden; }
 .ln-say__muted { color: var(--tip-muted); }
 /* :focus, not only :focus-visible, so a tap on a phone shows it too. */
 .ln-say:hover .ln-say__tip, .ln-say:focus .ln-say__tip { opacity: 1; transform: none; }
+.ln-say[data-align="end"] .ln-say__tip { left: auto; right: -4px; }
+
+/* Inline org mark after a role title (#31): as tall as the text, name on hover */
+.ln-org { width: 1.15em; height: 1.15em; vertical-align: -0.2em; border-radius: 4px; outline-offset: 3px; }
+.ln-org img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--rule); }
+.ln-org .ln-org__dark { display: none; }
+:root[data-theme="dark"] .ln-org .ln-org__light { display: none; }
+:root[data-theme="dark"] .ln-org .ln-org__dark { display: block; }
+.ln-org .ln-say__tip { left: -4px; }
 
 /* Copy email */
 .ln-copy-row { display: flex; align-items: center; gap: var(--space-2); }
