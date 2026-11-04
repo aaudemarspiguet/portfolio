@@ -254,6 +254,8 @@ html.ln-locked { overflow: hidden; }
 .ln-figure figcaption { font-size: 13px; line-height: 18px; color: var(--ink-muted); }
 .ln-figure__frame { overflow: hidden; }
 .ln-figure__frame img { display: block; width: 100%; height: auto; }
+/* Images with a dark variant: show the one that matches the theme. */
+:root:not([data-theme="dark"]) .ln-theme-dark, :root[data-theme="dark"] .ln-theme-light { display: none !important; }
 .ln-figures { display: flex; flex-direction: column; gap: var(--space-16); }
 .ln-figures--phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-6); align-items: start; }
 .ln-meta__wide { grid-column: 1 / -1; }

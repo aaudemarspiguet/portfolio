@@ -89,7 +89,8 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
 
     const slides = Array.from(track.children) as HTMLElement[];
     const frames = slides.map((slide) => slide.querySelector<HTMLElement>("[data-parallax-frame]"));
-    const media = slides.map((slide) => slide.querySelector<HTMLImageElement | HTMLVideoElement>("[data-parallax-media]"));
+    // A cover can have a light and a dark variant; both are fitted and moved together.
+    const media = slides.map((slide) => Array.from(slide.querySelectorAll<HTMLImageElement | HTMLVideoElement>("[data-parallax-media]")));
     // How far each cover can shift before its edge shows inside the frame.
     const room = media.map(() => ({ left: 0, right: 0 }));
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -124,11 +125,11 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
     };
 
     const paintMedia = (index: number, distance: number) => {
-      const el = media[index];
-      if (!el) return;
+      const els = media[index];
+      if (!els.length) return;
       const drift = s.reduce ? 0 : distance * -PARALLAX;
       const offset = Math.max(-room[index].right, Math.min(room[index].left, drift));
-      el.style.transform = `translate3d(${offset}px, 0, 0)`;
+      for (const el of els) el.style.transform = `translate3d(${offset}px, 0, 0)`;
     };
 
     const paint = () => {
@@ -155,19 +156,20 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
     // Sizes the cover to fill its frame at its natural ratio, plus zoom, so the
     // part outside the frame is what the parallax reveals.
     const fit = (index: number) => {
-      const el = media[index];
-      const [naturalWidth, naturalHeight] = naturalSize(el);
-      if (!el || !naturalWidth || !naturalHeight || !s.frameWidth) return;
-      const { frameWidth, frameHeight } = s;
-      const ratio = naturalWidth / naturalHeight;
-      const width = Math.max(frameWidth, frameHeight * ratio) * ZOOM;
-      const height = Math.max(frameHeight, frameWidth / ratio) * ZOOM;
-      const [focusX, focusY] = parseFocus(el.dataset.focus);
-      Object.assign(el.style, {
-        width: `${width}px`, height: `${height}px`,
-        left: `${(frameWidth - width) * focusX}px`, top: `${(frameHeight - height) * focusY}px`,
-      });
-      room[index] = { left: (width - frameWidth) * focusX, right: (width - frameWidth) * (1 - focusX) };
+      for (const el of media[index]) {
+        const [naturalWidth, naturalHeight] = naturalSize(el);
+        if (!naturalWidth || !naturalHeight || !s.frameWidth) continue;
+        const { frameWidth, frameHeight } = s;
+        const ratio = naturalWidth / naturalHeight;
+        const width = Math.max(frameWidth, frameHeight * ratio) * ZOOM;
+        const height = Math.max(frameHeight, frameWidth / ratio) * ZOOM;
+        const [focusX, focusY] = parseFocus(el.dataset.focus);
+        Object.assign(el.style, {
+          width: `${width}px`, height: `${height}px`,
+          left: `${(frameWidth - width) * focusX}px`, top: `${(frameHeight - height) * focusY}px`,
+        });
+        room[index] = { left: (width - frameWidth) * focusX, right: (width - frameWidth) * (1 - focusX) };
+      }
     };
 
     const step = (now: number) => {
@@ -239,7 +241,7 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
     };
 
     const onMediaReady = (event: Event) => {
-      const index = media.indexOf(event.currentTarget as HTMLImageElement | HTMLVideoElement);
+      const index = media.findIndex((els) => els.includes(event.currentTarget as HTMLImageElement | HTMLVideoElement));
       if (index < 0) return;
       fit(index);
       paint();
@@ -349,9 +351,9 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
 
     const resizeObserver = new ResizeObserver(measure);
     resizeObserver.observe(viewport);
-    media.forEach((el) => {
-      el?.addEventListener("load", onMediaReady);
-      el?.addEventListener("loadedmetadata", onMediaReady);
+    media.flat().forEach((el) => {
+      el.addEventListener("load", onMediaReady);
+      el.addEventListener("loadedmetadata", onMediaReady);
     });
     viewport.addEventListener("wheel", onWheel, { passive: false });
     viewport.addEventListener("pointerdown", onPointerDown);
@@ -369,9 +371,9 @@ export function ProjectCarousel({ projects, header, label = "Projects" }: { proj
       window.clearTimeout(releaseTimer);
       window.clearTimeout(wheelTimer);
       resizeObserver.disconnect();
-      media.forEach((el) => {
-        el?.removeEventListener("load", onMediaReady);
-        el?.removeEventListener("loadedmetadata", onMediaReady);
+      media.flat().forEach((el) => {
+        el.removeEventListener("load", onMediaReady);
+        el.removeEventListener("loadedmetadata", onMediaReady);
       });
       viewport.removeEventListener("wheel", onWheel);
       viewport.removeEventListener("pointerdown", onPointerDown);

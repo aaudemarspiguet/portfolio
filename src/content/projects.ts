@@ -4,13 +4,13 @@ import { placeholder, placeholderMedia } from "./placeholder";
 export type Metric = { label?: string; value: string; base: string };
 
 /** Card or case-study media. `focus` works like CSS object-position. */
-export type Media = { kind: "image" | "gif" | "video"; src: string; alt: string; focus?: string };
+export type Media = { kind: "image" | "gif" | "video"; src: string; alt: string; focus?: string; /** Shown instead of `src` in dark mode (images only). */ srcDark?: string };
 
 /** Someone credited on a case study. `link` is their LinkedIn when we have it. */
 export type Person = { name: string; link?: string };
 
 /** A captioned image in a case study. Width and height are the file's pixels, so the frame reserves its space. */
-export type Figure = { src: string; alt: string; caption: string; width: number; height: number };
+export type Figure = { src: string; alt: string; caption: string; width: number; height: number; /** Shown instead of `src` in dark mode, same size. */ srcDark?: string };
 
 /** One paragraph, or several. */
 export type Body = string | string[];
@@ -283,7 +283,7 @@ const allCaseStudies: Project[] = [
     slug: "saw", kind: "project", area: "Agent tooling", year: "2026",
     title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
     summary: "A shared thread where a whole team's coding agents trade messages and branch names but never code. Everyone can read along and steer their own agent.",
-    cover: { kind: "image", src: "/projects/saw/06-bob-replies.jpg", alt: "SAW's thread view: Alice posts her plan for a work item and Bob replies", focus: "center top" },
+    cover: { kind: "image", src: "/projects/saw/06-bob-replies-light.jpg", srcDark: "/projects/saw/06-bob-replies-dark.jpg", alt: "SAW's thread view: Alice posts her plan for a work item and Bob replies", focus: "center top" },
     tags: ["TypeScript", "MCP", "WebSockets"],
     caseStudy: {
       title: "Giving a team's coding agents one place to coordinate",
@@ -311,8 +311,8 @@ const allCaseStudies: Project[] = [
         ],
       },
       figures: [
-        { src: "/projects/saw/04-bob-sees-unread-thread.jpg", alt: "Bob's SAW page with the work-item thread in bold and an unread marker", caption: "Alice's post reaches Bob through the relay, and his thread list marks it unread.", width: 800, height: 600 },
-        { src: "/projects/saw/07-agent-mode-editing-commenting-viewing.jpg", alt: "The per-thread mode picker with Editing, Commenting and Viewing options", caption: "Each person sets their own agent's mode per thread, and only they can change it.", width: 800, height: 600 },
+        { src: "/projects/saw/04-bob-sees-unread-thread-light.jpg", srcDark: "/projects/saw/04-bob-sees-unread-thread-dark.jpg", alt: "Bob's SAW page with the work-item thread in bold, an unread marker, and one item waiting on him", caption: "Alice's post reaches Bob through the relay, and his thread list marks it unread.", width: 1600, height: 1200 },
+        { src: "/projects/saw/07-agent-mode-editing-commenting-viewing-light.jpg", srcDark: "/projects/saw/07-agent-mode-editing-commenting-viewing-dark.jpg", alt: "The per-thread mode picker with Editing, Commenting and Viewing options", caption: "Each person sets their own agent's mode per thread, and only they can change it.", width: 1600, height: 1200 },
       ],
       result: {
         heading: "Where it stands",

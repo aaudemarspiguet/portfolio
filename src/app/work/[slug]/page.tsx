@@ -61,6 +61,7 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
   const firstFigure = 1 + (diagram ? 1 : 0) + (arch ? 1 : 0);
   // Portrait phone captures sit side by side, so two of them don't fill two screens.
   const phoneFigures = cs.figures?.every((f) => f.height > f.width) ?? false;
+  const sizes = phoneFigures ? "(max-width: 560px) 100vw, 320px" : "(max-width: 704px) 100vw, 640px";
   // Walkthrough steps that end in "nothing happens" share the diagram's stop colour.
   const stopSteps = new Set(arch?.edges.filter((e) => e.stop && e.step).map((e) => e.step));
 
@@ -95,7 +96,8 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
       {cs.figures.map((f, i) => (
         <figure key={f.src} className="ln-figure">
           <div className="ln-surface ln-figure__frame">
-            <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes={phoneFigures ? "(max-width: 560px) 100vw, 320px" : "(max-width: 704px) 100vw, 640px"} />
+            <Image src={f.src} alt={f.alt} width={f.width} height={f.height} sizes={sizes} className={f.srcDark ? "ln-theme-light" : undefined} />
+            {f.srcDark && <Image src={f.srcDark} alt="" aria-hidden width={f.width} height={f.height} sizes={sizes} className="ln-theme-dark" />}
           </div>
           <figcaption>Fig. {firstFigure + i} · {f.caption}</figcaption>
         </figure>

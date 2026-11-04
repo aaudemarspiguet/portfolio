@@ -17,6 +17,14 @@ export function CoverMedia({ media, decorative = false, parallax = false, classN
   if (media.kind === "video") return <CoverVideo src={media.src} label={decorative ? undefined : media.alt} {...shared} />;
 
   // Plain <img>: the carousel transforms covers every frame, and SVG/GIF gain nothing from next/image.
+  if (media.srcDark) {
+    // Both variants load eagerly so the carousel can size the hidden one before a theme switch.
+    const themed = (src: string, theme: "light" | "dark") => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt={decorative || theme === "dark" ? "" : media.alt} aria-hidden={theme === "dark" || undefined} decoding="async" {...shared} className={`${className ?? ""} ln-theme-${theme}`} />
+    );
+    return <>{themed(media.src, "light")}{themed(media.srcDark, "dark")}</>;
+  }
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={media.src} alt={decorative ? "" : media.alt} loading="lazy" decoding="async" {...shared} />;
 }
