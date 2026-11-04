@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
@@ -65,6 +66,16 @@ export default function Home() {
         <div className="ln-wrap ln-stack-y">
           <SectionHeader heading={about.heading} />
           <div className="ln-about">
+            <div className="ln-about__photo">
+              <div className="ln-photo">
+                {about.photo ? (
+                  <Image src={about.photo.src} alt={about.photo.alt} fill sizes="(max-width: 640px) 100vw, 280px" />
+                ) : (
+                  <span className="ln-label">Photo</span>
+                )}
+                <span className="ln-sticker">{about.hometown}</span>
+              </div>
+            </div>
             <div className="ln-about__text">
               {about.paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
