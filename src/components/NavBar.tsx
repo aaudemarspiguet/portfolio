@@ -15,9 +15,10 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-// Home: the pill follows the section in view. Case studies: Projects, or
-// Experience for a work case study, stays selected.
-function useCurrentSection(onHome: boolean, caseStudySlug: string | null): SectionId | null {
+// Home: the pill follows the section in view. The all-projects page and case
+// studies keep Projects, or Experience for a work case study, selected.
+function useCurrentSection(pathname: string, caseStudySlug: string | null): SectionId | null {
+  const onHome = pathname === "/";
   const [spied, setSpied] = useState<SectionId>("projects");
 
   useEffect(() => {
@@ -38,6 +39,7 @@ function useCurrentSection(onHome: boolean, caseStudySlug: string | null): Secti
   }, [onHome]);
 
   if (onHome) return spied;
+  if (pathname === "/projects") return "projects";
   if (!caseStudySlug) return null;
   return getProject(caseStudySlug)?.kind === "work" ? "experience" : "projects";
 }
@@ -47,7 +49,7 @@ export function NavBar() {
   const pathname = usePathname();
   const onHome = pathname === "/";
   const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
-  const current = useCurrentSection(onHome, caseStudySlug);
+  const current = useCurrentSection(pathname, caseStudySlug);
   const href = (id: string) => (onHome ? `#${id}` : `/#${id}`);
 
   return (
