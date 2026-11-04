@@ -85,7 +85,8 @@ export type Project = {
   org?: { name: string; logo: string };
   flags?: ProjectFlag[];
   links?: { live?: string; repo?: string };
-  metric: Metric;
+  /** The card's headline result. Leave it out rather than fill it with a count of tests or commits. */
+  metric?: Metric;
   tags: string[];
   caseStudy: CaseStudy;
 };
@@ -289,7 +290,6 @@ export const caseStudies: Project[] = [
     title: "SAW: Shared Agent Workspace", flags: ["current", "highlighted"],
     summary: "A shared thread where two developers' coding agents trade messages and branch names but never code, and both humans can read and steer everything.",
     cover: { kind: "image", src: "/projects/saw/06-bob-replies.jpg", alt: "SAW's thread view: Alice posts her plan for a work item and Bob replies", focus: "center top" },
-    metric: { value: "355 tests passing", base: "On a clean export of the code, 2 skipped. CI runs on Ubuntu and Windows." },
     tags: ["TypeScript", "MCP", "WebSockets"],
     caseStudy: {
       title: "Giving two coding agents one place to coordinate",
@@ -323,11 +323,10 @@ export const caseStudies: Project[] = [
       result: {
         heading: "Where it stands",
         metrics: [
-          { label: "Tests", value: "355 of 357", base: "pass on a clean export, 2 skipped" },
           { label: "MCP tools", value: "9", base: "registered for agents" },
           { label: "Claude Code hooks", value: "4", base: "session start, prompt, pre-tool-use, stop" },
         ],
-        body: "CI runs the suite on Ubuntu and Windows, and both runs gate merges. The screens here come from two members on one machine with demo data. A live agent session hasn't been recorded yet.",
+        body: "The screens here come from two members on one machine with demo data. A live agent session hasn't been recorded yet.",
       },
     },
   },
@@ -524,7 +523,6 @@ export const caseStudies: Project[] = [
     title: "Handlab Poker Intelligence",
     summary: "A poker tracker that imports your hand records, filters and replays them, and finds the hands you describe in plain English.",
     cover: { kind: "image", src: "/projects/handlab/02-hands-all-505.jpg", alt: "The hands list with 505 imported hands and filters down the side" },
-    metric: { value: "510 tests passing", base: "Backend suite on a clean export of the code" },
     tags: ["Python", "FastAPI", "React"],
     caseStudy: {
       title: "A hand tracker you can ask questions",
@@ -559,7 +557,6 @@ export const caseStudies: Project[] = [
         heading: "Where it landed",
         metrics: [
           { label: "Sample import", value: "505 hands", base: "from 11 files in one zip, 0 errors" },
-          { label: "Backend tests", value: "510 passing", base: "on a clean export, Python 3.12" },
           { label: "4-bet filter", value: "66 of 505", base: "hands in the sample set" },
         ],
         body: "Natural-language search needs a live LLM key, so it isn't shown here. The screens use the repo's sample hand histories, with the product name blacked out.",
