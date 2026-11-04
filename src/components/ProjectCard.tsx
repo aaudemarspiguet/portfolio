@@ -1,10 +1,30 @@
 import Link from "next/link";
-import type { Project } from "@/content/projects";
+import { hasFlag, type Project } from "@/content/projects";
+import { CoverMedia } from "./CoverMedia";
 import { Metric, Tags } from "./marks";
 
-export function ProjectCard({ project, lead }: { project: Project; lead?: boolean }) {
+/**
+ * The 16:10 cover frame, with a "Current" chip for in-progress projects.
+ * `decorative` and `parallax` are for the carousel's repeated copies and its script.
+ */
+export function ProjectCover({ project, decorative, parallax }: { project: Project; decorative?: boolean; parallax?: boolean }) {
   return (
-    <Link href={`/work/${project.slug}`} className="ln-card">
+    <span className="ln-card__cover" data-parallax-frame={parallax ? "" : undefined}>
+      <CoverMedia media={project.cover} decorative={decorative} parallax={parallax} className="ln-card__media" />
+      {hasFlag(project, "current") && (
+        <span className="ln-card__badge">
+          <span className="ln-live__dot" aria-hidden="true" />
+          Current
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** The text half of a project card, shared by the grid card and the carousel slide. */
+export function ProjectCardBody({ project, lead }: { project: Project; lead?: boolean }) {
+  return (
+    <div className="ln-card__body">
       <h3 className="ln-card__title">{project.title}</h3>
       <div className="ln-card__head">
         <span>
@@ -17,6 +37,16 @@ export function ProjectCard({ project, lead }: { project: Project; lead?: boolea
         <Metric value={project.metric.value} base={project.metric.base} lead={lead} />
         <Tags items={project.tags} />
       </div>
+    </div>
+  );
+}
+
+/** Grid card: cover on top, text below. */
+export function ProjectCard({ project, lead }: { project: Project; lead?: boolean }) {
+  return (
+    <Link href={`/work/${project.slug}`} className="ln-card ln-card--media">
+      <ProjectCover project={project} />
+      <ProjectCardBody project={project} lead={lead} />
     </Link>
   );
 }
