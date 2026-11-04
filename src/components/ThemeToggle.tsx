@@ -6,9 +6,9 @@ export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "theme";
 
-const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)})()`;
+const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t="light"}document.documentElement.setAttribute("data-theme",t)})()`;
 
-// Runs in <head> before first paint: saved choice, else the system preference.
+// Runs in <head> before first paint: saved choice, otherwise light mode.
 // On client renders the script is inert (text/plain), so React doesn't warn.
 export function ThemeScript() {
   return (
@@ -53,16 +53,9 @@ export function useTheme() {
 export function ThemeToggle() {
   const theme = useTheme();
 
-  // Re-apply after React's dev remount clears the attribute, and follow the
-  // system setting until the visitor picks a theme themselves.
+  // Re-apply the saved choice or light default after React's dev remount.
   useLayoutEffect(() => {
-    const media = matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      document.documentElement.setAttribute("data-theme", savedTheme() ?? (media.matches ? "dark" : "light"));
-    };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    document.documentElement.setAttribute("data-theme", savedTheme() ?? "light");
   }, []);
 
   return (

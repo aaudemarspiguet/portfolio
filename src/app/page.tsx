@@ -13,15 +13,15 @@ export default function Home() {
       <section id="top" className="ln-hero">
         <div className="ln-wrap">
           <div className="ln-hero__intro">
-            <Availability>
-              {site.role} · {site.city} · {site.availability}
-            </Availability>
             <NameTooltip pronunciation={site.say.pronunciation} meaning={site.say.meaning}>
               <h1 className="ln-hero__name">
                 {site.name}
                 <span className="ln-dot">.</span>
               </h1>
             </NameTooltip>
+            <Availability>
+              {site.role} · {site.city} · {site.availability}
+            </Availability>
           </div>
           <div className="ln-hero__body">
             <p className="ln-hero__lede">
@@ -30,7 +30,7 @@ export default function Home() {
             </p>
             <NowChip>{site.now}</NowChip>
             <div className="ln-btn-row ln-hero__actions">
-              <a href="#contact" className="ln-btn ln-btn--primary">Email me</a>
+              <a href={`mailto:${site.email}`} className="ln-btn ln-btn--primary">Email me</a>
               <a href={site.links.resume} className="ln-btn">Résumé</a>
               <a href={site.links.github} className="ln-btn ln-btn--text">GitHub ↗</a>
               <a href={site.links.linkedin} className="ln-btn ln-btn--text">LinkedIn ↗</a>
@@ -72,7 +72,7 @@ export default function Home() {
 
       <section id="about" className="ln-section">
         <div className="ln-wrap ln-stack-y">
-          <SectionHeader label="About" heading={about.heading} />
+          <SectionHeader heading={about.heading} />
           <div className="ln-about">
             <div className="ln-about__photo">
               <div className="ln-photo">
@@ -91,7 +91,7 @@ export default function Home() {
 
       <section id="stack" className="ln-section">
         <div className="ln-wrap ln-stack-y" style={{ gap: 32 }}>
-          <SectionHeader label="Stack" heading={stack.heading} />
+          <SectionHeader heading={stack.heading} />
           <div className="ln-stack">
             {stack.groups.map((g) => (
               <div key={g.label} className="ln-stack__row">
