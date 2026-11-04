@@ -74,12 +74,6 @@ export default function Home() {
         <div className="ln-wrap ln-stack-y">
           <SectionHeader heading={about.heading} />
           <div className="ln-about">
-            <div className="ln-about__photo">
-              <div className="ln-photo">
-                <span className="ln-label">[Photo]</span>
-                <span className="ln-sticker">{about.hometown}</span>
-              </div>
-            </div>
             <div className="ln-about__text">
               {about.paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>

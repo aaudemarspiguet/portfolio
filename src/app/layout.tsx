@@ -19,9 +19,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: { default: `${site.name} · ${site.role}`, template: `%s · ${site.name}` },
-  description: `${site.role} building AI-powered products and the data systems under them.`,
-  // Placeholder content: keep search engines out until the content phase.
-  robots: { index: false, follow: false },
+  description: site.description,
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

@@ -2,7 +2,7 @@
 
 Personal site for a software engineer working on applied AI and data. Built with Next.js and deployed on Vercel.
 
-**Status:** the layout and design are done. The copy is still placeholder text in `[brackets]` until the content phase.
+The site includes experience, education, and six project writeups grounded in the base resume and its truth ledger.
 
 ## Run it
 
@@ -23,12 +23,12 @@ Open http://localhost:3000.
 ## Where things live
 
 - `src/content/site.ts`: all home page copy (name, links, experience, about, stack, contact).
-- `src/content/projects.ts`: the four project slots and their case studies.
+- `src/content/projects.ts`: six projects and their case studies.
 - `src/styles/tokens.css`: design tokens (color, shadow, type, spacing, radius) for light and dark.
 - `src/styles/components.css`: the `.ln-*` component styles.
 - `src/components/`: React components. Only the nav, theme toggle, copy-email button and clock run on the client.
 
-To change copy, edit the two files in `src/content/`. The markup doesn't need to change.
+To change copy, edit the two files in `src/content/`. Case studies support optional architecture diagrams and verified repository/demo links. The resume download lives in `public/Amogh_Paruvelli_Resume.pdf`.
 
 ## Design
 
@@ -47,4 +47,4 @@ Design references: [design system](https://claude.ai/artifact/CTHt2p3SY6onsctFEx
 - **Other branches and pull requests** get a preview URL.
 - **GitHub Actions** (`.github/workflows/ci.yml`) runs lint, typecheck and build on every push.
 
-The site is set to `noindex` until the real content is in.
+The site allows search indexing. Copy references: [Jeff Antony](https://www.amjeff.com/), [Spencer Gabor](https://spencergabor.work/), and [Marco Cornacchia](https://www.marco.fyi/).
