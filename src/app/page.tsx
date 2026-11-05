@@ -89,9 +89,11 @@ export default function Home() {
             {stack.groups.map((g) => (
               <div key={g.label} className="ln-stack__row">
                 <span className="ln-label">{g.label}</span>
-                {g.items.map((item) => (
-                  <span key={item} className="ln-chip">{item}</span>
-                ))}
+                <div className="ln-stack__chips">
+                  {g.items.map((item) => (
+                    <span key={item} className="ln-chip">{item}</span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

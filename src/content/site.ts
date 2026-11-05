@@ -79,9 +79,9 @@ export const site = {
   stack: {
     heading: "Tools I've worked with",
     groups: [
-      { label: "AI", items: ["PyTorch", "Pydantic", "Amazon Bedrock", "MCP"] },
-      { label: "Data", items: ["SQL / PostgreSQL", "PySpark", "Databricks", "Redis"] },
-      { label: "Software", items: ["Python / FastAPI", "TypeScript / React", "Java / Spring MVC", "AWS", "Docker"] },
+      { label: "AI", items: ["PyTorch", "Pydantic", "RAG", "MCP", "Amazon Bedrock", "Ollama", "Claude Code", "Codex"] },
+      { label: "Data", items: ["SQL / PostgreSQL", "MySQL", "Redis", "ChromaDB", "PySpark", "Databricks"] },
+      { label: "Software", items: ["Python / FastAPI", "TypeScript / React", "JavaScript / Node.js", "Java / Spring MVC", "AWS", "Docker", "Git", "CI/CD"] },
     ],
   },
   contact: {
