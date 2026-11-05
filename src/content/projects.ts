@@ -338,7 +338,7 @@ const allCaseStudies: Project[] = [
       lede: "Chat models refuse harmful requests, and earlier work found that the refusal hangs on a single direction inside the model. We removed it from Gemma, a small open model from Google, and the share of harmful prompts that got through went from 1% to 84% (N=100) while its benchmark scores barely moved. We wanted to know whether helpfulness could be pulled out the same way, without touching safety.",
       meta: {
         role: "Research team lead",
-        timeline: "March to May 2026",
+        timeline: "January to May 2026",
         partners: [people.shrey, people.vansh, people.aditya, people.rohan, people.kushal],
         stack: "Python, PyTorch, Hugging Face Transformers, NumPy",
       },
@@ -597,7 +597,7 @@ const allCaseStudies: Project[] = [
     caseStudy: {
       title: "A hand tracker you can ask questions",
       lede: "Poker sites keep a record of every hand you play, and finding one situation in thousands of them means scrolling. So we built a tracker you can ask in plain English, and it answers with the matching hands.",
-      meta: { role: "Contract software engineer", timeline: "February to July 2026", partners: [people.shrey], stack: "Python, FastAPI, SQLite, React, TypeScript, an LLM query router" },
+      meta: { role: "Software engineer", timeline: "February to July 2026", partners: [people.shrey], stack: "Python, FastAPI, SQLite, React, TypeScript, an LLM query router" },
       diagram: {
         steps: ["Plain-English question", "LLM router", "Validated query plan", "SQL compilers", "Matching hands"],
         model: 1,

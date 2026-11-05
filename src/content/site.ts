@@ -25,7 +25,7 @@ export type Education = {
 
 const roles: Role[] = [
   { title: "Data Engineer Intern", org: "Ebara Elliott Energy", when: "May to Aug 2026", where: "Jeannette, PA", line: "Built a self-service upload app that cut data ingestion from 60 minutes to 3. Consolidated records from 15 sources.", caseStudy: "ebara-data", logo: { light: "/logos/ebara-elliott.jpg" } },
-  { title: "Contract Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: "Built zip uploads for a poker hand tracker with plain-English search, so a folder of 11 session files imports 505 hands at once.", caseStudy: "handlab", logo: { light: "/logos/handlab.svg" } },
+  { title: "Software Engineer", org: "Handlab Poker Intelligence", when: "Feb to Jul 2026", where: "Remote", line: "Built zip uploads for a poker hand tracker with plain-English search, so a folder of 11 session files imports 505 hands at once.", caseStudy: "handlab", logo: { light: "/logos/handlab.svg" } },
   { title: "Software Engineer Intern", org: "Spencer's Gifts / Spirit Halloween", when: "Jun to Sep 2025", where: "Egg Harbor Township, NJ", line: "Wrote the Java endpoint for selected-store pickup status, Redis lookup calls, and 12 JUnit tests ahead of Halloween.", logo: { light: "/logos/spencers.jpg" } },
 ];
 
