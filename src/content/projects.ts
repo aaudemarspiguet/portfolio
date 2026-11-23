@@ -701,10 +701,12 @@ export function getProject(slug: string) {
   return caseStudies.find((p) => p.slug === slug);
 }
 
-/** The next case study of the same kind, wrapping around. */
+/** The next case study of the same kind, wrapping around only when another exists. */
 export function nextProject(slug: string) {
   const current = getProject(slug);
-  const group = caseStudies.filter((p) => p.kind === current?.kind);
+  if (!current) return undefined;
+  const group = caseStudies.filter((p) => p.kind === current.kind);
+  if (group.length < 2) return undefined;
   const i = group.findIndex((p) => p.slug === slug);
   return group[(i + 1) % group.length];
 }

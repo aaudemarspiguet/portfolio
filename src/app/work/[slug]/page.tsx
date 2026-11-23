@@ -126,10 +126,10 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
       ))}
     </section>}
 
-    <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
+    {next && <Link href={`/work/${next.slug}`} className="ln-surface ln-next">
       <span className="ln-next__title">{next.title}</span>
       <span className="ln-label">{isWork ? "Next role →" : "Next project →"}</span>
-    </Link>
+    </Link>}
   </>;
 
   return (
