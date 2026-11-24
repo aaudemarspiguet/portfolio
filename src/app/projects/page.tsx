@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: `Every project by ${site.name}, each with a case study.`,
 };
 
-// Every `kind: "project"` entry, in list order. The home carousel shows only the highlighted ones.
+// Every `kind: "project"` entry, in list order. The home grid shows only the highlighted ones.
 export default function ProjectsPage() {
   const count = `${projects.length} ${projects.length === 1 ? "project" : "projects"}`;
 

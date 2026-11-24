@@ -65,9 +65,8 @@ export type CaseStudy = {
 
 /**
  * Project flags. Add either or both to a `kind: "project"` entry.
- * - `highlighted`: shown in the home page carousel, in list order.
- * - `current`: still being worked on. Gets a "Current" chip on its cover, and the
- *   first highlighted current project starts in the middle of the carousel.
+ * - `highlighted`: shown in the home page grid, in list order.
+ * - `current`: still being worked on. Gets a "Current" chip on its cover.
  */
 export type ProjectFlag = "current" | "highlighted";
 
@@ -694,7 +693,7 @@ export const projects = caseStudies.filter((p) => p.kind === "project");
 
 export const hasFlag = (p: Project, flag: ProjectFlag) => p.flags?.includes(flag) ?? false;
 
-/** The home page carousel. */
+/** The home page's highlighted project grid. */
 export const highlightedProjects = projects.filter((p) => hasFlag(p, "highlighted"));
 
 export function getProject(slug: string) {

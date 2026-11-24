@@ -73,7 +73,7 @@ Done: drop the fixed ratio so the strip hugs its content, or give SAW a real `ar
 - `/projects` currently shows the same four. Later it holds the extras: smaller experiments, the WPO replication, claude-devkit (**needs content**).
 Done: all four cards visible at once, no dimmed cards, keyboard and screen reader read four links, no layout shift.
 
-**T7. Pipeline diagrams as card covers.**
+**T7. Pipeline diagrams as card covers. Dropped (2026-11-24).** At card size the labels shrink to about 8px, so a diagram cover is decoration, and the screenshots carry the product signal. Decision lines (T12) carry the engineering signal on cards instead. The notes below are kept for reference.
 `Architecture` (`src/components/Architecture.tsx`) renders `<svg class="ln-arch" role="img" aria-labelledby>` with `min-width: 720px` (for the scrollable case-study figure). find-the-outfit, llm-ablations and qna have `caseStudy.architecture`; SAW doesn't (keeps its screenshot until T5).
 - Add a `decorative` mode: `aria-hidden`, no `labelId`. Inside `.ln-card__cover`, drop the min-width and fit the SVG (default `preserveAspectRatio` meet) on `--paper-raised`.
 - Labels shrink to about 8px at card size. Judge it in the browser. If it's too small, fall back to a hover/focus swap (screenshot by default, diagram on hover) or a "How it works" peek.

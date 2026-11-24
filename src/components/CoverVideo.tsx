@@ -3,8 +3,8 @@
 import { useEffect, useRef, type ComponentProps } from "react";
 
 type Props = Omit<ComponentProps<"video">, "ref" | "children" | "muted" | "loop" | "autoPlay"> & {
-  /** Accessible name. Leave it out for a decorative copy, which is then hidden. */
-  label?: string;
+  /** Accessible name for the cover. */
+  label: string;
 };
 
 /** Muted looping cover video. Holds on its first frame under reduced motion. */
@@ -28,7 +28,6 @@ export function CoverVideo({ label, ...rest }: Props) {
     <video
       ref={ref}
       aria-label={label}
-      aria-hidden={label ? undefined : true}
       muted
       loop
       playsInline

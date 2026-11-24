@@ -133,8 +133,8 @@ html.ln-locked { overflow: hidden; }
 .ln-section-head { display: flex; flex-direction: column; gap: var(--space-2); }
 .ln-section-head h1, .ln-section-head h2 { margin: 0; max-width: 760px; font-size: var(--h2); line-height: 1.1; font-weight: 500; letter-spacing: -0.035em; text-wrap: balance; }
 .ln-section-foot { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
-/* Positioned so it stacks above the carousel viewport, whose shadow padding overlaps it. */
-.ln-more { position: relative; display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
+/* All-projects link below the highlighted grid. */
+.ln-more { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
 
 /* Tag and stack chips */
 .ln-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -149,7 +149,8 @@ html.ln-locked { overflow: hidden; }
 
 /* Cards */
 .ln-surface { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
-.ln-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-6); }
+.ln-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+@media (min-width: 900px) { .ln-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ln-card { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); color: var(--ink); text-decoration: none; transition: box-shadow .2s, transform .2s; }
 /* Media card: an inset 16:10 cover over the text. 8px inset + 16px body = the plain card's 24px. */
 .ln-card--media { gap: 0; padding: var(--space-2); }
@@ -169,25 +170,6 @@ html.ln-locked { overflow: hidden; }
 .ln-card__summary { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink-muted); }
 /* Tags always sit under the metric, so the foot has one height whatever the tag widths. */
 .ln-card__foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
-
-/* Project carousel: a plain-CSS port of ObsidianUI's Parallax Slider (MIT; notice in ProjectCarousel.tsx).
-   The strip is clipped to the content column; the first card sits on its left edge. */
-/* Slides are narrower than the column so the neighbors peek in on both sides of the centered card. */
-.ln-carousel { --slide-w: min(380px, calc(100vw - 2 * var(--gut) - 72px)); --slide-gap: var(--space-6); }
-@media (max-width: 640px) { .ln-carousel { --slide-gap: var(--space-3); } }
-.ln-carousel__bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-6); }
-.ln-carousel__nav { display: flex; gap: var(--space-2); }
-.ln-carousel__btn { width: 44px; padding: 0; justify-content: center; border-radius: var(--radius-pill); }
-.ln-carousel__btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ln-carousel__viewport { position: relative; overflow: hidden; overflow: clip; overflow-clip-margin: 2px; padding: var(--space-6) 0 var(--space-16); margin-bottom: calc(-1 * var(--space-12)); cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
-.ln-carousel[data-dragging="true"] .ln-carousel__viewport { cursor: grabbing; }
-.ln-carousel__viewport:focus-visible { outline-offset: -2px; }
-.ln-carousel__track { display: flex; width: max-content; gap: var(--slide-gap); will-change: transform; }
-/* The script sets each slide's scale, lift, opacity and --lift (1 when centered, 0 one card away). */
-.ln-carousel__slide { position: relative; flex: none; display: flex; width: var(--slide-w); will-change: transform, opacity; }
-.ln-carousel__slide::before { content: ""; position: absolute; inset: 0; border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); opacity: var(--lift, 0); pointer-events: none; }
-.ln-carousel__slide > .ln-card { position: relative; flex: 1; }
-.ln-carousel .ln-card__media { will-change: transform; pointer-events: none; }
 
 /* Experience list (#31): text-only rows, dates | role and result | place */
 .ln-list { display: flex; flex-direction: column; margin: 0; padding: 0 var(--space-6); list-style: none; }

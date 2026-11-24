@@ -3,14 +3,11 @@ import { hasFlag, type Project } from "@/content/projects";
 import { CoverMedia } from "./CoverMedia";
 import { Metric, Tags } from "./marks";
 
-/**
- * The 16:10 cover frame, with a "Current" chip for in-progress projects.
- * `decorative` and `parallax` are for the carousel's repeated copies and its script.
- */
-export function ProjectCover({ project, decorative, parallax }: { project: Project; decorative?: boolean; parallax?: boolean }) {
+/** The 16:10 cover frame, with a "Current" chip for in-progress projects. */
+export function ProjectCover({ project }: { project: Project }) {
   return (
-    <span className="ln-card__cover" data-parallax-frame={parallax ? "" : undefined}>
-      <CoverMedia media={project.cover} decorative={decorative} parallax={parallax} className="ln-card__media" />
+    <span className="ln-card__cover">
+      <CoverMedia media={project.cover} className="ln-card__media" />
       {hasFlag(project, "current") && (
         <span className="ln-card__badge">
           <span className="ln-live__dot" aria-hidden="true" />
@@ -21,7 +18,7 @@ export function ProjectCover({ project, decorative, parallax }: { project: Proje
   );
 }
 
-/** The text half of a project card, shared by the grid card and the carousel slide. */
+/** The text half of a project card. */
 export function ProjectCardBody({ project, lead }: { project: Project; lead?: boolean }) {
   return (
     <div className="ln-card__body">

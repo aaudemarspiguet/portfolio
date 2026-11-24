@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
 import { CopyEmail } from "@/components/CopyEmail";
 import { ExperienceRow } from "@/components/ExperienceRow";
-import { ProjectCarousel } from "@/components/ProjectCarousel";
+import { ProjectCard } from "@/components/ProjectCard";
 import { NameTooltip } from "@/components/NameTooltip";
 import { Availability, NowChip, SectionHeader, Squiggle } from "@/components/marks";
 import { getProject, highlightedProjects } from "@/content/projects";
@@ -44,7 +44,14 @@ export default function Home() {
       </section>
 
       <section id="projects" className="ln-section">
-        <ProjectCarousel projects={highlightedProjects} header={<SectionHeader label="Highlighted projects" heading={site.projects.heading} />} />
+        <div className="ln-wrap ln-stack-y">
+          <SectionHeader label="Highlighted projects" heading={site.projects.heading} />
+          <div className="ln-grid">
+            {highlightedProjects.map((project) => (
+              <ProjectCard key={project.slug} project={project} />
+            ))}
+          </div>
+        </div>
         <div className="ln-wrap ln-section-foot">
           <Link href="/projects" className="ln-link ln-more">All projects →</Link>
         </div>
