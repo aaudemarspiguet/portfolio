@@ -17,6 +17,7 @@ import { useStudioView, type RoomNavKey } from "../StudioViewProvider";
 import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furniture";
 import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
+import { TypedLine } from "./TypedLine";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 
@@ -46,19 +47,65 @@ function resolveObjLabel(o: InteractiveObj, isDark: boolean): string {
   return o.label;
 }
 
-const HINT_STORAGE_KEY = "roomHint";
+/**
+ * The first-visit tour: a few steps, each spotlighting objects in the room (by their registry key)
+ * while the rest dims and a note at the top of the stage says what they do. `canvases` lights every
+ * project canvas.
+ */
+type TourStep = {
+  focus: (portrait: boolean) => string[];
+  canvases?: boolean;
+  /** One short line in my voice, typed out on the note; keep it to one line on a wide stage. */
+  text: (portrait: boolean) => string;
+  /** A phrase in `text` that links to the plain view. */
+  plainLink?: string;
+};
 
-function readHintSeen(): boolean {
+const TOUR_STEPS: TourStep[] = [
+  {
+    // The hello: nothing lit yet, the whole room in view.
+    focus: () => [],
+    text: () => "Welcome to my studio. Here's a quick tour.",
+  },
+  {
+    canvases: true,
+    focus: () => [],
+    text: () => "My projects hang on the wall. Click one.",
+  },
+  {
+    // On phones the desk phone is the way back to the hero; on wide screens it's the iMac.
+    focus: (portrait) => [portrait ? "phone" : "imac"],
+    text: (portrait) => `My ${portrait ? "phone" : "desktop"} takes you back to the start.`,
+  },
+  {
+    // A phone's narrow frame can't hold the whole room, so it lights the two toys that sit together.
+    focus: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
+    text: () => "Most things in here do something. Try them.",
+  },
+  {
+    focus: () => ["window"],
+    text: () => "The window switches day and night.",
+  },
+  {
+    focus: () => [],
+    text: () => "Explore away, or see the plain version.",
+    plainLink: "plain version",
+  },
+];
+
+const TOUR_STORAGE_KEY = "roomTour";
+
+function readTourSeen(): boolean {
   try {
-    return localStorage.getItem(HINT_STORAGE_KEY) === "1";
+    return localStorage.getItem(TOUR_STORAGE_KEY) === "1";
   } catch {
     return false;
   }
 }
 
-function saveHintSeen() {
+function saveTourSeen() {
   try {
-    localStorage.setItem(HINT_STORAGE_KEY, "1");
+    localStorage.setItem(TOUR_STORAGE_KEY, "1");
   } catch {}
 }
 
@@ -108,7 +155,7 @@ export default function StudioRoom({
   const dotRef = useRef<HTMLDivElement>(null);
 
   const [enteredState, setEnteredState] = useState(false);
-  const [hintVisible, setHintVisible] = useState(false);
+  const [tour, setTour] = useState<{ step: number; portrait: boolean } | null>(null);
   const [keyObjects, setKeyObjects] = useState<InteractiveObj[]>([]);
   const [benchText, setBenchText] = useState<string | null>(null);
   const [trackIndex, setTrackIndex] = useState(0);
@@ -145,7 +192,9 @@ export default function StudioRoom({
   }, [onOpenPeek, onClosePeekState, onSwitchToPlain, onProgress, onReady, onWebglFailed]);
 
   const applyThemeRef = useRef<((dark: boolean) => void) | null>(null);
-  const dismissHintRef = useRef<(() => void) | null>(null);
+  const tourNextRef = useRef<(() => void) | null>(null);
+  const tourEndRef = useRef<((recenter?: boolean) => void) | null>(null);
+  const tourReplayRef = useRef<(() => void) | null>(null);
   const backToScreenRef = useRef<(() => void) | null>(null);
   const showTagForObjRef = useRef<((o: InteractiveObj) => void) | null>(null);
   const hideTagRef = useRef<(() => void) | null>(null);
@@ -567,17 +616,237 @@ export default function StudioRoom({
       moveTo(zoomTarget(mesh, dist), 750, done);
     }
 
-    /* Hint & Interactions */
-    let hintTimer: ReturnType<typeof setTimeout> | null = null;
-    function dismissHint() {
-      setHintVisible(false);
-      saveHintSeen();
-      if (hintTimer) {
-        clearTimeout(hintTimer);
-        hintTimer = null;
-      }
+    /* First-visit tour */
+    // Each step spotlights its objects: the room dims except for a soft glow that follows each
+    // object's outline. A half-size pass draws the targets white over a black copy of the room (so
+    // anything standing in front of them still blocks the light), and a full-screen quad dims every
+    // pixel that the blurred mask doesn't cover.
+    const TOUR_LAYER = 7;
+    const FOCUS_DIM = 0.62;
+    let tourStep = -1;
+    let tourTimer: ReturnType<typeof setTimeout> | null = null;
+    let focusTargets: THREE.Object3D[] = [];
+    const focus = { cur: 0, want: 0 };
+
+    const maskRT = new THREE.WebGLRenderTarget(1, 1);
+    const maskBlack = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const maskWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const dimMat = new THREE.ShaderMaterial({
+      uniforms: {
+        tMask: { value: maskRT.texture },
+        uTexel: { value: new THREE.Vector2(1, 1) },
+        uRadius: { value: 8 },
+        uAlpha: { value: 0 },
+      },
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+      fragmentShader: `
+        uniform sampler2D tMask;
+        uniform vec2 uTexel;
+        uniform float uRadius;
+        uniform float uAlpha;
+        varying vec2 vUv;
+        void main() {
+          float c = texture2D(tMask, vUv).r;
+          // Three staggered rings of taps, weighted toward the centre: a cheap soft blur that spreads
+          // the silhouette into a glow past its edge.
+          float sum = 0.0;
+          float total = 0.0;
+          for (int ring = 1; ring <= 3; ring++) {
+            float r = float(ring) / 3.0;
+            float w = 1.25 - r;
+            for (int i = 0; i < 16; i++) {
+              float a = (float(i) + 0.5 * float(ring)) * 0.3926991;
+              vec2 d = vec2(cos(a), sin(a)) * uTexel * uRadius * r;
+              sum += texture2D(tMask, vUv + d).r * w;
+              total += w;
+            }
+          }
+          float lit = max(c, smoothstep(0.0, 0.5, sum / total));
+          gl_FragColor = vec4(0.03, 0.03, 0.045, uAlpha * (1.0 - lit));
+        }
+      `,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const dimQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), dimMat);
+    dimQuad.frustumCulled = false;
+    const dimScene = new THREE.Scene();
+    dimScene.add(dimQuad);
+    const dimCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const clearColor = new THREE.Color();
+
+    function sizeFocusMask() {
+      const db = renderer.getDrawingBufferSize(new THREE.Vector2());
+      const w = Math.max(1, db.x >> 1);
+      const h = Math.max(1, db.y >> 1);
+      maskRT.setSize(w, h);
+      dimMat.uniforms.uTexel.value.set(1 / w, 1 / h);
+      // About 16 CSS pixels of glow, in half-size mask pixels.
+      dimMat.uniforms.uRadius.value = (16 * dpr) / 2;
     }
-    dismissHintRef.current = dismissHint;
+
+    // Click targets are invisible boxes; the mask passes swap every material, so they'd be drawn.
+    // Skip them, and light a hit box's parent (the guitar, the record player) instead of the box.
+    function isHitBox(o: THREE.Object3D) {
+      const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
+      return Boolean((o as THREE.Mesh).isMesh && mat && !Array.isArray(mat) && !mat.visible);
+    }
+    let hitBoxes: THREE.Object3D[] | null = null;
+    function visualOf(o: THREE.Object3D) {
+      return isHitBox(o) && o.parent && o.parent !== scene ? o.parent : o;
+    }
+    // Some objects read as part of their furniture: the record player lights its whole console
+    // (cabinet, legs and vinyl crate), one group further up.
+    const FOCUS_WHOLE: Record<string, number> = { turntable: 1 };
+    function focusOf(key: string, hit: THREE.Object3D) {
+      let o = visualOf(hit);
+      for (let up = FOCUS_WHOLE[key] ?? 0; up > 0 && o.parent && o.parent !== scene; up--) o = o.parent;
+      return o;
+    }
+
+    function setFocusTargets(next: THREE.Object3D[]) {
+      focusTargets.forEach((o) => o.traverse((c) => c.layers.disable(TOUR_LAYER)));
+      focusTargets = next;
+      focusTargets.forEach((o) => o.traverse((c) => c.layers.enable(TOUR_LAYER)));
+    }
+
+    function drawFocus() {
+      if (focus.cur <= 0.001) return;
+      const bg = scene.background;
+      const autoClear = renderer.autoClear;
+      renderer.getClearColor(clearColor);
+      const clearAlpha = renderer.getClearAlpha();
+      if (!hitBoxes) {
+        const found: THREE.Object3D[] = [];
+        scene.traverse((o) => {
+          if (isHitBox(o) && o.visible) found.push(o);
+        });
+        hitBoxes = found;
+      }
+      hitBoxes.forEach((o) => (o.visible = false));
+      scene.background = null;
+      renderer.setRenderTarget(maskRT);
+      renderer.setClearColor(0x000000, 1);
+      renderer.clear();
+      renderer.autoClear = false;
+      scene.overrideMaterial = maskBlack;
+      renderer.render(scene, camera);
+      scene.overrideMaterial = maskWhite;
+      camera.layers.set(TOUR_LAYER);
+      renderer.render(scene, camera);
+      camera.layers.set(0);
+      scene.overrideMaterial = null;
+      hitBoxes.forEach((o) => (o.visible = true));
+      scene.background = bg;
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(clearColor, clearAlpha);
+      dimMat.uniforms.uAlpha.value = focus.cur;
+      renderer.render(dimScene, dimCam);
+      renderer.autoClear = autoClear;
+    }
+
+    function clearFocus() {
+      // The targets stay lit while the dim fades out; the render loop drops them once it's gone.
+      focus.want = 0;
+      needsFrame = true;
+    }
+
+    function showTourStep(i: number) {
+      const step = TOUR_STEPS[i];
+      if (!step) return;
+      tourStep = i;
+      const keys = step.focus(isPortrait);
+      const meshes: THREE.Object3D[] = [
+        ...(step.canvases ? roomProjects.map(({ project }) => canvasMeshes[project.slug].face) : []),
+        ...keys.flatMap((k) => (objects.find((o) => o.key === k)?.hit ?? []).map((h) => focusOf(k, h))),
+      ];
+      if (meshes.length) {
+        setFocusTargets(meshes);
+        focus.want = FOCUS_DIM;
+      } else {
+        clearFocus();
+      }
+      const centre = new THREE.Vector3();
+      meshes.forEach((m) => centre.add(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())));
+      // Turn the view toward what this step lights, so it's in frame on a narrow stage.
+      if (meshes.length && look.resting) {
+        centre.divideScalar(meshes.length);
+        const base = new THREE.Vector3().subVectors(WIDE.look, WIDE.pos);
+        const to = new THREE.Vector3().subVectors(centre, WIDE.pos);
+        // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
+        let yaw = Math.atan2(to.x, to.z) - Math.atan2(base.x, base.z);
+        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+        const lim = yawLimit();
+        look.dragYaw = clamp(yaw, -lim, lim);
+        look.dragPitch = 0;
+      } else if (look.resting) {
+        look.dragYaw = 0;
+        look.dragPitch = 0;
+      }
+      needsFrame = true;
+      setTour({ step: i, portrait: isPortrait });
+    }
+
+    function queueTour() {
+      if (readTourSeen() || tourStep >= 0 || tourTimer) return;
+      tourTimer = setTimeout(() => {
+        tourTimer = null;
+        if (entered && !busy && !peekRef.current && !readTourSeen()) showTourStep(0);
+      }, reduced ? 0 : 350);
+    }
+
+    function endTour(recenter = false) {
+      if (tourStep < 0 && !tourTimer && pausedStep < 0) return;
+      saveTourSeen();
+      if (tourTimer) {
+        clearTimeout(tourTimer);
+        tourTimer = null;
+      }
+      if (tourStep >= 0 && recenter && look.resting) {
+        look.dragYaw = 0;
+        look.dragPitch = 0;
+      }
+      tourStep = -1;
+      pausedStep = -1;
+      clearFocus();
+      setTour(null);
+    }
+
+    // Opening a project mid-tour (step one invites it) tucks the tour away; coming back out to the
+    // room picks it up at the next step.
+    let pausedStep = -1;
+    function pauseTour() {
+      if (tourTimer) {
+        clearTimeout(tourTimer);
+        tourTimer = null;
+      }
+      if (tourStep < 0) return;
+      pausedStep = tourStep;
+      tourStep = -1;
+      clearFocus();
+      setTour(null);
+    }
+
+    function resumeTour() {
+      if (pausedStep < 0) {
+        queueTour();
+        return;
+      }
+      const next = pausedStep + 1;
+      pausedStep = -1;
+      if (next < TOUR_STEPS.length) showTourStep(next);
+      else endTour();
+    }
+
+    tourNextRef.current = () => {
+      if (tourStep + 1 < TOUR_STEPS.length) showTourStep(tourStep + 1);
+      else endTour(true);
+    };
+    tourEndRef.current = endTour;
+    tourReplayRef.current = () => {
+      if (entered && !busy && !peekRef.current) showTourStep(0);
+    };
 
     function enterRoom(after?: (() => void) | null, target?: { pos: THREE.Vector3; look: THREE.Vector3 }) {
       const doneCb = typeof after === "function" ? after : null;
@@ -587,17 +856,15 @@ export default function StudioRoom({
       }
       entered = true;
       setEnteredState(true);
-      if (!readHintSeen()) {
-        hintTimer = setTimeout(() => {
-          if (entered && !readHintSeen()) setHintVisible(true);
-        }, reduced ? 0 : 900);
-      }
       setCam(closeUp());
+      // The tour waits for the camera to land in the wide shot; a jump straight to a project skips it
+      // until the visitor comes back out to the room.
       const land = () => {
         hero?.setAttribute("data-gone", "true");
         hero?.removeAttribute("data-riding");
         clearHeroStyle();
         doneCb?.();
+        if (!target) queueTour();
       };
       if (reduced) {
         hero?.setAttribute("data-gone", "true");
@@ -606,7 +873,10 @@ export default function StudioRoom({
           look.resting = false;
           moveTo(target, 0, doneCb ?? undefined);
         } else {
-          toWide(0, null, doneCb ?? undefined);
+          toWide(0, null, () => {
+            doneCb?.();
+            queueTour();
+          });
         }
         return;
       }
@@ -636,7 +906,7 @@ export default function StudioRoom({
       syncDeck(currentTrackIdx, false);
       stopInstruments();
       look.resting = false;
-      setHintVisible(false);
+      endTour();
       const finish = () => {
         entered = false;
         setEnteredState(false);
@@ -682,6 +952,7 @@ export default function StudioRoom({
     function goTo(mesh: THREE.Object3D, dist: number, open: () => void) {
       callbacksRef.current.onClosePeekState();
       hideTag();
+      pauseTour();
       if (entered) zoomTo(mesh, dist, open);
       else enterRoom(open, zoomTarget(mesh, dist));
     }
@@ -705,7 +976,7 @@ export default function StudioRoom({
 
     function closePeekToWide() {
       callbacksRef.current.onClosePeekState();
-      if (entered) toWide(750);
+      if (entered) toWide(750, null, resumeTour);
     }
 
     function roomNav(key: RoomNavKey): boolean {
@@ -1093,7 +1364,6 @@ export default function StudioRoom({
     backToScreenRef.current = () => backToScreen();
     hideTagRef.current = hideTag;
     runKeyObjectRef.current = (o) => {
-      dismissHint();
       if (o.direct) o.act();
       else enterRoom(o.act);
     };
@@ -1247,7 +1517,6 @@ export default function StudioRoom({
       const targetObj = hovered ?? raycastAt(e.clientX, e.clientY);
       if (targetObj) {
         hideTag();
-        dismissHint();
         targetObj.act();
       }
     }
@@ -1289,6 +1558,7 @@ export default function StudioRoom({
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
       renderer.setSize(r.width, r.height, false);
+      sizeFocusMask();
       camera.aspect = aspect;
       baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
       applyFov();
@@ -1450,15 +1720,24 @@ export default function StudioRoom({
       }
 
       const dark = isDarkRef.current;
+      const tourLit = tourStep >= 0 && Boolean(TOUR_STEPS[tourStep].canvases);
       roomProjects.forEach(({ project }) => {
         const c = canvasMeshes[project.slug];
         const matHalo = c.halo.material as THREE.MeshBasicMaterial;
-        const want = (dark ? 0.85 : 0) + (hovered && hovered.key === project.slug ? (dark ? 0.35 : 0.55) : 0);
+        const lit = tourLit || (hovered && hovered.key === project.slug);
+        const want = (dark ? 0.85 : 0) + (lit ? (dark ? 0.35 : 0.55) : 0);
         if (Math.abs(matHalo.opacity - want) > 0.01) {
           matHalo.opacity += (want - matHalo.opacity) * (reduced ? 1 : 0.15);
           animating = true;
         }
       });
+
+      if (focus.cur !== focus.want) {
+        focus.cur += (focus.want - focus.cur) * (reduced ? 1 : 0.14);
+        if (Math.abs(focus.want - focus.cur) < 0.004) focus.cur = focus.want;
+        if (focus.cur === 0) setFocusTargets([]);
+        animating = true;
+      }
 
       if (animating || needsFrame || (ambient && now - lastDraw > 32)) {
         const tRender0 = benchMode ? performance.now() : 0;
@@ -1470,6 +1749,7 @@ export default function StudioRoom({
         renderer.render(scene, camera);
         needsFrame = false;
         lastDraw = now;
+        drawFocus();
 
         if (benchMode) {
           benchFrames++;
@@ -1484,6 +1764,7 @@ export default function StudioRoom({
           }
         }
       }
+
     }
 
     resize();
@@ -1509,7 +1790,8 @@ export default function StudioRoom({
       if (safetyTimer) clearTimeout(safetyTimer);
       if (fontTimer) clearTimeout(fontTimer);
       cancelAnimationFrame(rafId);
-      if (hintTimer) clearTimeout(hintTimer);
+      if (tourTimer) clearTimeout(tourTimer);
+      clearFocus();
       if (clockTimer) clearTimeout(clockTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       registerActions(null);
@@ -1546,6 +1828,12 @@ export default function StudioRoom({
       hero.removeAttribute("data-gone");
       clearHeroStyle();
       disposeRoomScene(scene);
+      setFocusTargets([]);
+      maskRT.dispose();
+      maskBlack.dispose();
+      maskWhite.dispose();
+      dimMat.dispose();
+      dimQuad.geometry.dispose();
       renderer.dispose();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
@@ -1585,6 +1873,11 @@ export default function StudioRoom({
         >
           ↺ back to the screen
         </button>
+        {!tour && (
+          <button type="button" className="ln-btn ln-btn--sm" onClick={() => tourReplayRef.current?.()}>
+            Tour
+          </button>
+        )}
         <div className="ln-deck" role="group" aria-label="Record player">
           <span
             className={deckPlaying ? "ln-deck__dot is-spinning" : "ln-deck__dot"}
@@ -1622,30 +1915,32 @@ export default function StudioRoom({
 
       <div ref={tagRef} className="ln-tag" hidden />
 
-      <div className="ln-hint" role="status" hidden={!hintVisible}>
-        <span>
-          Feel free to hover around and explore. You can also view a{" "}
-          <button
-            type="button"
-            className="ln-hint__link"
-            onClick={() => {
-              dismissHintRef.current?.();
+      {tour && (
+        <div className="ln-tour" role="region" aria-label="Room tour">
+          <TypedLine
+            key={tour.step}
+            text={TOUR_STEPS[tour.step].text(tour.portrait)}
+            link={TOUR_STEPS[tour.step].plainLink}
+            onLink={() => {
+              tourEndRef.current?.();
               callbacksRef.current.onSwitchToPlain();
             }}
-          >
-            plain version
-          </button>{" "}
-          of the site.
-        </span>
-        <button
-          type="button"
-          className="ln-hint__close"
-          aria-label="Dismiss tip"
-          onClick={() => dismissHintRef.current?.()}
-        >
-          ×
-        </button>
-      </div>
+          />
+          <div className="ln-tour__actions">
+            <span className="ln-tour__count">
+              {tour.step + 1} / {TOUR_STEPS.length}
+            </span>
+            {tour.step + 1 < TOUR_STEPS.length && (
+              <button type="button" className="ln-btn ln-btn--sm ln-btn--text" onClick={() => tourEndRef.current?.(true)}>
+                Skip
+              </button>
+            )}
+            <button type="button" className="ln-btn ln-btn--sm ln-btn--ink" onClick={() => tourNextRef.current?.()}>
+              {tour.step + 1 < TOUR_STEPS.length ? "Next" : "Done"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="ln-keys" role="group" aria-label="Things in the room">
         {keyObjects.map((o) => (

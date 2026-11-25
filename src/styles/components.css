@@ -472,26 +472,66 @@ html.ln-locked { overflow: hidden; }
   color: #1d1d1f;
   font: 500 12px var(--font-mono);
 }
-.ln-hint {
+/* First-visit room tour: a note pinned to the top of the stage. The spotlight on what each step
+   points at is drawn in the 3D scene (StudioRoom). */
+.ln-tour {
   position: absolute;
   top: 14px;
   left: 50%;
   z-index: 6;
   transform: translateX(-50%);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 6px 14px;
   width: max-content;
-  max-width: calc(100% - 28px);
-  padding: 6px 6px 6px 16px;
-  border-radius: var(--radius-pill);
+  max-width: min(640px, calc(100% - 28px));
+  padding: 6px;
+  border-radius: calc(var(--radius-btn) + 6px);
   background: color-mix(in srgb, var(--card) 92%, transparent);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(0, 0, 0, 0.18);
-  font: 500 14px/1.35 var(--font-sans);
+}
+.ln-tour__text {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 4px 0 4px 10px;
+  font: 500 14px/1.4 var(--font-sans);
   letter-spacing: -0.01em;
 }
-.ln-hint__link {
+/* The full line sits invisibly under the typed one, so the note keeps its size while it types. */
+.ln-tour__line { display: grid; }
+.ln-tour__line > * { grid-area: 1 / 1; }
+.ln-tour__ghost { visibility: hidden; }
+.ln-tour__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: var(--scarlet);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ln-tour__caret { animation: ln-caret 0.9s steps(1) infinite; }
+}
+@keyframes ln-caret {
+  50% { opacity: 0; }
+}
+.ln-tour__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* Wide stages keep each line and its buttons on one row; phones put the buttons under the line. */
+@media (min-width: 640px) {
+  .ln-tour { flex-wrap: nowrap; }
+  .ln-tour__text { white-space: nowrap; }
+}
+.ln-tour__link {
   padding: 0;
   border: 0;
   background: none;
@@ -501,25 +541,24 @@ html.ln-locked { overflow: hidden; }
   text-underline-offset: 3px;
   cursor: pointer;
 }
-.ln-hint__link:hover { color: var(--link-hover); }
-.ln-hint__close {
+.ln-tour__link:hover { color: var(--link-hover); }
+.ln-tour__actions {
+  display: flex;
   flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
+  align-items: center;
+  gap: 4px;
+}
+.ln-tour__count {
+  padding: 0 6px;
   color: var(--ink-muted);
-  font: 400 18px/1 var(--font-sans);
-  cursor: pointer;
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
 }
-.ln-hint__close:hover { background: var(--paper-sunk); color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  .ln-hint:not([hidden]) { animation: ln-hint-in .4s ease-out both; }
+  .ln-tour { animation: ln-tour-in .4s ease-out both; }
 }
-@keyframes ln-hint-in {
+@keyframes ln-tour-in {
   from { opacity: 0; transform: translate(-50%, -6px); }
 }
 /* Initial full-viewport boot screen: hides navbar and surrounding stage until room finishes loading */
