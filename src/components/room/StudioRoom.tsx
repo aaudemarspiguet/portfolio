@@ -814,8 +814,8 @@ export default function StudioRoom({
       setTour(null);
     }
 
-    // Opening a project mid-tour (step one invites it) tucks the tour away; coming back out to the
-    // room picks it up at the next step.
+    // Opening a project or heading back to the start mid-tour (steps two and three invite them)
+    // tucks the tour away; coming back out to the room picks it up at the next step.
     let pausedStep = -1;
     function pauseTour() {
       if (tourTimer) {
@@ -865,7 +865,7 @@ export default function StudioRoom({
         hero?.removeAttribute("data-riding");
         clearHeroStyle();
         doneCb?.();
-        if (!target) queueTour();
+        if (!target) resumeTour();
       };
       if (reduced) {
         hero?.setAttribute("data-gone", "true");
@@ -876,7 +876,7 @@ export default function StudioRoom({
         } else {
           toWide(0, null, () => {
             doneCb?.();
-            queueTour();
+            resumeTour();
           });
         }
         return;
@@ -907,7 +907,9 @@ export default function StudioRoom({
       syncDeck(currentTrackIdx, false);
       stopInstruments();
       look.resting = false;
-      endTour();
+      // The tour itself points at the phone/iMac as the way back to the start, so following it
+      // tucks the tour away; entering the room again picks it up at the next step.
+      pauseTour();
       const finish = () => {
         entered = false;
         setEnteredState(false);
