@@ -57,8 +57,9 @@ class Typer {
     if (lines.length === 0) return;
     const { index, chars, deleting } = this.state;
     const current = lines[index % lines.length];
-    let delay = deleting ? 22 : 42;
-    if (!deleting && chars === current.length) delay = 2100;
+    // About the pace of someone typing: a little uneven going forward, quicker backspacing.
+    let delay = deleting ? 40 : 70 + Math.random() * 40;
+    if (!deleting && chars === current.length) delay = 2600;
     else if (deleting && chars === 0) delay = 320;
 
     this.timer = setTimeout(() => {
