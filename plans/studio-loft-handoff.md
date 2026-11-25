@@ -75,7 +75,7 @@ The page has three views. Only one shows at a time.
 
 ## 6. The stage and the hero screen
 
-- **Stage:** `height: max(480px, calc(100svh - 88px - env(safe-area-inset-top)))`, `margin-top: 72px`, radius 20px, background `#0d0d10`, a 1px `--rule` ring.
+- **Stage:** `height: max(480px, calc(100svh - 88px - env(safe-area-inset-top)))`, `margin-top: 72px`, radius 20px, background `#0d0d10`, a 1px `--rule` ring. Its left and right edges line up exactly with the nav pill's edges at every width. Both sit inside a 1120px column with 16px gutters, and `body` has `margin: 0`, so no default browser margin narrows the stage.
 - **Hero:** real HTML on top of the canvas, sized to the iMac screen's exact aspect ratio (1.12 : 0.63) and centered in the stage with 14px padding. Below an aspect ratio of 1 it fills the stage instead. Blue crop marks (18px, 70% opacity) sit in its four corners.
 - **Hero content, in order:** the name with a scarlet period and the pronunciation tooltip ("uh-MOH-g · unerring"); the mono meta line; the lede with its bold first sentence; the dark "now" chip with a glowing scarlet dot; the actions (Email me, **Enter the room ↓**, Experience, GitHub ↗, LinkedIn ↗); the copy-email row.
 - **The 3D screen shows the same hero.** Draw the live HTML hero into a canvas texture (each element's background, borders and every word, at its real position, font and color) and use that texture as the iMac screen's material. Redraw it on theme change, on resize and once the fonts load. During camera moves, the HTML hero rides on the 3D screen (section 8), so the visitor never sees a swap.
