@@ -47,3 +47,6 @@ next-env.d.ts
 
 # private copy-process notes (kept on disk, not published)
 /docs/
+
+# share cards from `pnpm cards`
+/exports/
