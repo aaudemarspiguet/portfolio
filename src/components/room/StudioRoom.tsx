@@ -78,8 +78,9 @@ const TOUR_STEPS: TourStep[] = [
     text: (portrait) => `My ${portrait ? "phone" : "desktop"} takes you back to the start.`,
   },
   {
-    // A phone's narrow frame can't hold the whole room, so it lights the two toys that sit together.
-    focus: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
+    // A phone's narrow frame can't hold the whole room, so it skips the neon on the far wall and
+    // lights the toys on the right: the record player, the synths and the guitar above them.
+    focus: (portrait) => (portrait ? ["turntable", "rack", "guitar"] : ["neon", "guitar", "rack", "turntable"]),
     text: () => "Most things in here do something. Try them.",
   },
   {
