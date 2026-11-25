@@ -100,27 +100,40 @@ export function RoomPeeks({
   );
 }
 
-// Every peek keeps all of its actions together in one bar along the bottom of the card, laid
-// out like a wizard footer: the "go" actions, then Back / count / Next, then Close. On phones the
-// bar is pinned while the text scrolls, and the labels shorten.
-function CloseButton({ onClose }: { onClose: () => void }) {
+// Each peek is a modal card: a close (×) pinned in the top-right corner, a scrolling body, and one
+// footer that holds every other action together (main links, then prev / count / next).
+function PeekCard({
+  className = "",
+  onClose,
+  actions,
+  children,
+}: {
+  className?: string;
+  onClose: () => void;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <button type="button" className="ln-pill ln-peek__close" data-close onClick={onClose}>
-      <span className="ln-peek__wide">← back to the room</span>
-      <span className="ln-peek__narrow">Close</span>
-    </button>
+    <div className={`ln-peek__card ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="peekTitle">
+      <button type="button" className="ln-icon-btn ln-peek__x" data-close aria-label="Close" onClick={onClose}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+      <div className="ln-peek__body">{children}</div>
+      {actions && <div className="ln-peek__actions">{actions}</div>}
+    </div>
   );
 }
 
-function PeekActions({ go, steps, onClose }: { go?: ReactNode; steps?: ReactNode; onClose: () => void }) {
+function GridIcon() {
   return (
-    <div className="ln-peek__actions">
-      {go && <div className="ln-peek__go">{go}</div>}
-      <div className="ln-peek__nav">
-        {steps ?? <span />}
-        <CloseButton onClose={onClose} />
-      </div>
-    </div>
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="ln-peek__icon">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </svg>
   );
 }
 
@@ -146,34 +159,20 @@ function CasePeek({
   const imgSrc = project.cover.srcDark && isDark ? project.cover.srcDark : project.cover.src;
 
   return (
-    <div className="ln-peek__card" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
-      <div className="ln-peek__text">
-        <span className="ln-peek__code">
-          {project.area.toLowerCase()} · {project.year}
-        </span>
-        <h2 id="peekTitle">{project.title}</h2>
-        <p>{project.lede}</p>
-        <span className="ln-peek__tags">{project.tags.join(" · ").toLowerCase()}</span>
-      </div>
-
-      <figure className="ln-peek__fig">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imgSrc} alt={project.cover.alt} />
-      </figure>
-
-      <PeekActions
-        onClose={onClose}
-        go={
-          <>
+    <PeekCard
+      className="ln-peek__card--case"
+      onClose={onClose}
+      actions={
+        <>
+          <div className="ln-peek__go">
             <Link href={`/work/${project.slug}`} className="ln-btn ln-btn--primary">
               Read the case study ↗
             </Link>
-            <button type="button" className="ln-btn ln-btn--text" onClick={onAllProjects}>
-              All projects →
+            <button type="button" className="ln-btn ln-btn--ghost ln-peek__all" aria-label="All projects" onClick={onAllProjects}>
+              <GridIcon />
+              <span className="ln-peek__wide">All projects</span>
             </button>
-          </>
-        }
-        steps={
+          </div>
           <span className="ln-peek__steps">
             <button
               type="button"
@@ -199,9 +198,23 @@ function CasePeek({
               <span className="ln-peek__narrow">Next</span> ›
             </button>
           </span>
-        }
-      />
-    </div>
+        </>
+      }
+    >
+      <div className="ln-peek__text">
+        <span className="ln-peek__code">
+          {project.area.toLowerCase()} · {project.year}
+        </span>
+        <h2 id="peekTitle">{project.title}</h2>
+        <p>{project.lede}</p>
+        <span className="ln-peek__tags">{project.tags.join(" · ").toLowerCase()}</span>
+      </div>
+
+      <figure className="ln-peek__fig">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imgSrc} alt={project.cover.alt} />
+      </figure>
+    </PeekCard>
   );
 }
 
@@ -217,7 +230,17 @@ function AllProjectsPeek({
   onSelectProject: (index: number) => void;
 }) {
   return (
-    <div className="ln-peek__card ln-peek__card--one ln-peek__card--all" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
+    <PeekCard
+      className="ln-peek__card--one ln-peek__card--all"
+      onClose={onClose}
+      actions={
+        <div className="ln-peek__go">
+          <Link href="/projects" className="ln-btn ln-btn--ghost">
+            Full project list ↗
+          </Link>
+        </div>
+      }
+    >
       <div className="ln-peek__text">
         <h2 id="peekTitle">All projects</h2>
       </div>
@@ -233,21 +256,13 @@ function AllProjectsPeek({
           </button>
         ))}
       </div>
-      <PeekActions
-        onClose={onClose}
-        go={
-          <Link href="/projects" className="ln-btn ln-btn--text">
-            Full project list ↗
-          </Link>
-        }
-      />
-    </div>
+    </PeekCard>
   );
 }
 
 function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () => void }) {
   return (
-    <div className="ln-peek__card ln-peek__card--one" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
+    <PeekCard className="ln-peek__card--one" onClose={onClose}>
       <div className="ln-peek__text">
         <h2 id="peekTitle">A little about me</h2>
         <div className="ln-about-copy">
@@ -256,8 +271,7 @@ function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () 
           ))}
         </div>
       </div>
-      <PeekActions onClose={onClose} />
-    </div>
+    </PeekCard>
   );
 }
 

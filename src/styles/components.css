@@ -901,20 +901,37 @@ html[data-boot="revealing"] .ln-nav {
   padding: 20px;
   background: rgba(13, 13, 16, 0.55);
 }
+/* Modal card: close pinned in the corner, a scrolling body, and one footer of actions. */
 .ln-peek__card {
+  --peek-pad: 36px;
   position: relative;
   width: min(980px, 100%);
   max-height: 100%;
-  overflow: auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 32px;
-  --peek-pad: 36px;
-  padding: var(--peek-pad);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-radius: 16px;
   background: var(--paper);
   color: var(--ink);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+}
+.ln-peek__body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  padding: var(--peek-pad);
+}
+.ln-peek__card--case .ln-peek__body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.ln-peek__x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule), 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 .ln-peek__card h2 {
   margin: 0;
@@ -955,27 +972,26 @@ html[data-boot="revealing"] .ln-nav {
   border-top: 1px dashed var(--rule);
   width: 100%;
 }
-/* One bar holds every action, pinned to the bottom of the scrolling card. */
 .ln-peek__actions {
-  grid-column: 1 / -1;
-  position: sticky;
-  /* Sticky insets are measured inside the card's padding, so cancel it to sit on the edge. */
-  bottom: calc(-1 * var(--peek-pad));
-  z-index: 1;
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
-  margin: 0 calc(-1 * var(--peek-pad)) calc(-1 * var(--peek-pad));
   padding: 16px var(--peek-pad);
   border-top: 1px solid var(--rule);
   background: var(--paper);
 }
-.ln-peek__go,
-.ln-peek__nav { display: flex; align-items: center; gap: 10px; }
-.ln-peek__nav { margin-left: auto; }
-.ln-peek__steps { display: inline-flex; align-items: center; gap: 8px; }
+.ln-peek__go { display: flex; align-items: center; gap: 12px; }
+.ln-peek__icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.ln-peek__steps { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
 .ln-peek__count {
   min-width: 3.5ch;
   text-align: center;
@@ -983,10 +999,7 @@ html[data-boot="revealing"] .ln-nav {
   letter-spacing: 0;
   color: var(--ink-muted);
 }
-.ln-peek__card--one {
-  grid-template-columns: minmax(0, 1fr);
-  width: min(760px, 100%);
-}
+.ln-peek__card--one { width: min(760px, 100%); }
 .ln-peek__card .ln-about-copy p:first-child { font-size: 19px; color: var(--ink); }
 .ln-peek__card--all { width: min(920px, 100%); }
 .ln-allgrid {
@@ -1040,15 +1053,18 @@ html[data-boot="revealing"] .ln-nav {
 @media (max-width: 720px) {
   .ln-allgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ln-peek { padding: 12px; }
-  .ln-peek__card { grid-template-columns: 1fr; --peek-pad: 24px; gap: 20px; }
+  .ln-peek__card { --peek-pad: 24px; }
+  .ln-peek__card--case .ln-peek__body { grid-template-columns: minmax(0, 1fr); }
+  .ln-peek__body { gap: 20px; }
 }
 .ln-peek__narrow { display: none; }
-/* Phones: the bar stacks into two rows (go actions, then Back / count / Next and Close). */
+/* Phones: the footer stacks into two rows (the main links, then Back / count / Next). */
 @media (max-width: 640px) {
   .ln-peek__wide { display: none; }
   .ln-peek__narrow { display: inline; }
-  .ln-peek__card { grid-template-columns: minmax(0, 1fr); --peek-pad: 20px; gap: 16px; }
-  .ln-peek__card h2 { font-size: 28px; }
+  .ln-peek__card { --peek-pad: 20px; }
+  .ln-peek__body { gap: 16px; }
+  .ln-peek__card h2 { font-size: 28px; padding-right: 36px; }
   .ln-peek__text { gap: 12px; }
   .ln-peek__text p { font-size: 16px; line-height: 1.5; }
   .ln-peek__actions {
@@ -1057,23 +1073,17 @@ html[data-boot="revealing"] .ln-nav {
     gap: 10px;
     padding: 12px var(--peek-pad) calc(12px + env(safe-area-inset-bottom, 0px));
   }
-  .ln-peek__go { flex-wrap: wrap; justify-content: space-between; gap: 8px 10px; }
-  .ln-peek__go .ln-btn { height: 44px; padding: 0 14px; font-size: 14px; }
-  .ln-peek__go .ln-btn--text { padding-inline: 0; }
-  .ln-peek__nav { justify-content: space-between; margin-left: 0; }
-  .ln-peek__nav .ln-pill {
+  .ln-peek__go { gap: 10px; }
+  .ln-peek__go .ln-btn { height: 44px; padding: 0 14px; font-size: 14px; justify-content: center; }
+  .ln-peek__go .ln-btn--primary { flex: 1; }
+  .ln-peek__all { width: 44px; padding: 0; }
+  .ln-peek__steps { justify-content: space-between; margin-left: 0; }
+  .ln-peek__steps .ln-pill {
     height: 40px;
-    padding: 0 16px;
+    padding: 0 18px;
     font: 500 15px var(--font-sans);
     letter-spacing: -0.01em;
   }
-  .ln-peek__close.ln-pill {
-    padding: 0 4px;
-    background: none;
-    box-shadow: none;
-    color: var(--ink-muted);
-  }
-  .ln-peek__steps { gap: 6px; }
 }
 
 /* Terminal (Experience peek) */
