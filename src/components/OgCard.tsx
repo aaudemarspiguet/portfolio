@@ -4,20 +4,28 @@ import { join } from "node:path";
 import { cacheLife } from "next/cache";
 import { ImageResponse } from "next/og";
 import type { ReactNode } from "react";
-import type { Media, Project } from "@/content/projects";
+import { caseStudySlugs, getProject, type Media, type Project } from "@/content/projects";
 import { site } from "@/content/site";
 
-// Case-study link-preview cards (work/[slug]/opengraph-image.tsx). The home preview is a room
-// render, app/opengraph-image.jpg. Satori renders these cards, so every element with more than one
-// child needs display: flex, and colors are hex values copied from styles/tokens.css.
+// Share cards. Link previews use them through opengraph-image.tsx files (the home preview is a room
+// render, app/opengraph-image.jpg instead), and `pnpm cards` saves the rest as PNGs to upload by
+// hand. Satori renders these, so every element with more than one child needs display: flex, and
+// colors are hex values copied from styles/tokens.css.
 
-export const ogSize = { width: 1200, height: 630 };
+type Size = { width: number; height: number };
+
+export const ogSize: Size = { width: 1200, height: 630 };
+/** GitHub's repo social preview. */
+const githubSize: Size = { width: 1280, height: 640 };
+/** LinkedIn's profile banner. */
+const bannerSize: Size = { width: 1584, height: 396 };
 
 const c = {
   paper: "#f5f5f7",
   card: "#ffffff",
   ink: "#1d1d1f",
   muted: "#5f5f66",
+  rule: "rgba(29, 29, 31, 0.12)",
   scarlet: "#ff3b1f",
 };
 
@@ -68,7 +76,7 @@ async function coverData(cover: Media): Promise<string | null> {
   }
 }
 
-async function render(children: ReactNode) {
+async function render(children: ReactNode, size: Size, padding = "64px 72px") {
   return new ImageResponse(
     (
       <div
@@ -79,25 +87,81 @@ async function render(children: ReactNode) {
           background: c.paper,
           color: c.ink,
           fontFamily: sans,
-          padding: "64px 72px",
+          padding,
         }}
       >
         {children}
       </div>
     ),
-    { ...ogSize, fonts: await fonts() },
+    { ...size, fonts: await fonts() },
   );
 }
 
-function Label({ children, color = c.muted }: { children: ReactNode; color?: string }) {
-  return <div style={{ display: "flex", fontFamily: mono, fontWeight: 500, fontSize: 26, color, letterSpacing: -0.3 }}>{children}</div>;
+function Label({ children, color = c.muted, size = 26 }: { children: ReactNode; color?: string; size?: number }) {
+  return <div style={{ display: "flex", fontFamily: mono, fontWeight: 500, fontSize: size, color, letterSpacing: -0.3 }}>{children}</div>;
+}
+
+function Name({ size }: { size: number }) {
+  return (
+    <div style={{ display: "flex", fontSize: size, fontWeight: 600, letterSpacing: size * -0.042, lineHeight: 1 }}>
+      {site.name}
+      <span style={{ color: c.scarlet }}>.</span>
+    </div>
+  );
+}
+
+/** The lede with the typing tagline's caret after it. */
+function Lede({ size }: { size: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: size / 3 }}>
+      <div style={{ display: "flex", fontSize: size, fontWeight: 400, letterSpacing: size * -0.024 }}>{site.lede.highlight}</div>
+      <div style={{ display: "flex", width: Math.max(3, size / 10), height: size * 1.1, background: c.scarlet }} />
+    </div>
+  );
+}
+
+const metaLine = () => [site.role, site.city, site.availability].join(" · ").toLowerCase();
+
+/** The hero as a card: name, meta line and lede. `label` sits at the top. */
+export async function siteCard({ label = site.brand, size = ogSize }: { label?: string; size?: Size } = {}) {
+  return render(
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
+      <Label>{label}</Label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        <Name size={120} />
+        <Label>{metaLine()}</Label>
+      </div>
+      <div style={{ display: "flex", borderTop: `2px solid ${c.rule}`, paddingTop: 32 }}>
+        <Lede size={42} />
+      </div>
+    </div>,
+    size,
+  );
+}
+
+/** LinkedIn banner. The profile photo covers the bottom-left, so everything sits on the right. */
+async function bannerCard() {
+  return render(
+    <div style={{ display: "flex", width: "100%", justifyContent: "flex-end", alignItems: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <Name size={84} />
+        <Label size={22}>{metaLine()}</Label>
+        <div style={{ display: "flex", borderTop: `2px solid ${c.rule}`, paddingTop: 20, marginTop: 6 }}>
+          <Lede size={30} />
+        </div>
+      </div>
+    </div>,
+    bannerSize,
+    "48px 88px",
+  );
 }
 
 /** Case study card: area, headline and project name, with the cover on the right when there is one. */
-export async function caseStudyCard(project: Project) {
+export async function caseStudyCard(project: Project, size = ogSize) {
   const cover = await coverData(project.cover);
   const title = project.caseStudy.title;
   const titleSize = cover ? (title.length > 64 ? 46 : 54) : title.length > 64 ? 60 : 72;
+  const coverHeight = size.height - 128;
   return render(
     <div style={{ display: "flex", width: "100%", gap: 56 }}>
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
@@ -125,11 +189,26 @@ export async function caseStudyCard(project: Project) {
           <img
             src={cover}
             width={480}
-            height={502}
-            style={{ width: 480, height: 502, objectFit: "cover", objectPosition: project.cover.focus ?? "center" }}
+            height={coverHeight}
+            style={{ width: 480, height: coverHeight, objectFit: "cover", objectPosition: project.cover.focus ?? "center" }}
           />
         </div>
       )}
     </div>,
+    size,
   );
+}
+
+// ---- Exports for `pnpm cards` ---------------------------------------------------
+
+/** Every card `pnpm cards` saves: the portfolio repo's preview, the LinkedIn banner, and one preview per case-study repo. */
+export function exportCardNames() {
+  return ["home-github", "home-banner", ...caseStudySlugs.map((slug) => `${slug}-github`)];
+}
+
+export async function exportCard(name: string) {
+  if (name === "home-github") return siteCard({ size: githubSize });
+  if (name === "home-banner") return bannerCard();
+  const project = getProject(name.replace(/-github$/, ""));
+  return name.endsWith("-github") && project ? caseStudyCard(project, githubSize) : null;
 }
