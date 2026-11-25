@@ -3,7 +3,8 @@ import { Inter, Geist_Mono, Neonderthaw } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { StudioViewProvider } from "@/components/StudioViewProvider";
 import { ThemeScript } from "@/components/ThemeToggle";
-import { showDrafts } from "@/content/env";
+import { isPreviewEnv } from "@/content/env";
+import { workSlugs } from "@/content/projects";
 import { site } from "@/content/site";
 import "./globals.css";
 
@@ -28,8 +29,8 @@ const neonderthaw = Neonderthaw({
 export const metadata: Metadata = {
   title: { default: `${site.name} – Portfolio`, template: `%s · ${site.name}` },
   description: site.description,
-  // Production is indexed. Dev and preview builds, which can show draft case studies, are not.
-  robots: { index: !showDrafts, follow: !showDrafts },
+  // Production is indexed. Dev and preview builds are not.
+  robots: { index: !isPreviewEnv, follow: !isPreviewEnv },
 };
 
 export const viewport: Viewport = {
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <a href="#main" className="ln-skip">Skip to content</a>
         <StudioViewProvider>
-          <NavBar />
+          <NavBar workSlugs={workSlugs} />
           <div id="main">{children}</div>
         </StudioViewProvider>
       </body>

@@ -25,10 +25,10 @@ export function ProjectCardBody({ project, lead }: { project: Project; lead?: bo
       <h3 className="ln-card__title">{project.title}</h3>
       <div className="ln-card__head">
         <span className="ln-card__area">
-          {project.org && (
+          {(project.orgs ?? (project.org ? [project.org] : [])).map((o) => (
             // eslint-disable-next-line @next/next/no-img-element -- small static mark
-            <img src={project.org.logo} alt={`${project.org.name} logo`} width={18} height={18} className="ln-card__org" />
-          )}
+            <img key={o.name} src={o.logo} alt={`${o.name} logo`} width={18} height={18} className="ln-card__org" />
+          ))}
           {project.area} · {project.year}
         </span>
         <span className="ln-card__cta">Case study →</span>

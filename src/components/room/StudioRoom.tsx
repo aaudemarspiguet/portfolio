@@ -2,11 +2,20 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import * as THREE from "three";
-import type { Project } from "@/content/projects";
+import type { HomeProject } from "@/content/project-types";
+import {
+  playClick,
+  playDiscSwap,
+  playNeedleDrop,
+  playNeedleLift,
+  playSwitch,
+  startVinylTexture,
+  stopVinylTexture,
+} from "@/lib/sfx";
 import { toggleTheme, useTheme } from "../ThemeToggle";
-import type { RoomNavKey } from "../StudioViewProvider";
+import { useStudioView, type RoomNavKey } from "../StudioViewProvider";
 import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furniture";
-import { clamp, easeInOutCubic, linearColor, mapRoomProjects, smoothstep } from "./roomData";
+import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
 import { drawHeroToCanvas } from "./textures";
 
@@ -28,6 +37,13 @@ type InteractiveObj = {
   anchor: () => THREE.Object3D;
   act: () => void;
 };
+
+function resolveObjLabel(o: InteractiveObj, isDark: boolean): string {
+  if (o.key === "window") {
+    return isDark ? "window · day mode" : "window · night mode";
+  }
+  return o.label;
+}
 
 const HINT_STORAGE_KEY = "roomHint";
 
@@ -64,11 +80,12 @@ export default function StudioRoom({
   onOpenPeek,
   onClosePeekState,
   onSwitchToPlain,
+  onProgress,
   onReady,
   onWebglFailed,
   registerActions,
 }: {
-  projects: Project[];
+  projects: HomeProject[];
   stageRef: RefObject<HTMLElement | null>;
   heroRef: RefObject<HTMLDivElement | null>;
   heroScreenRef: RefObject<HTMLDivElement | null>;
@@ -76,10 +93,12 @@ export default function StudioRoom({
   onOpenPeek: (next: PeekState, section: RoomNavKey | null) => void;
   onClosePeekState: () => void;
   onSwitchToPlain: () => void;
+  onProgress?: (ratio: number) => void;
   onReady: () => void;
   onWebglFailed: () => void;
   registerActions: (actions: RoomActions | null) => void;
 }) {
+  const { view } = useStudioView();
   const theme = useTheme();
   const isDarkRef = useRef(theme === "dark");
 
@@ -91,6 +110,8 @@ export default function StudioRoom({
   const [hintVisible, setHintVisible] = useState(false);
   const [keyObjects, setKeyObjects] = useState<InteractiveObj[]>([]);
   const [benchText, setBenchText] = useState<string | null>(null);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [deckPlaying, setDeckPlaying] = useState(false);
   const isFinePointer = useSyncExternalStore(subscribeFinePointer, getFinePointerSnapshot, () => false);
 
   const peekRef = useRef<PeekState>(peek);
@@ -98,6 +119,7 @@ export default function StudioRoom({
     onOpenPeek,
     onClosePeekState,
     onSwitchToPlain,
+    onProgress,
     onReady,
     onWebglFailed,
   });
@@ -115,10 +137,11 @@ export default function StudioRoom({
       onOpenPeek,
       onClosePeekState,
       onSwitchToPlain,
+      onProgress,
       onReady,
       onWebglFailed,
     };
-  }, [onOpenPeek, onClosePeekState, onSwitchToPlain, onReady, onWebglFailed]);
+  }, [onOpenPeek, onClosePeekState, onSwitchToPlain, onProgress, onReady, onWebglFailed]);
 
   const applyThemeRef = useRef<((dark: boolean) => void) | null>(null);
   const dismissHintRef = useRef<(() => void) | null>(null);
@@ -126,6 +149,8 @@ export default function StudioRoom({
   const showTagForObjRef = useRef<((o: InteractiveObj) => void) | null>(null);
   const hideTagRef = useRef<(() => void) | null>(null);
   const runKeyObjectRef = useRef<((o: InteractiveObj) => void) | null>(null);
+  const syncDeckRef = useRef<((nextTrack: number, shouldPlay: boolean) => void) | null>(null);
+  const stopInstrumentsRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (isFinePointer) document.documentElement.classList.add("ln-dotcursor");
@@ -176,6 +201,7 @@ export default function StudioRoom({
       needsFrame = true;
     }
 
+    callbacksRef.current.onProgress?.(0.45);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
     const WIDE = {
@@ -183,8 +209,46 @@ export default function StudioRoom({
       look: new THREE.Vector3(0, 1.52, -2),
     };
 
+    let sceneBuilt = false;
+    let texturesDone = false;
+    let fontsDone = !document.fonts?.load;
+    let readyEmitted = false;
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+    let fontTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const tryFinishLoad = () => {
+      if (readyEmitted || !sceneBuilt) return;
+      if (!texturesDone || !fontsDone) return;
+      readyEmitted = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
+      if (fontTimer) clearTimeout(fontTimer);
+      redrawHero();
+      redrawNeon();
+      if (shadowDirty) {
+        renderer.shadowMap.needsUpdate = true;
+        shadowDirty = false;
+        shadowRedraws++;
+      }
+      renderer.render(scene, camera);
+      needsFrame = false;
+      callbacksRef.current.onProgress?.(1);
+      callbacksRef.current.onReady();
+    };
+
     const roomProjects = mapRoomProjects(projects);
-    const refs: RoomSceneRefs = buildRoomScene(scene, roomProjects, renderOnce);
+    const refs: RoomSceneRefs = buildRoomScene(
+      scene,
+      roomProjects,
+      renderOnce,
+      (loaded, total) => {
+        const ratio = total > 0 ? loaded / total : 1;
+        callbacksRef.current.onProgress?.(0.65 + 0.3 * ratio);
+        if (loaded >= total) {
+          texturesDone = true;
+          tryFinishLoad();
+        }
+      },
+    );
     const { SCR, screen, screenMat, canvasMeshes } = refs;
 
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -210,16 +274,25 @@ export default function StudioRoom({
     redrawHero();
     redrawNeon();
     if (document.fonts?.load) {
+      fontTimer = setTimeout(() => {
+        fontsDone = true;
+        tryFinishLoad();
+      }, 450);
       Promise.all([
         document.fonts.load("170px Neonderthaw"),
         document.fonts.load("500 150px Inter"),
         document.fonts.load("500 30px 'Geist Mono'"),
       ])
         .then(() => {
+          fontsDone = true;
           redrawHero();
           redrawNeon();
+          tryFinishLoad();
         })
-        .catch(() => {});
+        .catch(() => {
+          fontsDone = true;
+          tryFinishLoad();
+        });
     }
 
     /* Day / Night theme synchronization */
@@ -293,13 +366,11 @@ export default function StudioRoom({
       isPortrait = r.width / r.height < 1;
       if (isPortrait) {
         heroBox = null;
-        heroScreenEl.style.cssText = "";
         return;
       }
       const bw = Math.min(w, h * aspect);
       const bh = bw / aspect;
       heroBox = { w: bw, h: bh, stageH: r.height };
-      heroScreenEl.style.cssText = `left:${(r.width - bw) / 2}px;top:${(r.height - bh) / 2}px;width:${bw}px;height:${bh}px;right:auto;bottom:auto`;
     }
 
     function closeUp() {
@@ -497,6 +568,8 @@ export default function StudioRoom({
         if (typeof after === "function") after();
         return;
       }
+      syncDeck(currentTrackIdx, false);
+      stopInstruments();
       look.resting = false;
       setHintVisible(false);
       const finish = () => {
@@ -524,7 +597,7 @@ export default function StudioRoom({
       });
     }
 
-    function openCase(project: Project, swapDir?: 1 | -1) {
+    function openCase(project: HomeProject, swapDir?: 1 | -1) {
       callbacksRef.current.onOpenPeek({ kind: "case", project, swapDir }, "work");
     }
     function openTerminal() {
@@ -603,17 +676,211 @@ export default function StudioRoom({
     let posterStraight = false;
     let swingStart = -1;
     let spinning = false;
+    let platterSpeed = 0;
     let armAngle = 0.05;
+    let currentTrackIdx = 0;
+    let loadedTrackIdx = -1;
+    let audioRampRaf = 0;
+    let activeDeckToken = 0;
+    let cleanupPlayingListener: (() => void) | null = null;
+
+    const audio = new Audio();
+    audio.preload = "none";
+    audio.volume = RECORD_TRACKS[0].volume;
+
+    const synthAudio = new Audio();
+    synthAudio.preload = "none";
+    synthAudio.loop = false;
+    synthAudio.volume = 0.18;
+
+    const onSynthEnded = () => {
+      playing = false;
+      synthAudio.currentTime = 0;
+      renderOnce();
+    };
+    synthAudio.addEventListener("ended", onSynthEnded);
+
+    const GUITAR_HITS = ["/audio/guitar-hit-1.m4a", "/audio/guitar-hit-2.m4a"] as const;
+    const guitarAudio = new Audio();
+    guitarAudio.preload = "none";
+    guitarAudio.volume = 0.22;
+    let guitarHitIdx = 0;
+
+    function stopInstruments() {
+      playing = false;
+      synthAudio.pause();
+      synthAudio.currentTime = 0;
+      guitarAudio.pause();
+      guitarAudio.currentTime = 0;
+      renderOnce();
+    }
+    stopInstrumentsRef.current = stopInstruments;
+
+    function setPreservePitch(preserve: boolean) {
+      const media = audio as HTMLAudioElement & {
+        webkitPreservesPitch?: boolean;
+        mozPreservesPitch?: boolean;
+      };
+      media.preservesPitch = preserve;
+      media.webkitPreservesPitch = preserve;
+      media.mozPreservesPitch = preserve;
+    }
+
+    function cancelAudioRamp() {
+      if (audioRampRaf) {
+        cancelAnimationFrame(audioRampRaf);
+        audioRampRaf = 0;
+      }
+      cleanupPlayingListener?.();
+      cleanupPlayingListener = null;
+    }
+
+    function rampAudio(opts: {
+      fromRate: number;
+      toRate: number;
+      fromVol: number;
+      toVol: number;
+      durationMs: number;
+      pauseOnDone: boolean;
+      token: number;
+    }) {
+      const start = performance.now();
+      audio.playbackRate = opts.fromRate;
+      audio.volume = clamp(opts.fromVol, 0, 1);
+
+      const step = (now: number) => {
+        if (opts.token !== activeDeckToken) return;
+        const t = Math.min(1, (now - start) / opts.durationMs);
+        const eased = opts.pauseOnDone ? t * t : 1 - Math.pow(1 - t, 3);
+        audio.playbackRate = opts.fromRate + (opts.toRate - opts.fromRate) * eased;
+        // Fade volume smoothly in during start, and gently out near the end of wind-down.
+        const volT = opts.pauseOnDone ? Math.max(0, (t - 0.15) / 0.85) : Math.min(1, t / 0.72);
+        audio.volume = clamp(opts.fromVol + (opts.toVol - opts.fromVol) * volT, 0, 1);
+
+        if (t < 1) {
+          audioRampRaf = requestAnimationFrame(step);
+          return;
+        }
+        audioRampRaf = 0;
+        if (opts.pauseOnDone) {
+          audio.pause();
+          audio.playbackRate = 1;
+          setPreservePitch(true);
+        }
+      };
+      audioRampRaf = requestAnimationFrame(step);
+    }
+
+    function syncDeck(nextTrack: number, shouldPlay: boolean) {
+      const idx = ((nextTrack % RECORD_TRACKS.length) + RECORD_TRACKS.length) % RECORD_TRACKS.length;
+      const wasPlaying = spinning;
+      const trackChanged = loadedTrackIdx !== idx;
+      const token = ++activeDeckToken;
+
+      cancelAudioRamp();
+      currentTrackIdx = idx;
+      refs.setRecordTrack(idx);
+      spinning = shouldPlay;
+      setTrackIndex(idx);
+      setDeckPlaying(shouldPlay);
+
+      const targetVol = RECORD_TRACKS[idx].volume;
+
+      if (shouldPlay) {
+        if (trackChanged) {
+          if (!audio.paused) audio.pause();
+          loadedTrackIdx = idx;
+          audio.src = RECORD_TRACKS[idx].src;
+          audio.currentTime = 0;
+          playDiscSwap();
+        } else if (!wasPlaying) {
+          playNeedleDrop();
+        }
+
+        startVinylTexture();
+        setPreservePitch(false);
+
+        if (!trackChanged && !audio.paused) {
+          // Catch platter mid-wind-down (or keep running) without restarting playback.
+          rampAudio({
+            fromRate: audio.playbackRate || 0.7,
+            toRate: 1,
+            fromVol: audio.volume,
+            toVol: targetVol,
+            durationMs: 220,
+            pauseOnDone: false,
+            token,
+          });
+        } else {
+          const startRate = trackChanged ? 0.65 : 0.62;
+          audio.playbackRate = startRate;
+          audio.volume = 0.015;
+
+          const startWindUp = () => {
+            cleanupPlayingListener = null;
+            if (token !== activeDeckToken) return;
+            rampAudio({
+              fromRate: startRate,
+              toRate: 1,
+              fromVol: 0.015,
+              toVol: targetVol,
+              durationMs: 250,
+              pauseOnDone: false,
+              token,
+            });
+          };
+
+          const onPlaying = () => startWindUp();
+          audio.addEventListener("playing", onPlaying, { once: true });
+          cleanupPlayingListener = () => audio.removeEventListener("playing", onPlaying);
+
+          void audio.play().catch(() => {
+            if (token !== activeDeckToken) return;
+            cancelAudioRamp();
+            spinning = false;
+            setDeckPlaying(false);
+            stopVinylTexture();
+          });
+        }
+      } else {
+        if (wasPlaying && !audio.paused) {
+          playNeedleLift();
+          stopVinylTexture(0.22);
+          setPreservePitch(false);
+          rampAudio({
+            fromRate: audio.playbackRate || 1,
+            toRate: 0.48,
+            fromVol: audio.volume,
+            toVol: 0,
+            durationMs: 340,
+            pauseOnDone: true,
+            token,
+          });
+        } else {
+          audio.pause();
+          audio.playbackRate = 1;
+          stopVinylTexture();
+        }
+      }
+      renderOnce();
+    }
+    syncDeckRef.current = syncDeck;
+
+    const onAudioEnded = () => {
+      syncDeck(currentTrackIdx + 1, true);
+    };
+    audio.addEventListener("ended", onAudioEnded);
 
     const objects: InteractiveObj[] = [
-      { key: "imac", label: "desktop · back to the screen", hit: [screen], anchor: () => screen, act: () => backToScreen() },
-      { key: "window", label: "window · night mode", hit: [refs.windowHit], anchor: () => refs.windowHit, act: toggleTheme },
+      { key: "imac", label: "desktop · back to the screen", hit: [screen], anchor: () => screen, act: () => { playClick(); backToScreen(); } },
+      { key: "window", label: "window · night mode", hit: [refs.windowHit], anchor: () => refs.windowHit, act: () => { playSwitch(); toggleTheme(); } },
       {
         key: "neon",
         label: "neon · flick it",
         hit: [refs.neonSign],
         anchor: () => refs.neonSign,
         act: () => {
+          playSwitch();
           flickerUntil = performance.now() + 950;
         },
       },
@@ -623,7 +890,20 @@ export default function StudioRoom({
         hit: [refs.rackHit],
         anchor: () => refs.rackHit,
         act: () => {
+          playSwitch();
           playing = !playing;
+          if (playing) {
+            if (!synthAudio.getAttribute("src")) {
+              synthAudio.src = "/audio/synth-jam.m4a";
+            }
+            synthAudio.currentTime = 0;
+            void synthAudio.play().catch(() => {
+              playing = false;
+            });
+          } else {
+            synthAudio.pause();
+            synthAudio.currentTime = 0;
+          }
           renderOnce();
         },
       },
@@ -634,6 +914,10 @@ export default function StudioRoom({
         anchor: () => refs.guitarHit,
         act: () => {
           swingStart = performance.now();
+          guitarAudio.src = GUITAR_HITS[guitarHitIdx];
+          guitarHitIdx = (guitarHitIdx + 1) % GUITAR_HITS.length;
+          guitarAudio.currentTime = 0;
+          void guitarAudio.play().catch(() => {});
         },
       },
       {
@@ -642,6 +926,7 @@ export default function StudioRoom({
         hit: [refs.pst],
         anchor: () => refs.pst,
         act: () => {
+          playClick();
           posterStraight = !posterStraight;
         },
       },
@@ -651,16 +936,24 @@ export default function StudioRoom({
         label: "all projects →",
         hit: [refs.printsHit],
         anchor: () => refs.printsHit,
-        act: () => goToAll(),
+        act: () => { playClick(); goToAll(); },
       },
       {
         key: "turntable",
-        label: "record player · spin / stop",
+        label: "record player · play / pause",
         hit: [refs.deckHit],
         anchor: () => refs.deckHit,
         act: () => {
-          spinning = !spinning;
-          renderOnce();
+          syncDeck(currentTrackIdx, !spinning);
+        },
+      },
+      {
+        key: "crate",
+        label: "vinyl crate · next track",
+        hit: [refs.crateHit],
+        anchor: () => refs.crateHit,
+        act: () => {
+          syncDeck(currentTrackIdx + 1, true);
         },
       },
     ];
@@ -673,7 +966,7 @@ export default function StudioRoom({
         label: `${project.title.split(":")[0].toLowerCase()} →`,
         hit: [c.face],
         anchor: () => c.face,
-        act: () => goToProject(idx),
+        act: () => { playClick(); goToProject(idx); },
       });
     });
 
@@ -701,7 +994,7 @@ export default function StudioRoom({
     function showTag(o: InteractiveObj, x?: number, y?: number) {
       const tagEl = tagRef.current;
       if (!tagEl) return;
-      tagEl.textContent = o.label;
+      tagEl.textContent = resolveObjLabel(o, isDarkRef.current);
       tagEl.hidden = false;
       const pos = x === undefined || y === undefined ? projectObj(o.anchor()) : { x, y };
       tagEl.style.left = `${pos.x}px`;
@@ -930,9 +1223,19 @@ export default function StudioRoom({
       const viewIsRoom = document.documentElement.dataset.view !== "plain" && document.documentElement.dataset.view !== "about";
       const visibleRoom = entered && !peekRef.current && stageOnScreen && viewIsRoom;
 
-      if (spinning && visibleRoom && !reduced) {
-        refs.record.rotation.y -= dt * 3.49;
-        ambient = true;
+      const targetPlatterSpeed = spinning ? 3.49 : 0;
+      if (visibleRoom && !reduced) {
+        if (Math.abs(platterSpeed - targetPlatterSpeed) > 0.01) {
+          const rate = spinning ? 7.5 : 4.2;
+          platterSpeed += (targetPlatterSpeed - platterSpeed) * Math.min(1, dt * rate);
+          animating = true;
+        } else {
+          platterSpeed = targetPlatterSpeed;
+        }
+        if (platterSpeed > 0.01) {
+          refs.record.rotation.y -= dt * platterSpeed;
+          if (spinning) ambient = true;
+        }
       }
       if (visibleRoom && !reduced) {
         refs.rotor.rotation.y += dt * 0.85;
@@ -1055,10 +1358,27 @@ export default function StudioRoom({
     }
 
     resize();
-    callbacksRef.current.onReady();
+    if (shadowDirty) {
+      renderer.shadowMap.needsUpdate = true;
+      shadowDirty = false;
+      shadowRedraws++;
+    }
+    renderer.render(scene, camera);
+    needsFrame = false;
+    sceneBuilt = true;
+    callbacksRef.current.onProgress?.(0.68);
+    safetyTimer = setTimeout(() => {
+      texturesDone = true;
+      fontsDone = true;
+      tryFinishLoad();
+    }, 1500);
+    tryFinishLoad();
     rafId = requestAnimationFrame(frame);
 
     return () => {
+      readyEmitted = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
+      if (fontTimer) clearTimeout(fontTimer);
       cancelAnimationFrame(rafId);
       if (hintTimer) clearTimeout(hintTimer);
       registerActions(null);
@@ -1076,6 +1396,21 @@ export default function StudioRoom({
       hero.removeEventListener("wheel", onHeroWheel);
       hero.removeEventListener("touchstart", onHeroTouchStart);
       hero.removeEventListener("touchmove", onHeroTouchMove);
+      audio.removeEventListener("ended", onAudioEnded);
+      activeDeckToken++;
+      cancelAudioRamp();
+      audio.pause();
+      stopVinylTexture();
+      audio.removeAttribute("src");
+      audio.load();
+      syncDeckRef.current = null;
+      stopInstruments();
+      synthAudio.removeEventListener("ended", onSynthEnded);
+      synthAudio.removeAttribute("src");
+      synthAudio.load();
+      guitarAudio.removeAttribute("src");
+      guitarAudio.load();
+      stopInstrumentsRef.current = null;
       if (heroTex) heroTex.dispose();
       hero.removeAttribute("data-gone");
       clearHeroStyle();
@@ -1088,6 +1423,18 @@ export default function StudioRoom({
   useEffect(() => {
     applyThemeRef.current?.(theme === "dark");
   }, [theme]);
+
+  // Pause turntable and instrument audio if the user switches away from the 3D room view.
+  useEffect(() => {
+    if (view !== "room") {
+      if (deckPlaying) {
+        syncDeckRef.current?.(trackIndex, false);
+      }
+      stopInstrumentsRef.current?.();
+    }
+  }, [view, trackIndex, deckPlaying]);
+
+  const currentTrack = RECORD_TRACKS[trackIndex] ?? RECORD_TRACKS[0];
 
   return (
     <>
@@ -1107,6 +1454,38 @@ export default function StudioRoom({
         >
           ↺ back to the screen
         </button>
+        <div className="ln-deck" role="group" aria-label="Record player">
+          <span
+            className={deckPlaying ? "ln-deck__dot is-spinning" : "ln-deck__dot"}
+            style={{ background: currentTrack.labelColor }}
+            aria-hidden="true"
+          />
+          <span className="ln-deck__title">{currentTrack.title}</span>
+          <button
+            type="button"
+            className="ln-deck__btn"
+            aria-label="Previous track"
+            onClick={() => syncDeckRef.current?.(trackIndex - 1, true)}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="ln-deck__btn"
+            aria-label={deckPlaying ? "Pause record player" : "Play record player"}
+            onClick={() => syncDeckRef.current?.(trackIndex, !deckPlaying)}
+          >
+            {deckPlaying ? "❚❚" : "▶"}
+          </button>
+          <button
+            type="button"
+            className="ln-deck__btn"
+            aria-label="Next track"
+            onClick={() => syncDeckRef.current?.(trackIndex + 1, true)}
+          >
+            ›
+          </button>
+        </div>
         {benchText && <span className="ln-bench">{benchText}</span>}
       </div>
 
@@ -1146,7 +1525,7 @@ export default function StudioRoom({
             onBlur={() => hideTagRef.current?.()}
             onClick={() => runKeyObjectRef.current?.(o)}
           >
-            {o.label}
+            {resolveObjLabel(o, theme === "dark")}
           </button>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { clamp, linearColor, type RoomProjectSpec } from "./roomData";
+import { clamp, linearColor, RECORD_TRACKS, type RoomProjectSpec, WISCONSIN_W_LAYERS } from "./roomData";
 import {
   createBrickTexture,
   createFabricTexture,
@@ -9,7 +9,7 @@ import {
   createNeonTexture,
   createOakFloorTexture,
   createRecordTexture,
-  createRugTexture,
+  createRugTextures,
   createSynthBandTexture,
   createThrowTexture,
 } from "./textures";
@@ -44,7 +44,9 @@ export type RoomSceneRefs = {
   printsHit: THREE.Mesh;
   printsAnchor: THREE.Object3D;
   deckHit: THREE.Mesh;
+  crateHit: THREE.Mesh;
   record: THREE.Group;
+  setRecordTrack: (index: number) => void;
   arm: THREE.Group;
   rotor: THREE.Group;
   bowlMat: THREE.MeshStandardMaterial;
@@ -65,6 +67,7 @@ export function buildRoomScene(
   scene: THREE.Scene,
   roomProjects: RoomProjectSpec[],
   onAssetLoad: () => void,
+  onAssetProgress?: (loaded: number, total: number) => void,
 ): RoomSceneRefs {
   function mat(color: number, opts?: THREE.MeshStandardMaterialParameters) {
     return new THREE.MeshStandardMaterial({
@@ -80,7 +83,7 @@ export function buildRoomScene(
     w: number,
     h: number,
     d: number,
-    m: THREE.Material,
+    m: THREE.Material | THREE.Material[],
     x = 0,
     y = 0,
     z = 0,
@@ -297,7 +300,12 @@ export function buildRoomScene(
   }
 
   /* Poster (Young Thug – Jeffery) */
-  const loader = new THREE.TextureLoader();
+  const manager = new THREE.LoadingManager(
+    () => onAssetProgress?.(1, 1),
+    (_url, loaded, total) => onAssetProgress?.(loaded, total),
+    () => onAssetProgress?.(1, 1),
+  );
+  const loader = new THREE.TextureLoader(manager);
   const posterTex = loader.load("/room/jeffery.jpg", onAssetLoad);
   posterTex.colorSpace = THREE.SRGBColorSpace;
   posterTex.anisotropy = 4;
@@ -577,10 +585,47 @@ export function buildRoomScene(
   guitarHit.position.set(0, -0.62, 0.02);
   guitar.add(guitarHit);
 
-  /* "WET GRASS" rug */
-  const rugTex = createRugTexture();
-  const rug = box(2.9, 0.025, 1.9, new THREE.MeshStandardMaterial({ map: rugTex, roughness: 1 }), 0.1, 0.0125, -0.55);
+  /* "WET GRASS" tufted plush rug */
+  const { map: rugTex, bumpMap: rugBump, pileShells } = createRugTextures();
+  const rugTopMat = new THREE.MeshStandardMaterial({
+    map: rugTex,
+    bumpMap: rugBump,
+    bumpScale: 0.72,
+    roughness: 1,
+  });
+  const rugSideMat = new THREE.MeshStandardMaterial({
+    color: linearColor(0x19582a),
+    bumpMap: rugBump,
+    bumpScale: 0.6,
+    roughness: 1,
+  });
+  const rug = box(
+    2.9,
+    0.028,
+    1.9,
+    [rugSideMat, rugSideMat, rugTopMat, rugSideMat, rugSideMat, rugSideMat],
+    0.1,
+    0.014,
+    -0.55,
+  );
   rug.castShadow = false;
+  pileShells.forEach((shellTex, idx) => {
+    const pad = (idx + 1) * 0.028;
+    const shell = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.9 + pad, 1.9 + pad),
+      new THREE.MeshStandardMaterial({
+        map: shellTex,
+        transparent: true,
+        alphaTest: 0.14,
+        depthWrite: false,
+        roughness: 1,
+      }),
+    );
+    shell.rotation.x = -Math.PI / 2;
+    shell.position.set(0.1, 0.0295 + idx * 0.0045, -0.55);
+    shell.receiveShadow = true;
+    scene.add(shell);
+  });
 
   /* Desk chair */
   const chair = new THREE.Group();
@@ -836,6 +881,42 @@ export function buildRoomScene(
   throwMesh.rotation.y = 0.04;
   couch.add(throwMesh);
 
+  /* UW-Madison Motion W felt wall crest centered above the couch */
+  const badgersCrest = new THREE.Group();
+  badgersCrest.position.set(3.992, 1.82, -1.15);
+  badgersCrest.rotation.y = -Math.PI / 2;
+  scene.add(badgersCrest);
+  const crestScale = 0.94;
+  WISCONSIN_W_LAYERS.forEach(({ points, color, depth, z }, layerIdx) => {
+    const shape = new THREE.Shape();
+    points.forEach(([px, py], idx) => {
+      if (idx === 0) shape.moveTo(px * crestScale, py * crestScale);
+      else shape.lineTo(px * crestScale, py * crestScale);
+    });
+    shape.closePath();
+
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: layerIdx !== 1,
+      bevelThickness: 0.0018,
+      bevelSize: 0.0015,
+      bevelSegments: 1,
+    });
+    const isFelt = layerIdx !== 1;
+    const matCrest = new THREE.MeshStandardMaterial({
+      color: linearColor(color),
+      roughness: isFelt ? 0.92 : 0.85,
+      metalness: 0.02,
+      bumpMap: isFelt ? fuzzTex : null,
+      bumpScale: layerIdx === 2 ? 0.14 : layerIdx === 0 ? 0.06 : 0,
+    });
+    const layerMesh = new THREE.Mesh(geo, matCrest);
+    layerMesh.position.z = z;
+    layerMesh.castShadow = true;
+    layerMesh.receiveShadow = true;
+    badgersCrest.add(layerMesh);
+  });
+
   /* Coat rack with headphones & olive backpack */
   const coat = new THREE.Group();
   coat.position.set(-3.3, 0, -0.35);
@@ -913,19 +994,26 @@ export function buildRoomScene(
   consoleG.add(deck);
   box(0.46, 0.07, 0.36, plinthMat, 0, 0.035, 0, deck);
   cyl(0.152, 0.152, 0.014, 32, M.silver, -0.06, 0.077, 0, deck);
-  const recordTex = createRecordTexture();
+  const recordTextures = RECORD_TRACKS.map((t) => createRecordTexture(t.labelColor));
   const record = new THREE.Group();
   record.position.set(-0.06, 0.086, 0);
   deck.add(record);
-  const vinylTop = new THREE.Mesh(
-    new THREE.CircleGeometry(0.148, 40),
-    new THREE.MeshStandardMaterial({ map: recordTex, roughness: 0.35 }),
-  );
+  const vinylMat = new THREE.MeshStandardMaterial({ map: recordTextures[0], roughness: 0.35 });
+  const vinylTop = new THREE.Mesh(new THREE.CircleGeometry(0.148, 40), vinylMat);
+  vinylTop.userData.extraTextures = recordTextures;
   vinylTop.rotation.x = -Math.PI / 2;
   vinylTop.position.y = 0.0021;
   record.add(vinylTop);
   cyl(0.148, 0.148, 0.004, 40, M.black, 0, 0, 0, record).castShadow = false;
   cyl(0.008, 0.008, 0.02, 8, M.silver, 0, 0.008, 0, record);
+
+  function setRecordTrack(index: number) {
+    const tex = recordTextures[((index % recordTextures.length) + recordTextures.length) % recordTextures.length];
+    if (tex && vinylMat.map !== tex) {
+      vinylMat.map = tex;
+      vinylMat.needsUpdate = true;
+    }
+  }
 
   const arm = new THREE.Group();
   arm.position.set(0.16, 0.08, -0.12);
@@ -943,6 +1031,9 @@ export function buildRoomScene(
     sl.rotation.x = -0.18;
   });
   box(0.36, 0.02, 0.3, walnut, 0, 0.01, 0, crate);
+  const crateHit = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.34), new THREE.MeshBasicMaterial({ visible: false }));
+  crateHit.position.set(0, 0.18, 0);
+  crate.add(crateHit);
   const deckHit = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
   deckHit.position.set(0, 0.08, 0);
   deck.add(deckHit);
@@ -1062,7 +1153,9 @@ export function buildRoomScene(
     printsHit,
     printsAnchor,
     deckHit,
+    crateHit,
     record,
+    setRecordTrack,
     arm,
     rotor,
     bowlMat,
@@ -1084,6 +1177,8 @@ export function disposeRoomScene(scene: THREE.Scene) {
   scene.traverse((obj) => {
     if (obj instanceof THREE.Mesh) {
       obj.geometry.dispose();
+      const extra = obj.userData.extraTextures as THREE.Texture[] | undefined;
+      extra?.forEach((t) => t.dispose());
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((m) => {
         if (!m) return;

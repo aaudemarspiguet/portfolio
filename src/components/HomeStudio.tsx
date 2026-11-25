@@ -10,12 +10,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Project } from "@/content/projects";
+import type { HomeProject } from "@/content/project-types";
 import type { site as SiteType } from "@/content/site";
 import { CopyEmail } from "./CopyEmail";
+import { CoverVideo } from "./CoverVideo";
 import { ExperienceRow } from "./ExperienceRow";
 import { NameTooltip } from "./NameTooltip";
+import { TypingTagline } from "./TypingTagline";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
+import { BootScreen } from "./BootScreen";
 import type { RoomActions } from "./room/StudioRoom";
 import { RoomPeeks, type PeekState } from "./room/RoomPeeks";
 
@@ -44,7 +47,7 @@ export function HomeStudio({
   contactPanel,
 }: {
   siteData: typeof SiteType;
-  projects: Project[];
+  projects: HomeProject[];
   roleCaseStudies: Record<string, string | undefined>;
   contactPanel: ReactNode;
 }) {
@@ -67,6 +70,7 @@ export function HomeStudio({
   const actionsRef = useRef<RoomActions | null>(null);
 
   const [roomReady, setRoomReady] = useState(false);
+  const [roomProgress, setRoomProgress] = useState(0);
   const [peek, setPeek] = useState<PeekState>(null);
 
   const handleRegisterActions = useCallback(
@@ -118,7 +122,12 @@ export function HomeStudio({
   }, [setView]);
 
   const handleRoomReady = useCallback(() => {
+    setRoomProgress(1);
     setRoomReady(true);
+  }, []);
+
+  const handleRoomProgress = useCallback((ratio: number) => {
+    setRoomProgress((prev) => Math.max(prev, ratio));
   }, []);
 
   // Scroll to a requested section after switching into plain view.
@@ -153,17 +162,14 @@ export function HomeStudio({
   }, [view, setPlainSection]);
 
   const heroMeta = `${siteData.role.toLowerCase()} · ${siteData.city.toLowerCase()} · ${siteData.availability.toLowerCase()}`;
+  const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
 
   return (
     <>
+      <BootScreen targetProgress={roomProgress} ready={bootReady} />
+
       <div className="ln-wrap">
         <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
-          {!roomReady && (
-            <div className="ln-loading" id="loading">
-              setting up the room…
-            </div>
-          )}
-
           {hydrated && view === "room" && !webglFailed && (
             <RoomErrorBoundary onError={markWebglFailed}>
               <StudioRoom
@@ -175,6 +181,7 @@ export function HomeStudio({
                 onOpenPeek={handleOpenPeek}
                 onClosePeekState={handleClosePeekState}
                 onSwitchToPlain={handleSwitchToPlain}
+                onProgress={handleRoomProgress}
                 onReady={handleRoomReady}
                 onWebglFailed={markWebglFailed}
                 registerActions={handleRegisterActions}
@@ -196,14 +203,7 @@ export function HomeStudio({
                 </NameTooltip>
               </h1>
               <span className="ln-meta-line">{heroMeta}</span>
-              <p className="ln-room-hero__lede">
-                <b>{siteData.lede.highlight}</b>
-                {siteData.lede.rest}
-              </p>
-              <span className="ln-now-chip">
-                <i aria-hidden="true" />
-                now · {siteData.now}
-              </span>
+              <TypingTagline lines={siteData.taglines} className="ln-room-hero__lede" />
               <div className="ln-btn-row">
                 <a className="ln-btn ln-btn--primary" href={`mailto:${siteData.email}`}>
                   Email me
@@ -280,14 +280,7 @@ export function HomeStudio({
               </NameTooltip>
             </h1>
             <span className="ln-meta-line">{heroMeta}</span>
-            <p className="ln-plainhero__lede">
-              <b>{siteData.lede.highlight}</b>
-              {siteData.lede.rest}
-            </p>
-            <span className="ln-now-chip">
-              <i aria-hidden="true" />
-              now · {siteData.now}
-            </span>
+            <TypingTagline lines={siteData.taglines} className="ln-plainhero__lede" />
             <div className="ln-btn-row">
               <a className="ln-btn ln-btn--primary" href={`mailto:${siteData.email}`}>
                 Email me
@@ -314,14 +307,47 @@ export function HomeStudio({
 
           <section className="ln-section" id="work">
             <div className="ln-section-head">
-              <span className="ln-eyebrow">highlighted projects · {projects.length}</span>
               <h2>{siteData.projects.heading}</h2>
+              <div className="ln-section-head__sub">
+                <span className="ln-label">highlighted projects · {projects.length}</span>
+                <Link href="/projects" className="ln-link ln-more">
+                  All projects →
+                </Link>
+              </div>
             </div>
             <div className="ln-collage">
               {projects.map((p) => (
                 <Link key={p.slug} href={`/work/${p.slug}`} className={`ln-piece ln-piece--${p.slug}`}>
                   <span className="ln-piece__frame">
-                    {p.cover.srcDark ? (
+                    {p.cover.videoSrc ? (
+                      <span className="ln-iphone">
+                        <span className="ln-iphone__btn ln-iphone__btn--action" aria-hidden="true" />
+                        <span className="ln-iphone__btn ln-iphone__btn--vol1" aria-hidden="true" />
+                        <span className="ln-iphone__btn ln-iphone__btn--vol2" aria-hidden="true" />
+                        <span className="ln-iphone__btn ln-iphone__btn--power" aria-hidden="true" />
+                        <span className="ln-iphone__screen">
+                          <span className="ln-iphone__status" aria-hidden="true">
+                            <span className="ln-iphone__time">9:41</span>
+                            <span className="ln-iphone__island" />
+                            <span className="ln-iphone__icons">
+                              <svg viewBox="0 0 18 10" width="14" height="8" fill="currentColor">
+                                <rect x="0" y="6" width="2.2" height="4" rx="0.6" />
+                                <rect x="3.5" y="4" width="2.2" height="6" rx="0.6" />
+                                <rect x="7" y="2" width="2.2" height="8" rx="0.6" />
+                                <rect x="10.5" y="0" width="2.2" height="10" rx="0.6" />
+                              </svg>
+                              <span className="ln-iphone__bat" />
+                            </span>
+                          </span>
+                          <CoverVideo
+                            src={p.cover.videoSrc}
+                            poster={p.cover.videoPoster ?? p.cover.src}
+                            label={p.cover.alt}
+                          />
+                          <span className="ln-iphone__home" aria-hidden="true" />
+                        </span>
+                      </span>
+                    ) : p.cover.srcDark ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={p.cover.src} alt={p.cover.alt} loading="lazy" className="ln-theme-light" />
@@ -333,12 +359,21 @@ export function HomeStudio({
                       <img src={p.cover.src} alt={p.cover.alt} loading="lazy" />
                     )}
                     <span className="ln-piece__hover" aria-hidden="true">
-                      <span className="ln-piece__tags">{p.tags.join(" · ").toLowerCase()}</span>
                       <span className="ln-piece__more">Read more →</span>
                     </span>
                   </span>
                   <span className="ln-piece__cap">
-                    <h3 className="ln-card__title">{p.title}</h3>
+                    <span className="ln-piece__head">
+                      <h3 className="ln-card__title">{p.title}</h3>
+                      {(p.orgs ?? (p.org ? [p.org] : [])).length > 0 && (
+                        <span className="ln-piece__orgs">
+                          {(p.orgs ?? (p.org ? [p.org] : [])).map((o) => (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img key={o.name} src={o.logo} alt={`${o.name} logo`} width={18} height={18} className="ln-card__org" />
+                          ))}
+                        </span>
+                      )}
+                    </span>
                     <p className="ln-card__summary">{p.summary}</p>
                     <span className="ln-card__meta">
                       {p.area.toLowerCase()} · {p.year}
@@ -347,17 +382,12 @@ export function HomeStudio({
                 </Link>
               ))}
             </div>
-            <div className="ln-section-foot">
-              <Link href="/projects" className="ln-link ln-more">
-                All projects →
-              </Link>
-            </div>
           </section>
 
           <section className="ln-section" id="experience">
             <div className="ln-section-head">
-              <span className="ln-eyebrow">experience · {siteData.experience.roles.length} roles</span>
               <h2>{siteData.experience.heading}</h2>
+              <span className="ln-label">experience · {siteData.experience.roles.length} roles</span>
             </div>
             <ul className="ln-list">
               {siteData.experience.roles.map((r) => (
@@ -377,8 +407,8 @@ export function HomeStudio({
 
           <section className="ln-section" id="background">
             <div className="ln-section-head">
-              <span className="ln-eyebrow">background</span>
               <h2>Education and tools</h2>
+              <span className="ln-label">background</span>
             </div>
             <div className="ln-school">
               {siteData.education.logo && (

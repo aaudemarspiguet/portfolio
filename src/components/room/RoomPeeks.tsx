@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import type { Project } from "@/content/projects";
+import type { HomeProject } from "@/content/project-types";
 import type { Role } from "@/content/site";
 import { useTheme } from "../ThemeToggle";
+import { TERMINAL_PROMPT } from "../TypingTagline";
 
 export type PeekState =
-  | { kind: "case"; project: Project; swapDir?: 1 | -1 }
+  | { kind: "case"; project: HomeProject; swapDir?: 1 | -1 }
   | { kind: "all" }
   | { kind: "about" }
   | { kind: "terminal" }
@@ -24,7 +25,7 @@ export function RoomPeeks({
   onAllProjects,
 }: {
   peek: PeekState;
-  projects: Project[];
+  projects: HomeProject[];
   roles: Role[];
   aboutParagraphs: string[];
   onClose: () => void;
@@ -107,8 +108,8 @@ function CasePeek({
   onStepProject,
   onAllProjects,
 }: {
-  project: Project;
-  projects: Project[];
+  project: HomeProject;
+  projects: HomeProject[];
   isDark: boolean;
   onClose: () => void;
   onStepProject: (index: number, dir: 1 | -1) => void;
@@ -156,7 +157,7 @@ function CasePeek({
           {project.area.toLowerCase()} · {project.year}
         </span>
         <h2 id="peekTitle">{project.title}</h2>
-        <p>{project.caseStudy.lede}</p>
+        <p>{project.lede}</p>
         <span className="ln-peek__tags">{project.tags.join(" · ").toLowerCase()}</span>
         <div className="ln-btn-row">
           <Link href={`/work/${project.slug}`} className="ln-btn ln-btn--primary">
@@ -182,7 +183,7 @@ function AllProjectsPeek({
   onClose,
   onSelectProject,
 }: {
-  projects: Project[];
+  projects: HomeProject[];
   isDark: boolean;
   onClose: () => void;
   onSelectProject: (index: number) => void;
@@ -243,7 +244,7 @@ function TerminalPeek({ roles, onClose }: { roles: Role[]; onClose: () => void }
     <div className="ln-term" role="dialog" aria-modal="true" aria-label="Experience">
       <div className="ln-term__screen">
         <div className="ln-term__row">
-          <span className="g">amogh@loft ~ % cat experience/*.txt</span>
+          <span className="g">{TERMINAL_PROMPT}cat experience/*.txt</span>
           <button type="button" className="ln-pill" data-close onClick={onClose}>
             exit
           </button>
@@ -255,7 +256,7 @@ function TerminalPeek({ roles, onClose }: { roles: Role[]; onClose: () => void }
             <span className="l">{r.line}</span>
           </p>
         ))}
-        <span className="g">amogh@loft ~ % </span>
+        <span className="g">{TERMINAL_PROMPT}</span>
         <span className="ln-caret" aria-hidden="true" />
       </div>
     </div>

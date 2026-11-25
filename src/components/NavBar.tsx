@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
-import { getProject } from "@/content/projects";
 import { site } from "@/content/site";
 import { HomeLink } from "./HomeLink";
+import { SfxToggle } from "./SfxToggle";
 import { useStudioView, type RoomNavKey } from "./StudioViewProvider";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -16,7 +16,7 @@ const NAV_ITEMS: { key: RoomNavKey; label: string; hash: string }[] = [
 
 type NavKey = RoomNavKey | "background";
 
-function useCurrentKey(pathname: string, caseStudySlug: string | null): NavKey | null {
+function useCurrentKey(pathname: string, caseStudySlug: string | null, workSlugs: string[]): NavKey | null {
   const onHome = pathname === "/";
   const { view, roomCurrent, plainSection } = useStudioView();
 
@@ -27,7 +27,7 @@ function useCurrentKey(pathname: string, caseStudySlug: string | null): NavKey |
   }
   if (pathname === "/projects") return "work";
   if (!caseStudySlug) return null;
-  return getProject(caseStudySlug)?.kind === "work" ? "experience" : "work";
+  return workSlugs.includes(caseStudySlug) ? "experience" : "work";
 }
 
 function GitHubIcon() {
@@ -46,11 +46,11 @@ function LinkedInIcon() {
   );
 }
 
-export function NavBar() {
+export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const pathname = usePathname();
   const onHome = pathname === "/";
   const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
-  const current = useCurrentKey(pathname, caseStudySlug);
+  const current = useCurrentKey(pathname, caseStudySlug, workSlugs);
   const { view, webglFailed, setView, navigateInRoom } = useStudioView();
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
@@ -126,6 +126,7 @@ export function NavBar() {
             </button>
           )}
           <MobileMenu current={current} href={href} onNavClick={handleNavClick} />
+          <SfxToggle />
           <ThemeToggle />
         </div>
       </div>

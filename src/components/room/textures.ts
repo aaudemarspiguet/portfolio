@@ -129,21 +129,111 @@ export function createSynthBandTexture(): THREE.CanvasTexture {
   });
 }
 
-export function createRugTexture(): THREE.CanvasTexture {
-  return canvasTex(1024, 680, (g, w, h) => {
-    g.fillStyle = "#1f6b34";
-    g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 26000; i++) {
-      const v = Math.random();
-      g.fillStyle = v > 0.5 ? "rgba(76,160,90,.35)" : "rgba(10,50,22,.35)";
-      g.fillRect(Math.random() * w, Math.random() * h, 2, 4);
-    }
-    g.fillStyle = "#f4f3ef";
-    g.font = "800 92px Inter, Arial, sans-serif";
+export function createRugTextures(): {
+  map: THREE.CanvasTexture;
+  bumpMap: THREE.CanvasTexture;
+  pileShells: THREE.CanvasTexture[];
+} {
+  const label = "“WET GRASS”";
+
+  const drawCenteredLabel = (g: CanvasRenderingContext2D, w: number, h: number) => {
+    const px = Math.round(92 * (w / 1024));
+    g.font = `800 ${px}px Inter, Arial, sans-serif`;
     g.textAlign = "center";
     g.textBaseline = "middle";
-    g.fillText("“WET GRASS”", w / 2, h * 0.62);
+    const m = g.measureText(label);
+    const dx =
+      typeof m.actualBoundingBoxLeft === "number" && typeof m.actualBoundingBoxRight === "number"
+        ? (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2
+        : 0;
+    const dy =
+      typeof m.actualBoundingBoxAscent === "number" && typeof m.actualBoundingBoxDescent === "number"
+        ? (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2
+        : 0;
+    g.fillText(label, w / 2 + dx, h / 2 + dy);
+  };
+
+  const map = canvasTex(1024, 680, (g, w, h) => {
+    g.fillStyle = "#19582a";
+    g.fillRect(0, 0, w, h);
+
+    // Dense multi-tone tufted wool blades for plush pile richness.
+    const yarnTones = [
+      "rgba(12, 46, 20, 0.45)",
+      "rgba(24, 84, 40, 0.45)",
+      "rgba(44, 128, 62, 0.38)",
+      "rgba(66, 160, 82, 0.28)",
+    ];
+    for (let i = 0; i < 68000; i++) {
+      g.fillStyle = yarnTones[i & 3];
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const len = 3 + Math.random() * 5;
+      const tilt = (Math.random() - 0.5) * 2.2;
+      g.save();
+      g.translate(x, y);
+      g.rotate(tilt);
+      g.fillRect(-1, -len / 2, 2 + Math.random() * 1.4, len);
+      g.restore();
+    }
+
+    // Center "WET GRASS" optically on both axes.
+    g.fillStyle = "#f2f1ec";
+    drawCenteredLabel(g, w, h);
+
+    // Weave light green & highlight tuft wisps subtly through the lettering so it reads like dyed carpet pile.
+    for (let i = 0; i < 4200; i++) {
+      g.fillStyle = i % 3 === 0 ? "rgba(245, 245, 240, 0.28)" : "rgba(31, 107, 52, 0.22)";
+      g.fillRect(Math.random() * w, Math.random() * h, 1.5 + Math.random() * 1.5, 3 + Math.random() * 3);
+    }
   });
+
+  const bumpMap = canvasTex(
+    1024,
+    680,
+    (g, w, h) => {
+      g.fillStyle = "#525252";
+      g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 72000; i++) {
+        const shade = 40 + Math.floor(Math.random() * 200);
+        g.fillStyle = `rgba(${shade},${shade},${shade},0.48)`;
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        g.fillRect(x, y, 2 + Math.random() * 2, 3 + Math.random() * 5);
+      }
+    },
+    undefined,
+    THREE.NoColorSpace,
+  );
+
+  // Two stacked pile-tip shell layers so light catches upper tuft tips and edges overhang softly.
+  const pileShells = [
+    { count: 44000, alpha: 0.62, tipBright: 0.45 },
+    { count: 24000, alpha: 0.44, tipBright: 0.65 },
+  ].map(({ count, alpha, tipBright }) =>
+    canvasTex(512, 340, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      for (let i = 0; i < count; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const edgeBoost = x < 8 || x > w - 8 || y < 8 || y > h - 8 ? 1.25 : 1;
+        const r = Math.round(32 + Math.random() * 44 * tipBright);
+        const gr = Math.round(108 + Math.random() * 72 * tipBright);
+        const b = Math.round(46 + Math.random() * 34 * tipBright);
+        g.fillStyle = `rgba(${r},${gr},${b},${Math.min(0.85, alpha * edgeBoost)})`;
+        g.fillRect(x, y, 1.4 + Math.random() * 1.4, 2 + Math.random() * 2.8);
+      }
+      // Subtle translucent white wool tips over the centered lettering zone on the inner shell.
+      if (alpha > 0.5) {
+        g.globalCompositeOperation = "source-atop";
+        g.fillStyle = "rgba(244, 243, 238, 0.85)";
+        drawCenteredLabel(g, w, h);
+        g.globalCompositeOperation = "source-over";
+      }
+    }),
+  );
+
+  return { map, bumpMap, pileShells };
 }
 
 export function createFuzzTexture(): THREE.CanvasTexture {
@@ -199,7 +289,7 @@ export function createThrowTexture(): THREE.CanvasTexture {
   });
 }
 
-export function createRecordTexture(): THREE.CanvasTexture {
+export function createRecordTexture(accent = "#ff3b1f"): THREE.CanvasTexture {
   return canvasTex(256, 256, (g) => {
     g.fillStyle = "#0d0d0f";
     g.beginPath();
@@ -212,7 +302,7 @@ export function createRecordTexture(): THREE.CanvasTexture {
       g.arc(128, 128, rr, 0, Math.PI * 2);
       g.stroke();
     }
-    g.fillStyle = "#ff3b1f";
+    g.fillStyle = accent;
     g.beginPath();
     g.arc(128, 128, 40, 0, Math.PI * 2);
     g.fill();
@@ -262,8 +352,48 @@ export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture
   const S = Math.min(2, 2048 / box.width);
   return canvasTex(Math.round(box.width * S), Math.round(box.height * S), (g) => {
     g.scale(S, S);
-    g.fillStyle = getComputedStyle(heroScreenEl).backgroundColor;
+    const screenStyle = getComputedStyle(heroScreenEl);
+    g.fillStyle = screenStyle.backgroundColor;
     g.fillRect(0, 0, box.width, box.height);
+
+    // ASCII dither matching the HTML hero background.
+    const tile = document.createElement("canvas");
+    tile.width = 72;
+    tile.height = 72;
+    const tg = tile.getContext("2d");
+    if (tg) {
+      const asciiRows = [
+        [".", "+", ":", "#", "-", "*"],
+        ["*", "-", "#", ":", "+", "."],
+        [":", "#", ".", "*", "-", "+"],
+        ["+", ".", "*", "-", "#", ":"],
+        ["-", "*", "+", ".", ":", "#"],
+        ["#", ":", "-", "+", "*", "."],
+      ];
+      const glyphAlpha: Record<string, number> = {
+        ".": 0.45,
+        ":": 0.52,
+        "-": 0.58,
+        "+": 0.72,
+        "*": 0.82,
+        "#": 0.9,
+      };
+      tg.fillStyle = screenStyle.color;
+      tg.font = '500 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+      tg.textAlign = "center";
+      tg.textBaseline = "middle";
+      asciiRows.forEach((row, r) => {
+        row.forEach((ch, c) => {
+          tg.globalAlpha = (glyphAlpha[ch] ?? 0.6) * 0.22;
+          tg.fillText(ch, c * 12 + 6, r * 12 + 6);
+        });
+      });
+      const pat = g.createPattern(tile, "repeat");
+      if (pat) {
+        g.fillStyle = pat;
+        g.fillRect(0, 0, box.width, box.height);
+      }
+    }
 
     heroScreenEl.querySelectorAll<HTMLElement>("*").forEach((el) => {
       if (el.closest(".ln-say__tip")) return;

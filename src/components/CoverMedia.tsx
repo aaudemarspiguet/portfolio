@@ -1,4 +1,4 @@
-import type { Media } from "@/content/projects";
+import type { Media } from "@/content/project-types";
 import { CoverVideo } from "./CoverVideo";
 
 /** A card cover: image, GIF or video. `focus` becomes object-position. */
@@ -9,7 +9,16 @@ export function CoverMedia({ media, className }: { media: Media; className?: str
     draggable: false,
   };
 
-  if (media.kind === "video") return <CoverVideo src={media.src} label={media.alt} {...shared} />;
+  if (media.kind === "video" || media.videoSrc) {
+    return (
+      <CoverVideo
+        src={media.videoSrc ?? media.src}
+        poster={media.videoPoster}
+        label={media.alt}
+        {...shared}
+      />
+    );
+  }
 
   // Keep SVG and GIF covers in their original format.
   if (media.srcDark) {
