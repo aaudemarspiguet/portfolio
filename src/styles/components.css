@@ -2226,10 +2226,16 @@ html[data-boot="revealing"] .ln-mbar {
      --bars is the screen's height less the viewport's, measured in StudioRoom. In room view the
      stage gets that much page above and below it, the canvas runs that far past both its edges,
      and StudioRoom keeps the page scrolled down by it so the stage fills the viewport exactly.
-     Only the root is locked, so the page can't be dragged; body stays unclipped, because clipping
-     it cut the canvas off at the viewport's bottom. The camera stays framed to the stage, so the
-     extra rows only continue the picture. */
-  html:has(#room:not([hidden])) { overflow: hidden; overscroll-behavior: none; }
+     The root is not overflow:hidden: with it locked, Safari painted plain bands under its bars even
+     with the room there and the page scrolled, so the root stays scrollable like plain view's.
+     Dragging the room or the hero doesn't move the page (touch-action below), and StudioRoom
+     scrolls back if anything else does. Body stays unclipped, because clipping it cut the canvas
+     off at the viewport's bottom. The camera stays framed to the stage, so the extra rows only
+     continue the picture. #lockroot puts the old lock back, to compare. */
+  html:has(#room:not([hidden])) { overscroll-behavior: none; }
+  html[data-lockroot]:has(#room:not([hidden])) { overflow: hidden; }
+  .ln-room-hero,
+  .ln-stage__canvas { touch-action: none; }
   html:has(#room:not([hidden])) body::before { display: none; }
   .ln-stage {
     overflow: visible;
