@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { site } from "@/content/site";
 import { toggleSfx, useSfxEnabled } from "@/lib/sfx";
 import { GlassMenu, type MenuItem } from "./glass/GlassMenu";
@@ -107,10 +108,18 @@ export function MoreMenu({ buttonClassName, withLinks }: { buttonClassName: stri
         </svg>
       </button>
       {open && <GlassMenu anchor={buttonRef} items={items} align="end" label="More" onClose={close} />}
-      {recordOpen && inRoom && <RecordSheet onClose={() => setRecordOpen(false)} />}
-      <div className="ln-toast" role="status" aria-live="polite">
-        {toast && <span>{toast}</span>}
-      </div>
+      {/* The sheet and toast are fixed to the screen, but the glass bar's blur turns it into their
+          frame, which squeezes them into the ⋯ pill. So they mount on the page body instead. */}
+      {hydrated &&
+        createPortal(
+          <>
+            {recordOpen && inRoom && <RecordSheet onClose={() => setRecordOpen(false)} />}
+            <div className="ln-toast" role="status" aria-live="polite">
+              {toast && <span>{toast}</span>}
+            </div>
+          </>,
+          document.body,
+        )}
     </>
   );
 }
