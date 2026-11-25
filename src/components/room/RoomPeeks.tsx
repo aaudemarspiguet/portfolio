@@ -176,26 +176,24 @@ function CasePeek({
           <span className="ln-peek__steps">
             <button
               type="button"
-              className="ln-pill"
+              className="ln-btn ln-btn--ghost ln-peek__step"
               data-step="-1"
               aria-label={`Previous project: ${prev.title}`}
               onClick={() => onStepProject(i - 1, -1)}
             >
-              ‹ <span className="ln-peek__wide">prev</span>
-              <span className="ln-peek__narrow">Prev</span>
+              ‹ Prev
             </button>
             <span className="ln-peek__count">
               {i + 1} / {n}
             </span>
             <button
               type="button"
-              className="ln-pill"
+              className="ln-btn ln-btn--ghost ln-peek__step"
               data-step="1"
               aria-label={`Next project: ${next.title}`}
               onClick={() => onStepProject(i + 1, 1)}
             >
-              <span className="ln-peek__wide">next</span>
-              <span className="ln-peek__narrow">Next</span> ›
+              Next ›
             </button>
           </span>
         </>

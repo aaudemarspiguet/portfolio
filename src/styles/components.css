@@ -1046,6 +1046,7 @@ html[data-boot="revealing"] .ln-nav {
   stroke-width: 1.8;
 }
 .ln-peek__steps { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.ln-peek__step { gap: 6px; }
 .ln-peek__count {
   min-width: 3.5ch;
   text-align: center;
@@ -1132,12 +1133,7 @@ html[data-boot="revealing"] .ln-nav {
   .ln-peek__go .ln-btn--primary { flex: 1; }
   .ln-peek__all { width: 44px; padding: 0; }
   .ln-peek__steps { justify-content: space-between; margin-left: 0; }
-  .ln-peek__steps .ln-pill {
-    height: 40px;
-    padding: 0 18px;
-    font: 500 15px var(--font-sans);
-    letter-spacing: -0.01em;
-  }
+  .ln-peek__step { height: 44px; padding: 0 16px; font-size: 14px; }
 }
 
 /* Terminal (Experience peek) */
