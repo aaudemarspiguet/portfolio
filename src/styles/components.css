@@ -2150,11 +2150,11 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-mbar__end { display: flex; align-items: center; padding: 2px; }
   .ln-toast { top: calc(64px + env(safe-area-inset-top, 0px)); }
 
-  /* Full screen: the room fills the phone, edge to edge, under the status bar and behind Safari's
-     floating toolbar. lvh is the height with the toolbar out of the way, so no band shows above it,
-     and paper behind the canvas keeps Safari from tinting its bars black. */
+  /* The room fills the phone edge to edge, down to Safari's toolbar. svh, not lvh: an lvh stage is
+     taller than the screen while the toolbar shows, so the page scrolled. Paper behind the canvas
+     keeps Safari from tinting its bars black. */
   .ln-stage {
-    height: 100lvh;
+    height: 100svh;
     margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
     border-radius: 0;
     box-shadow: none;
