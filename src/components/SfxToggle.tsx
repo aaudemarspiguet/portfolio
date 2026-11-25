@@ -6,9 +6,10 @@ import { initGlobalSfx, toggleSfx, useSfxEnabled } from "@/lib/sfx";
 const noopSubscribe = () => () => {};
 
 /**
- * Installs delegated click SFX once and renders a compact sound toggle in the nav bar.
+ * Installs delegated click SFX once and renders a sound toggle: an icon button in the nav bar,
+ * or a labeled pill (`labeled`) in the phone menu.
  */
-export function SfxToggle() {
+export function SfxToggle({ className = "ln-icon-btn", labeled = false }: { className?: string; labeled?: boolean }) {
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const stored = useSfxEnabled();
   const enabled = hydrated ? stored : true;
@@ -18,7 +19,7 @@ export function SfxToggle() {
   return (
     <button
       type="button"
-      className="ln-icon-btn"
+      className={className}
       data-sfx-toggle="true"
       aria-pressed={enabled}
       aria-label={enabled ? "Mute click sound effects" : "Enable click sound effects"}
@@ -37,6 +38,7 @@ export function SfxToggle() {
           <path d="m21 9-6 6M15 9l6 6" />
         </svg>
       )}
+      {labeled && <span>{enabled ? "sound on" : "sound off"}</span>}
     </button>
   );
 }

@@ -315,10 +315,22 @@ html.ln-locked { overflow: hidden; }
 }
 .ln-sheet__links a:hover,
 .ln-sheet__links a[aria-current] { color: var(--link); }
+.ln-sheet__controls,
 .ln-sheet__social {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 24px 18px 0;
+}
+.ln-sheet__social { padding-top: 12px; }
+.ln-sheet__sfx svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 @media (prefers-reduced-motion: no-preference) {
   .ln-sheet[open] { animation: ln-sheet-in .2s ease-out; }
@@ -327,9 +339,10 @@ html.ln-locked { overflow: hidden; }
 @media (max-width: 640px) {
   .ln-nav__links { display: none; }
   .ln-nav { grid-template-columns: minmax(0, 1fr) auto; padding: 0 8px 0 14px; }
-  .ln-nav__social { display: none; }
+  .ln-nav__social,
+  .ln-nav__sfx,
+  .ln-viewbtn { display: none; }
   .ln-menubtn { display: inline-grid; }
-  .ln-viewbtn { min-width: 88px; padding: 0 10px; }
 }
 
 /* Stage & 3D room */

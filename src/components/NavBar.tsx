@@ -54,6 +54,9 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const { view, webglFailed, setView, navigateInRoom } = useStudioView();
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
+  const canSwitchView = onHome && !webglFailed;
+  const viewLabel = view === "room" ? "plain view" : "room view";
+  const toggleView = () => setView(view === "room" ? "plain" : "room");
 
   function handleNavClick(event: MouseEvent<HTMLAnchorElement>, key: NavKey) {
     if (!onHome) return;
@@ -115,19 +118,22 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
           >
             <LinkedInIcon />
           </a>
-          {onHome && !webglFailed && (
-            <button
-              type="button"
-              className="ln-viewbtn"
-              aria-pressed={view !== "room"}
-              onClick={() => setView(view === "room" ? "plain" : "room")}
-            >
-              {view === "room" ? "plain view" : "room view"}
+          {canSwitchView && (
+            <button type="button" className="ln-viewbtn" aria-pressed={view !== "room"} onClick={toggleView}>
+              {viewLabel}
             </button>
           )}
-          <MobileMenu current={current} href={href} onNavClick={handleNavClick} />
-          <SfxToggle />
+          <SfxToggle className="ln-icon-btn ln-nav__sfx" />
           <ThemeToggle />
+          {/* Phones: the pill keeps the wordmark, theme and this menu, like production. The view
+              switch and sound live inside the menu. */}
+          <MobileMenu
+            current={current}
+            href={href}
+            onNavClick={handleNavClick}
+            viewLabel={canSwitchView ? viewLabel : null}
+            onToggleView={toggleView}
+          />
         </div>
       </div>
     </header>
@@ -138,10 +144,14 @@ function MobileMenu({
   current,
   href,
   onNavClick,
+  viewLabel,
+  onToggleView,
 }: {
   current: NavKey | null;
   href: (hash: string) => string;
   onNavClick: (event: MouseEvent<HTMLAnchorElement>, key: NavKey) => void;
+  viewLabel: string | null;
+  onToggleView: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -201,7 +211,7 @@ function MobileMenu({
         onClick={show}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 8h16M4 16h16" />
+          <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
       </button>
 
@@ -244,6 +254,21 @@ function MobileMenu({
             </a>
           ))}
         </nav>
+        <div className="ln-sheet__controls">
+          {viewLabel && (
+            <button
+              type="button"
+              className="ln-pill"
+              onClick={() => {
+                hide();
+                onToggleView();
+              }}
+            >
+              {viewLabel}
+            </button>
+          )}
+          <SfxToggle className="ln-pill ln-sheet__sfx" labeled />
+        </div>
         <div className="ln-sheet__social">
           <a
             className="ln-pill"
