@@ -8,8 +8,11 @@ export type MenuItem =
       label: string;
       /** Shown under the label in mono, for data like the current track. */
       sub?: string;
+      /** A glyph on the leading edge, as iOS 26 menus draw them. */
       icon?: ReactNode;
-      /** A checkmark column: true shows the mark, false keeps the space. */
+      /** A small mark on the trailing edge, like ↗ for a link that leaves the site. */
+      trail?: string;
+      /** A checkmark: true shows the mark, false keeps the space. */
       checked?: boolean;
       href?: string;
       external?: boolean;
@@ -38,6 +41,8 @@ export function GlassMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left?: number; right?: number } | null>(null);
   const hasChecks = items.some((i) => i.kind !== "separator" && i.checked !== undefined);
+  // With glyphs, the glyph owns the leading column and checkmarks move to the trailing edge.
+  const hasIcons = items.some((i) => i.kind !== "separator" && i.icon);
 
   useLayoutEffect(() => {
     const el = anchor.current;
@@ -96,18 +101,28 @@ export function GlassMenu({
         if (item.kind === "separator") return <div key={`sep-${i}`} className="ln-gmenu__sep" role="separator" />;
         const inner = (
           <>
-            {hasChecks && (
+            {hasChecks && !hasIcons && (
               <span className="ln-gmenu__check" aria-hidden="true">
                 {item.checked ? "✓" : ""}
+              </span>
+            )}
+            {hasIcons && (
+              <span className="ln-gmenu__icon" aria-hidden="true">
+                {item.icon}
               </span>
             )}
             <span className="ln-gmenu__text">
               <span className="ln-gmenu__label">{item.label}</span>
               {item.sub && <span className="ln-gmenu__sub">{item.sub}</span>}
             </span>
-            {item.icon && (
-              <span className="ln-gmenu__icon" aria-hidden="true">
-                {item.icon}
+            {hasIcons && item.checked && (
+              <span className="ln-gmenu__check ln-gmenu__check--end" aria-hidden="true">
+                ✓
+              </span>
+            )}
+            {item.trail && (
+              <span className="ln-gmenu__trail" aria-hidden="true">
+                {item.trail}
               </span>
             )}
           </>

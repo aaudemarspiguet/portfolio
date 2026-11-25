@@ -6,24 +6,36 @@ import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from 
 import { useStudioView } from "./StudioViewProvider";
 
 /**
- * Going home without a link (the phone bar's pull-down menu): on "/" it returns to the room and
- * flies back to the hero screen, elsewhere it navigates to "/" first.
+ * Home keeps the view you're in: in the room it flies back to the hero screen, in plain view it
+ * scrolls to the top.
+ */
+function returnHome(inRoom: boolean, goBackToScreen: () => void, instant = false) {
+  if (inRoom) {
+    window.scrollTo(0, 0);
+    goBackToScreen();
+    return;
+  }
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: instant || reduce ? "instant" : "smooth" });
+}
+
+/**
+ * Going home without a link (the phone bar's pull-down menu): on "/" it returns to the hero in the
+ * current view, elsewhere it navigates to "/" first.
  */
 export function useGoHome() {
   const router = useRouter();
   const pathname = usePathname();
   const onHome = pathname === "/";
-  const { view, webglFailed, setView, goBackToScreen } = useStudioView();
+  const { view, webglFailed, goBackToScreen } = useStudioView();
   const pendingHome = useRef(false);
 
   useEffect(() => {
     if (onHome && pendingHome.current) {
       pendingHome.current = false;
-      if (!webglFailed && view !== "room") setView("room");
-      window.scrollTo({ top: 0, behavior: "instant" });
-      goBackToScreen();
+      returnHome(!webglFailed && view === "room", goBackToScreen, true);
     }
-  }, [onHome, webglFailed, view, setView, goBackToScreen]);
+  }, [onHome, webglFailed, view, goBackToScreen]);
 
   return useCallback(() => {
     if (!onHome) {
@@ -31,22 +43,12 @@ export function useGoHome() {
       router.push("/", { scroll: false });
       return;
     }
-    if (webglFailed) {
-      window.scrollTo({
-        top: 0,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-      });
-      return;
-    }
-    if (view !== "room") setView("room");
-    window.scrollTo(0, 0);
-    goBackToScreen();
-  }, [onHome, router, webglFailed, view, setView, goBackToScreen]);
+    returnHome(!webglFailed && view === "room", goBackToScreen);
+  }, [onHome, router, webglFailed, view, goBackToScreen]);
 }
 
 /**
- * Brand link: on "/" returns to room view (if supported) and flies back to the iMac hero screen;
- * on other routes navigates to "/".
+ * Brand link: on "/" returns to the hero in the current view; on other routes navigates to "/".
  */
 export function HomeLink({
   children,
@@ -61,17 +63,15 @@ export function HomeLink({
 }) {
   const pathname = usePathname();
   const onHome = pathname === "/";
-  const { view, webglFailed, setView, goBackToScreen } = useStudioView();
+  const { view, webglFailed, goBackToScreen } = useStudioView();
   const pendingHome = useRef(false);
 
   useEffect(() => {
     if (onHome && pendingHome.current) {
       pendingHome.current = false;
-      if (!webglFailed && view !== "room") setView("room");
-      window.scrollTo({ top: 0, behavior: "instant" });
-      goBackToScreen();
+      returnHome(!webglFailed && view === "room", goBackToScreen, true);
     }
-  }, [onHome, webglFailed, view, setView, goBackToScreen]);
+  }, [onHome, webglFailed, view, goBackToScreen]);
 
   function goHome(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.();
@@ -82,16 +82,7 @@ export function HomeLink({
     }
 
     event.preventDefault();
-    if (webglFailed) {
-      window.scrollTo({
-        top: 0,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-      });
-      return;
-    }
-    if (view !== "room") setView("room");
-    window.scrollTo(0, 0);
-    goBackToScreen();
+    returnHome(!webglFailed && view === "room", goBackToScreen);
   }
 
   return (

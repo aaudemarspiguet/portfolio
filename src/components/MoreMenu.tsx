@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { site } from "@/content/site";
 import { toggleSfx, useSfxEnabled } from "@/lib/sfx";
 import { GlassMenu, type MenuItem } from "./glass/GlassMenu";
+import { CodeIcon, CopyIcon, GitHubIcon, LinkedInIcon, MoonIcon, SpeakerIcon, SunIcon, VinylIcon, WalkIcon } from "./icons";
 import { RecordSheet } from "./room/RecordSheet";
 import { RECORD_TRACKS } from "./room/roomData";
 import { roomCommand, useRoomBus } from "./room/roomBus";
@@ -62,26 +63,30 @@ export function MoreMenu({ buttonClassName, withLinks }: { buttonClassName: stri
   const items: MenuItem[] = [
     ...(inRoom
       ? ([
-          { label: tourSeen() ? "Replay the Tour" : "Take the Tour", onSelect: roomCommand.replayTour },
+          { label: tourSeen() ? "Replay the Tour" : "Take the Tour", icon: <WalkIcon />, onSelect: roomCommand.replayTour },
           {
             label: "Record Player",
+            icon: <VinylIcon />,
             sub: `${track.title} · ${room.playing ? "playing" : "paused"}`,
             onSelect: () => setRecordOpen(true),
           },
           { kind: "separator" },
         ] satisfies MenuItem[])
       : []),
-    { label: "Sound Effects", checked: sfxOn, onSelect: toggleSfx },
-    { label: "Dark Appearance", checked: theme === "dark", onSelect: toggleTheme },
+    { label: "Sound Effects", icon: <SpeakerIcon />, checked: sfxOn, onSelect: toggleSfx },
+    // Names the mode a tap switches to, like Control Center's Dark Mode button.
+    theme === "dark"
+      ? { label: "Light Mode", icon: <SunIcon />, onSelect: toggleTheme }
+      : { label: "Dark Mode", icon: <MoonIcon />, onSelect: toggleTheme },
     { kind: "separator" },
-    { label: "Copy Email", onSelect: copyEmail },
+    { label: "Copy Email", icon: <CopyIcon />, onSelect: copyEmail },
     ...(withLinks
       ? ([
-          { label: "GitHub", href: site.links.github, external: true, icon: "↗" },
-          { label: "LinkedIn", href: site.links.linkedin, external: true, icon: "↗" },
+          { label: "GitHub", icon: <GitHubIcon />, href: site.links.github, external: true, trail: "↗" },
+          { label: "LinkedIn", icon: <LinkedInIcon />, href: site.links.linkedin, external: true, trail: "↗" },
         ] satisfies MenuItem[])
       : []),
-    { label: "View Source", href: site.links.source, external: true, icon: "↗" },
+    { label: "View Source", icon: <CodeIcon />, href: site.links.source, external: true, trail: "↗" },
   ];
 
   return (

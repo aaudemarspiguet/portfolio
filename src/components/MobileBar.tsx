@@ -2,11 +2,11 @@
 
 import { useCallback, useRef, useState } from "react";
 import { site } from "@/content/site";
-import { CubeIcon } from "./CubeIcon";
 import { GlassMenu, type MenuItem } from "./glass/GlassMenu";
 import { useGoHome } from "./HomeLink";
 import { MoreMenu } from "./MoreMenu";
-import { useStudioView, type RoomNavKey } from "./StudioViewProvider";
+import { type RoomNavKey } from "./StudioViewProvider";
+import { ViewSwitch } from "./ViewSwitch";
 
 const SECTION_LABELS: Record<RoomNavKey, string> = {
   work: "Projects",
@@ -16,7 +16,7 @@ const SECTION_LABELS: Record<RoomNavKey, string> = {
 
 /**
  * The phone top bar: one full-width Liquid Glass bar over the full-screen page. On the left, the
- * page's name opens a pull-down of the sections; on the right, the room switch (a cube) and a
+ * page's name opens a pull-down of the sections; on the right, the room/plain switch and a
  * ⋯ menu with everything else.
  */
 export function MobileBar({
@@ -32,7 +32,6 @@ export function MobileBar({
   onNav: (key: RoomNavKey) => void;
   onToggleView: () => void;
 }) {
-  const { view } = useStudioView();
   const goHome = useGoHome();
   const [navOpen, setNavOpen] = useState(false);
   const titleRef = useRef<HTMLButtonElement>(null);
@@ -65,11 +64,7 @@ export function MobileBar({
       </button>
 
       <div className="ln-mbar__end">
-        {canSwitchView && (
-          <button type="button" className="ln-gbtn" aria-label="Room view" aria-pressed={view === "room"} onClick={onToggleView}>
-            <CubeIcon />
-          </button>
-        )}
+        {canSwitchView && <ViewSwitch className="ln-gbtn" onToggle={onToggleView} />}
         <MoreMenu buttonClassName="ln-gbtn" withLinks />
       </div>
 
