@@ -2151,6 +2151,20 @@ html[data-boot="revealing"] .ln-mbar {
     padding-top: calc(52px + env(safe-area-inset-top, 0px));
     border-radius: 0;
   }
+  /* The boot lock screen fills the phone too, so it hands straight over to the room. */
+  .ln-boot__stage {
+    height: 100svh;
+    margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
+  }
+  :root .ln-boot__stage .ln-boot__screen {
+    inset: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .ln-boot__lock {
+    padding-top: calc(clamp(48px, 14cqh, 120px) + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Back, Tour and the deck live in the bar's menus now. */
   .ln-stage__bar > :not(.ln-bench) { display: none; }
