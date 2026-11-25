@@ -1100,12 +1100,16 @@ export default function StudioRoom({
       return hit ? ((hit.object.userData.obj as InteractiveObj | undefined) ?? null) : null;
     }
 
+    // Phones turn the head (see the render loop): 0.58 rad frames the couch, W and coat rack at the ends.
+    function yawLimit() {
+      return isPortrait ? 0.58 : 0.4;
+    }
+
     function nudge(dx: number, dy: number) {
-      // Phones turn the head (see the render loop): 0.58 rad frames the couch, W and coat rack at the ends.
-      const yawLimit = isPortrait ? 0.58 : 0.4;
+      const lim = yawLimit();
       // Zoomed in, the same drag turns less, so the view tracks the finger.
       const k = 1 / zoom.cur;
-      look.dragYaw = clamp(look.dragYaw - dx * 0.0022 * k, -yawLimit, yawLimit);
+      look.dragYaw = clamp(look.dragYaw - dx * 0.0022 * k, -lim, lim);
       look.dragPitch = clamp(look.dragPitch - dy * 0.0016 * k, -0.12, 0.14);
       hideTag();
     }
@@ -1286,6 +1290,10 @@ export default function StudioRoom({
         look.yaw += 1e-3;
       }
       layoutHero();
+      // Rotating a phone to landscape swaps the head turn for the orbit, which allows less yaw.
+      const lim = yawLimit();
+      look.dragYaw = clamp(look.dragYaw, -lim, lim);
+      look.yaw = clamp(look.yaw, -lim, lim);
       redrawHero();
       if (!entered) setCam(closeUp());
       renderOnce();
