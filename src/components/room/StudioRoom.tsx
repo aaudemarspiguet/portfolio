@@ -1662,12 +1662,14 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
-    // On phones the stage has a runway above it (its top margin, the status bar's height). Keeping
-    // the page scrolled down by it puts the room at the top of the screen, and the non-zero scroll
-    // is what makes iOS 26 Safari show the room under the status bar, not a solid colour.
+    // Experiment, only with ?runway=1: the phone stage gets a runway above it (its top margin, the
+    // status bar's height), and the page is kept scrolled down by it. The non-zero scroll may be what
+    // makes iOS 26 Safari show the room under the status bar instead of a solid colour.
     const phoneMq = window.matchMedia("(max-width: 640px)");
+    const runwayOn = new URLSearchParams(window.location.search).get("runway") === "1";
+    if (runwayOn) document.documentElement.dataset.runway = "1";
     function holdRunway() {
-      if (!stage || !phoneMq.matches) return;
+      if (!runwayOn || !stage || !phoneMq.matches) return;
       const r = stage.getBoundingClientRect();
       if (!r.height) return;
       const runway = Math.round(r.top + window.scrollY);
@@ -1680,17 +1682,8 @@ export default function StudioRoom({
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
-      // On phones the canvas runs past the stage, under Safari's toolbar, to past the bottom of the
-      // screen. Measure the gap to the bottom on this phone rather than guess one. (iOS keeps
-      // screen.width and height in portrait, so pick the side that matches the window.)
-      const portrait = window.innerHeight >= window.innerWidth;
-      const screenH = portrait
-        ? Math.max(window.screen.width, window.screen.height)
-        : Math.min(window.screen.width, window.screen.height);
-      const underBar = Math.max(0, Math.round(screenH - r.bottom));
-      document.documentElement.style.setProperty("--under-bar", `${underBar}px`);
-      // Size the buffer to the canvas and frame the camera to the stage, so the extra rows only
-      // continue the picture.
+      // On phones the canvas runs past the stage, under Safari's toolbar. Size the buffer to the
+      // canvas and frame the camera to the stage, so the extra rows only continue the picture.
       const canvasH = Math.max(r.height, canvas.getBoundingClientRect().height);
       renderer.setSize(r.width, canvasH, false);
       sizeFocusMask();
@@ -1948,6 +1941,7 @@ export default function StudioRoom({
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onRunwayScroll);
       cancelAnimationFrame(runwayRaf);
+      delete document.documentElement.dataset.runway;
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchstart", onTouchStart);
