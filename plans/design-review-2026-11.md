@@ -119,6 +119,10 @@ Done: it reads as audio, not as an IDE error, in both themes and at 375px. The `
 
 **T15. `/notes` dated log plus RSS (later).** One line per entry: a mono date, a sentence and a link. It gives agent-tooling work a home that isn't a polished case study. An RSS route handler needs a read of the Next 16 docs first. Not part of this branch unless asked.
 
+### Restyle direction (2026-11-24)
+
+Amogh wants the design more creative and less sterile, mixing mechanical and hand-made. From four mockups he picked **take D, "plotter notebook"**: printer's crop marks, a technical-drawing dimension line under the name (labeled with the pronunciation), a hand-hatched chart of a real result (ingest 60m → 3m), a waveform section divider with a scarlet playhead, mono data, the git revision in the nav, and a hand-circled "current", all over today's clean cards. Palette is still open (Blueprint pairs with it). Group C (mono layer, waveform) folds into this restyle.
+
 ### Optional, later
 
 - At most two terminal motifs: the Now chip as a status line, or a footer stamp of the last deploy's commit taken at build time.
