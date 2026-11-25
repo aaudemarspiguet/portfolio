@@ -6,19 +6,21 @@ Live at https://amoghmade.dev.
 
 ## Run it
 
+This repo uses pnpm (the version is pinned in `package.json`). With Node 22, `corepack enable` sets it up.
+
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:3000.
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | Start the dev server |
-| `npm run lint` | Run ESLint |
-| `npm run typecheck` | Generate route types, then run `tsc` |
-| `npm run build` | Build for production |
+| `pnpm dev` | Start the dev server |
+| `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Generate route types, then run `tsc` |
+| `pnpm build` | Build for production |
 
 ## Where things live
 
