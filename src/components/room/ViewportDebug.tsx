@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { debugFlag } from "@/lib/debugFlags";
 
-// Temporary: on a phone, add ?debug=1 to the address to see what Safari reports for the viewport,
+// Temporary: on a phone, add ?debug=1 or #debug to the address (remembered until ?debug=0) to see what Safari reports for the viewport,
 // the safe areas, the scroll and the room's canvas. Screenshot it to see why the room does or
 // doesn't run under the status bar and the toolbar. Renders nothing without the flag.
 
@@ -34,7 +35,7 @@ export function ViewportDebug() {
   // Read the flag on the client only, so the server render and hydration both start with nothing.
   const on = useSyncExternalStore(
     noop,
-    () => new URLSearchParams(window.location.search).get("debug") === "1",
+    () => debugFlag("debug"),
     () => false,
   );
   const [lines, setLines] = useState<string[]>([]);

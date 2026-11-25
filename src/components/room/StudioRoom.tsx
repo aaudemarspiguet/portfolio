@@ -21,6 +21,7 @@ import { TypedLine } from "./TypedLine";
 import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
+import { debugFlag } from "@/lib/debugFlags";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -1662,11 +1663,11 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
-    // Experiment, only with ?runway=1: the phone stage gets a runway above it (its top margin, the
+    // Experiment, only with ?runway=1 or #runway (remembered until ?runway=0): the phone stage gets a runway above it (its top margin, the
     // status bar's height), and the page is kept scrolled down by it. The non-zero scroll may be what
     // makes iOS 26 Safari show the room under the status bar instead of a solid colour.
     const phoneMq = window.matchMedia("(max-width: 640px)");
-    const runwayOn = new URLSearchParams(window.location.search).get("runway") === "1";
+    const runwayOn = debugFlag("runway");
     if (runwayOn) document.documentElement.dataset.runway = "1";
     function holdRunway() {
       if (!runwayOn || !stage || !phoneMq.matches) return;
