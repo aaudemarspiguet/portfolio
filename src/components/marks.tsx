@@ -46,16 +46,6 @@ export function SectionHeader({ label, heading }: { label?: string; heading: str
   );
 }
 
-export function Tags({ items }: { items: string[] }) {
-  return (
-    <div className="ln-tags">
-      {items.map((t) => (
-        <span key={t} className="ln-tag">{t}</span>
-      ))}
-    </div>
-  );
-}
-
 /** A headline number. `lead` sets it in scarlet: use it once per view. */
 export function Metric({ label, value, base, lead }: { label?: string; value: string; base: string; lead?: boolean }) {
   return (
