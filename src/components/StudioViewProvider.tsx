@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -84,8 +85,6 @@ type StudioViewContextValue = {
   view: StudioView;
   hydrated: boolean;
   webglFailed: boolean;
-  roomCurrent: RoomNavKey | null;
-  plainSection: PlainSectionKey | null;
   pendingSection: string | null;
   setView: (v: StudioView, section?: string | null, noSave?: boolean) => void;
   setRoomCurrent: (key: RoomNavKey | null) => void;
@@ -97,7 +96,15 @@ type StudioViewContextValue = {
   goBackToScreen: () => void;
 };
 
+// The nav highlight changes on every scroll-spy hit, so it lives in its own context: only the
+// navbar reads it, and the home page doesn't re-render while the reader scrolls.
+type StudioNavContextValue = {
+  roomCurrent: RoomNavKey | null;
+  plainSection: PlainSectionKey | null;
+};
+
 const StudioViewContext = createContext<StudioViewContextValue | null>(null);
+const StudioNavContext = createContext<StudioNavContextValue | null>(null);
 
 export function StudioViewProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -191,26 +198,28 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
     roomHandlersRef.current?.backToScreen();
   }, []);
 
+  const value = useMemo(
+    () => ({
+      view,
+      hydrated,
+      webglFailed,
+      pendingSection,
+      setView,
+      setRoomCurrent,
+      setPlainSection,
+      markWebglFailed,
+      clearPendingSection,
+      registerRoomHandlers,
+      navigateInRoom,
+      goBackToScreen,
+    }),
+    [view, hydrated, webglFailed, pendingSection, setView, markWebglFailed, clearPendingSection, registerRoomHandlers, navigateInRoom, goBackToScreen],
+  );
+  const nav = useMemo(() => ({ roomCurrent, plainSection }), [roomCurrent, plainSection]);
+
   return (
-    <StudioViewContext.Provider
-      value={{
-        view,
-        hydrated,
-        webglFailed,
-        roomCurrent,
-        plainSection,
-        pendingSection,
-        setView,
-        setRoomCurrent,
-        setPlainSection,
-        markWebglFailed,
-        clearPendingSection,
-        registerRoomHandlers,
-        navigateInRoom,
-        goBackToScreen,
-      }}
-    >
-      {children}
+    <StudioViewContext.Provider value={value}>
+      <StudioNavContext.Provider value={nav}>{children}</StudioNavContext.Provider>
     </StudioViewContext.Provider>
   );
 }
@@ -219,6 +228,15 @@ export function useStudioView() {
   const ctx = useContext(StudioViewContext);
   if (!ctx) {
     throw new Error("useStudioView must be used inside StudioViewProvider");
+  }
+  return ctx;
+}
+
+/** Which nav item is current on the home page. Only the navbar needs it. */
+export function useStudioNav() {
+  const ctx = useContext(StudioNavContext);
+  if (!ctx) {
+    throw new Error("useStudioNav must be used inside StudioViewProvider");
   }
   return ctx;
 }

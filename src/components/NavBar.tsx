@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from
 import { site } from "@/content/site";
 import { HomeLink } from "./HomeLink";
 import { SfxToggle } from "./SfxToggle";
-import { useStudioView, type RoomNavKey } from "./StudioViewProvider";
+import { useStudioNav, useStudioView, type RoomNavKey } from "./StudioViewProvider";
 import { ThemeToggle } from "./ThemeToggle";
 
 const NAV_ITEMS: { key: RoomNavKey; label: string; hash: string }[] = [
@@ -18,7 +18,8 @@ type NavKey = RoomNavKey | "background";
 
 function useCurrentKey(pathname: string, caseStudySlug: string | null, workSlugs: string[]): NavKey | null {
   const onHome = pathname === "/";
-  const { view, roomCurrent, plainSection } = useStudioView();
+  const { view } = useStudioView();
+  const { roomCurrent, plainSection } = useStudioNav();
 
   if (onHome) {
     if (view === "about") return "about";
