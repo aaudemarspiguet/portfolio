@@ -7,6 +7,10 @@
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+  /* iOS Safari enlarges some text when a phone turns sideways, but only in the normal page flow, so
+     plain view's terminal grew while the room's (inside a scrolling box) didn't. Keep sizes as set. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   /* Safari tints its status bar and toolbar from the page, so the page itself is never left unpainted. */
   background: var(--paper);
 }
