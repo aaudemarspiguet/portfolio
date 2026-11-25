@@ -1696,6 +1696,16 @@ html[data-boot="revealing"] .ln-nav {
 .ln-panel .ln-copied { background: var(--on-panel); color: var(--panel); }
 
 
+.ln-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--paper-sunk);
+  font: 500 13px/20px var(--font-mono);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
 /* Metric */
 .ln-metric { display: flex; flex-direction: column; gap: var(--space-1); }
 .ln-metric__value {
