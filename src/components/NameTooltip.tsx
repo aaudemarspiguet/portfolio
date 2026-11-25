@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { useTipPlacement } from "./useTipPlacement";
 
 /**
@@ -10,6 +10,7 @@ import { useTipPlacement } from "./useTipPlacement";
  */
 export function NameTooltip({ pronunciation, meaning, children }: { pronunciation: string; meaning?: string; children: ReactNode }) {
   const { root, tip, place, below } = useTipPlacement<HTMLDivElement>();
+  const tipId = useId();
 
   return (
     <div
@@ -17,12 +18,12 @@ export function NameTooltip({ pronunciation, meaning, children }: { pronunciatio
       className="ln-say"
       data-place={below ? "below" : undefined}
       tabIndex={0}
-      aria-describedby="ln-say-tip"
+      aria-describedby={tipId}
       onPointerEnter={place}
       onFocus={place}
     >
       {children}
-      <span ref={tip} id="ln-say-tip" role="tooltip" className="ln-say__tip">
+      <span ref={tip} id={tipId} role="tooltip" className="ln-say__tip">
         Say it: {pronunciation}
         {meaning && <span className="ln-say__muted"> · means “{meaning}”</span>}
       </span>

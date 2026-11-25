@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono, Neonderthaw } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
+import { StudioViewProvider } from "@/components/StudioViewProvider";
 import { ThemeScript } from "@/components/ThemeToggle";
 import { showDrafts } from "@/content/env";
 import { site } from "@/content/site";
@@ -18,6 +19,12 @@ const geistMono = Geist_Mono({
   weight: ["400", "500"],
 });
 
+const neonderthaw = Neonderthaw({
+  variable: "--font-neon",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: { default: `${site.name} – Portfolio`, template: `%s · ${site.name}` },
   description: site.description,
@@ -26,20 +33,29 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // The page starts light for everyone, so the browser toolbar does too.
-  themeColor: "#f5f5f7",
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#121214" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-theme="light" className={`${inter.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${geistMono.variable} ${neonderthaw.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript />
       </head>
       <body>
         <a href="#main" className="ln-skip">Skip to content</a>
-        <NavBar />
-        <main id="main">{children}</main>
+        <StudioViewProvider>
+          <NavBar />
+          <div id="main">{children}</div>
+        </StudioViewProvider>
       </body>
     </html>
   );

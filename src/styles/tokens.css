@@ -1,40 +1,47 @@
 /*
-  Lab Notebook tokens (design system v3).
-  Source: https://claude.ai/artifact/CTHt2p3SY6onsctFExQ3G5 (tokens.json)
-  The theme script in layout.tsx always sets data-theme on <html>, from the
-  saved choice or the system preference, so dark only needs one selector.
+  Studio Loft + Lab Notebook tokens.
+  Matches plans/studio-loft-handoff.md Section 4 while preserving aliases
+  used by /projects and /work/[slug].
 */
 
 :root {
   color-scheme: light;
 
-  /* Color */
+  /* Studio Loft core palette */
   --paper: #f5f5f7;
-  --paper-raised: #ffffff;
-  --paper-sunk: #ececf0;
-  --glass: rgba(255, 255, 255, 0.62);
+  --paper-sunk: #ebebef;
+  --card: #ffffff;
+  --paper-raised: var(--card);
   --ink: #1d1d1f;
-  --ink-muted: #6e6e73;
-  --rule: rgba(0, 0, 0, 0.08);
+  --ink-muted: #5f5f66;
+
+  --glass: rgba(255, 255, 255, 0.52);
+  --glass-edge: rgba(255, 255, 255, 0.7);
+  --glass-ring: rgba(0, 0, 0, 0.08);
+
+  --rule: rgba(29, 29, 31, 0.12);
   --rule-strong: #86868b;
   --link: #0066cc;
   --link-hover: #004f9e;
-  --link-tint: #e6eff9;
-  --fill-link: #0066cc;
-  --fill-link-hover: #0058b0;
+  --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
+  --fill-link: var(--link);
+  --fill-link-hover: var(--link-hover);
   --on-link: #ffffff;
-  --accent: #ff3b1f;
+
+  --scarlet: #ff3b1f;
+  --accent: var(--scarlet);
   --accent-tint: #ffe4df;
-  --panel: #1d1d1f;
-  --on-panel: #f5f5f7;
-  --on-panel-muted: #a1a1a6;
+
+  --panel: #141416;
+  --on-panel: #f4f3ef;
+  --on-panel-muted: #a6a6ad;
   --fill-primary: #1d1d1f;
   --on-primary: #ffffff;
   --tip-muted: #a1a1a6;
-  --panel-rule: rgba(255, 255, 255, 0.14);
+  --panel-rule: rgba(255, 255, 255, 0.12);
   --logo-tile: #ffffff;
 
-  /* Surfaces with a sheen */
+  /* Surfaces with a sheen (for /projects and /work/[slug]) */
   --card-bg: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
   --ctrl-bg: linear-gradient(180deg, #ffffff 0%, #f4f4f6 100%);
   --ctrl-bg-hover: linear-gradient(180deg, #f9f9fb 0%, #ececf0 100%);
@@ -49,7 +56,7 @@
   --shadow-glow: 0 0 0 4px rgba(255, 59, 31, 0.16), 0 0 14px rgba(255, 59, 31, 0.6);
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 1), 0 0 0 1px rgba(0, 0, 0, 0.09), 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 10px -4px rgba(0, 0, 0, 0.1);
   --shadow-lift: 0 30px 60px -24px rgba(0, 0, 0, 0.32), 0 12px 24px -12px rgba(0, 0, 0, 0.12);
-  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.07), 0 12px 32px -12px rgba(0, 0, 0, 0.2);
+  --shadow-glass: inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgba(0, 0, 0, 0.04), 0 0 0 1px var(--glass-ring), 0 10px 30px rgba(0, 0, 0, 0.12);
   --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 40px 80px -36px rgba(0, 0, 0, 0.45);
 
   /* Type */
@@ -74,78 +81,107 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
-  --radius-xl: 28px;
+  --radius-xl: 24px;
   --radius-pill: 999px;
 
-  /* Layout */
-  --layout-max: 1080px;
+  /* Layout: 1120px column with 16px gutters so nav pill and stage edges align exactly. */
+  --layout-max: 1120px;
   --layout-measure: 640px;
-  --layout-nav: 52px;
+  --layout-nav: 48px;
+  --gut-l: max(16px, env(safe-area-inset-left, 0px));
+  --gut-r: max(16px, env(safe-area-inset-right, 0px));
+  --gut: 16px;
 
-  /* Responsive sizes: desktop set (phone set below) */
-  --gut: 32px;
-  --sec: var(--space-30);
-  --hero-top: 96px;
-  --hero: 96px;
+  /* Responsive sizes */
+  --sec: 96px;
+  --hero-top: 132px;
+  --hero: clamp(52px, 9vw, 120px);
   --lede: 20px;
-  --h2: 40px;
+  --h2: clamp(32px, 4.4vw, 44px);
   --h2-case: 36px;
-  --big: 56px;
-  --panel-pad: 64px;
-}
-
-/* Wide-gamut screens get the scarlet closer to fluorescent; sRGB stays the fallback. */
-@supports (color: color(display-p3 1 1 1)) {
-  :root { --accent: color(display-p3 1 0.23 0.1); }
+  --big: clamp(32px, 5vw, 56px);
+  --panel-pad: clamp(28px, 6vw, 64px);
 }
 
 @media (max-width: 640px) {
   :root {
-    --gut: 16px;
     --sec: 72px;
-    --hero-top: 48px;
-    --hero: 52px;
+    --hero-top: 96px;
     --lede: 18px;
-    --h2: 30px;
     --h2-case: 28px;
-    --big: 34px;
-    --panel-pad: 28px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #121214;
+    --paper-sunk: #1d1d21;
+    --card: #1a1a1e;
+    --paper-raised: var(--card);
+    --ink: #ececef;
+    --ink-muted: #a3a3ab;
+    --rule: rgba(236, 236, 239, 0.14);
+    --rule-strong: #6e6e73;
+    --link: #4da3ff;
+    --link-hover: #7dbbff;
+    --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
+    --fill-link: var(--link);
+    --fill-link-hover: var(--link-hover);
+    --accent-tint: #3d120b;
+    --panel: #0b0b0d;
+    --fill-primary: #ececef;
+    --on-primary: #121214;
+    --tip-muted: #a3a3ab;
+    --glass: rgba(30, 30, 34, 0.5);
+    --glass-edge: rgba(255, 255, 255, 0.14);
+    --glass-ring: rgba(255, 255, 255, 0.08);
+    --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
+    --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
+    --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
+    --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 28px -14px rgba(0, 0, 0, 0.7), 0 36px 72px -32px rgba(0, 0, 0, 0.8);
+    --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.12), 0 22px 40px -18px rgba(0, 0, 0, 0.75), 0 48px 90px -36px rgba(0, 0, 0, 0.85);
+    --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 8px 22px -6px rgba(77, 163, 255, 0.45);
+    --shadow-button-hover: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 10px 28px -8px rgba(255, 59, 31, 0.55);
+    --shadow-glow: 0 0 0 4px rgba(255, 59, 31, 0.22), 0 0 16px rgba(255, 59, 31, 0.7);
+    --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lift: 0 30px 60px -24px rgba(0, 0, 0, 0.9), 0 12px 24px -12px rgba(0, 0, 0, 0.6);
+    --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 40px 80px -36px rgba(0, 0, 0, 0.8);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-
-  --paper: #000000;
-  --paper-raised: #1c1c1e;
-  --paper-sunk: #2c2c2e;
-  --glass: rgba(28, 28, 30, 0.6);
-  --ink: #f5f5f7;
-  --ink-muted: #98989d;
-  --rule: rgba(255, 255, 255, 0.12);
+  --paper: #121214;
+  --paper-sunk: #1d1d21;
+  --card: #1a1a1e;
+  --paper-raised: var(--card);
+  --ink: #ececef;
+  --ink-muted: #a3a3ab;
+  --rule: rgba(236, 236, 239, 0.14);
   --rule-strong: #6e6e73;
-  --link: #2997ff;
-  --link-hover: #5eb0ff;
-  --link-tint: #0b2440;
-  --fill-link: #0a6fd8;
-  --fill-link-hover: #1a7ff0;
+  --link: #4da3ff;
+  --link-hover: #7dbbff;
+  --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
+  --fill-link: var(--link);
+  --fill-link-hover: var(--link-hover);
   --accent-tint: #3d120b;
-  --panel: #1c1c1e;
-  --fill-primary: #f5f5f7;
-  --on-primary: #1d1d1f;
-  --tip-muted: #6e6e73;
-
-  --card-bg: linear-gradient(180deg, #232326 0%, #1c1c1e 100%);
-  --ctrl-bg: linear-gradient(180deg, #2c2c2e 0%, #222224 100%);
-  --ctrl-bg-hover: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 100%);
-
+  --panel: #0b0b0d;
+  --fill-primary: #ececef;
+  --on-primary: #121214;
+  --tip-muted: #a3a3ab;
+  --glass: rgba(30, 30, 34, 0.5);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-ring: rgba(255, 255, 255, 0.08);
+  --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
+  --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
+  --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 28px -14px rgba(0, 0, 0, 0.7), 0 36px 72px -32px rgba(0, 0, 0, 0.8);
   --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.12), 0 22px 40px -18px rgba(0, 0, 0, 0.75), 0 48px 90px -36px rgba(0, 0, 0, 0.85);
-  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 8px 22px -6px rgba(10, 111, 216, 0.6);
-  --shadow-button-hover: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 10px 28px -8px rgba(255, 59, 31, 0.6);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 8px 22px -6px rgba(77, 163, 255, 0.45);
+  --shadow-button-hover: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 10px 28px -8px rgba(255, 59, 31, 0.55);
   --shadow-glow: 0 0 0 4px rgba(255, 59, 31, 0.22), 0 0 16px rgba(255, 59, 31, 0.7);
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 30px 60px -24px rgba(0, 0, 0, 0.9), 0 12px 24px -12px rgba(0, 0, 0, 0.6);
-  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 32px -12px rgba(0, 0, 0, 0.8);
   --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 40px 80px -36px rgba(0, 0, 0, 0.8);
 }

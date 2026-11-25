@@ -1,0 +1,1157 @@
+"use client";
+
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import * as THREE from "three";
+import type { Project } from "@/content/projects";
+import { toggleTheme, useTheme } from "../ThemeToggle";
+import type { RoomNavKey } from "../StudioViewProvider";
+import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furniture";
+import { clamp, easeInOutCubic, linearColor, mapRoomProjects, smoothstep } from "./roomData";
+import type { PeekState } from "./RoomPeeks";
+import { drawHeroToCanvas } from "./textures";
+
+export type RoomActions = {
+  enterRoom: () => void;
+  backToScreen: (after?: () => void) => void;
+  openTerminal: () => void;
+  goToProject: (index: number, dir?: 1 | -1) => void;
+  goToAll: () => void;
+  closePeekToWide: () => void;
+  nav: (key: RoomNavKey) => boolean;
+};
+
+type InteractiveObj = {
+  key: string;
+  label: string;
+  direct?: boolean;
+  hit: THREE.Object3D[];
+  anchor: () => THREE.Object3D;
+  act: () => void;
+};
+
+const HINT_STORAGE_KEY = "roomHint";
+
+function readHintSeen(): boolean {
+  try {
+    return localStorage.getItem(HINT_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveHintSeen() {
+  try {
+    localStorage.setItem(HINT_STORAGE_KEY, "1");
+  } catch {}
+}
+
+function subscribeFinePointer(onChange: () => void) {
+  const mq = window.matchMedia?.("(pointer: fine)");
+  mq?.addEventListener?.("change", onChange);
+  return () => mq?.removeEventListener?.("change", onChange);
+}
+
+function getFinePointerSnapshot() {
+  return window.matchMedia?.("(pointer: fine)").matches ?? false;
+}
+
+export default function StudioRoom({
+  projects,
+  stageRef,
+  heroRef,
+  heroScreenRef,
+  peek,
+  onOpenPeek,
+  onClosePeekState,
+  onSwitchToPlain,
+  onReady,
+  onWebglFailed,
+  registerActions,
+}: {
+  projects: Project[];
+  stageRef: RefObject<HTMLElement | null>;
+  heroRef: RefObject<HTMLDivElement | null>;
+  heroScreenRef: RefObject<HTMLDivElement | null>;
+  peek: PeekState;
+  onOpenPeek: (next: PeekState, section: RoomNavKey | null) => void;
+  onClosePeekState: () => void;
+  onSwitchToPlain: () => void;
+  onReady: () => void;
+  onWebglFailed: () => void;
+  registerActions: (actions: RoomActions | null) => void;
+}) {
+  const theme = useTheme();
+  const isDarkRef = useRef(theme === "dark");
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+
+  const [enteredState, setEnteredState] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [keyObjects, setKeyObjects] = useState<InteractiveObj[]>([]);
+  const [benchText, setBenchText] = useState<string | null>(null);
+  const isFinePointer = useSyncExternalStore(subscribeFinePointer, getFinePointerSnapshot, () => false);
+
+  const peekRef = useRef<PeekState>(peek);
+  const callbacksRef = useRef({
+    onOpenPeek,
+    onClosePeekState,
+    onSwitchToPlain,
+    onReady,
+    onWebglFailed,
+  });
+
+  useEffect(() => {
+    isDarkRef.current = theme === "dark";
+  }, [theme]);
+
+  useEffect(() => {
+    peekRef.current = peek;
+  }, [peek]);
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onOpenPeek,
+      onClosePeekState,
+      onSwitchToPlain,
+      onReady,
+      onWebglFailed,
+    };
+  }, [onOpenPeek, onClosePeekState, onSwitchToPlain, onReady, onWebglFailed]);
+
+  const applyThemeRef = useRef<((dark: boolean) => void) | null>(null);
+  const dismissHintRef = useRef<(() => void) | null>(null);
+  const backToScreenRef = useRef<(() => void) | null>(null);
+  const showTagForObjRef = useRef<((o: InteractiveObj) => void) | null>(null);
+  const hideTagRef = useRef<(() => void) | null>(null);
+  const runKeyObjectRef = useRef<((o: InteractiveObj) => void) | null>(null);
+
+  useEffect(() => {
+    if (isFinePointer) document.documentElement.classList.add("ln-dotcursor");
+    else document.documentElement.classList.remove("ln-dotcursor");
+    return () => {
+      document.documentElement.classList.remove("ln-dotcursor");
+    };
+  }, [isFinePointer]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const stage = stageRef.current;
+    const hero = heroRef.current;
+    const heroScreenEl = heroScreenRef.current;
+    if (!canvas || !stage || !hero || !heroScreenEl) return;
+
+    hero.removeAttribute("data-gone");
+    hero.style.transform = "";
+    hero.style.opacity = "";
+    hero.style.transition = "";
+    hero.style.pointerEvents = "";
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    } catch {
+      callbacksRef.current.onWebglFailed();
+      return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const benchMode = urlParams.get("bench") === "1";
+    const dprOverride = urlParams.get("dpr");
+    const isCoarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+    const maxDpr = dprOverride ? Number(dprOverride) || 2 : isCoarse ? 1.5 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+
+    renderer.setPixelRatio(dpr);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+
+    let shadowDirty = true;
+    let shadowRedraws = 0;
+    let needsFrame = true;
+    function renderOnce() {
+      needsFrame = true;
+    }
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
+    const WIDE = {
+      pos: new THREE.Vector3(0.1, 1.6, 4.1),
+      look: new THREE.Vector3(0, 1.52, -2),
+    };
+
+    const roomProjects = mapRoomProjects(projects);
+    const refs: RoomSceneRefs = buildRoomScene(scene, roomProjects, renderOnce);
+    const { SCR, screen, screenMat, canvasMeshes } = refs;
+
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+    let heroTex: THREE.CanvasTexture | null = null;
+    function redrawHero() {
+      if (!heroScreenEl || hero?.style.transform) return;
+      const nextTex = drawHeroToCanvas(heroScreenEl);
+      if (!nextTex) return;
+      if (heroTex) heroTex.dispose();
+      heroTex = nextTex;
+      screenMat.map = heroTex;
+      screenMat.needsUpdate = true;
+      renderOnce();
+    }
+
+    function redrawNeon() {
+      const neonFamily = getComputedStyle(document.documentElement).getPropertyValue("--font-neon").trim();
+      refs.updateNeonTexture(neonFamily || undefined);
+      renderOnce();
+    }
+
+    redrawHero();
+    redrawNeon();
+    if (document.fonts?.load) {
+      Promise.all([
+        document.fonts.load("170px Neonderthaw"),
+        document.fonts.load("500 150px Inter"),
+        document.fonts.load("500 30px 'Geist Mono'"),
+      ])
+        .then(() => {
+          redrawHero();
+          redrawNeon();
+        })
+        .catch(() => {});
+    }
+
+    /* Day / Night theme synchronization */
+    let flickerUntil = 0;
+    function applyTheme(dark: boolean) {
+      shadowDirty = true;
+      renderer.setClearColor(linearColor(dark ? 0x07080c : 0xbfd8ef));
+      refs.skyMat.color.copy(linearColor(dark ? 0x0d1733 : 0x9fd0ff));
+      refs.moon.visible = dark;
+      refs.sun.intensity = (dark ? 0.12 : 1.5) * Math.PI;
+      refs.sun.color.copy(linearColor(dark ? 0x7d93c9 : 0xfff1d6));
+      refs.hemi.intensity = (dark ? 0.1 : 0.75) * Math.PI;
+      refs.hemi.color.copy(linearColor(dark ? 0x4b5a86 : 0xe8eef6));
+      refs.ambient.intensity = (dark ? 0.03 : 0.15) * Math.PI;
+
+      refs.lampLight.intensity = dark ? 2.6 : 0;
+      refs.lampSpot.intensity = dark ? 7.5 : 0;
+      refs.shadeMat.emissive.copy(linearColor(dark ? 0x3a2410 : 0x000000));
+      refs.bulbMat.color.copy(linearColor(dark ? 0xfff0d2 : 0x77777c));
+      refs.shadeInnerMat.color.copy(linearColor(dark ? 0xffc77a : 0x55555a));
+
+      refs.neonLight.intensity = dark ? 2.4 : 0;
+      refs.neonMat.emissive.copy(linearColor(dark ? 0xff5a3c : 0x000000));
+      refs.neonMat.emissiveIntensity = dark ? 3 : 0;
+      refs.neonMat.color.copy(linearColor(dark ? 0xffd6cc : 0x8f8a83));
+
+      refs.screenGlow.intensity = dark ? 1.1 : 0;
+      refs.bowlMat.emissive.copy(linearColor(dark ? 0x8a6a3a : 0x000000));
+
+      roomProjects.forEach(({ project }) => {
+        const entry = canvasMeshes[project.slug];
+        (entry.strip.material as THREE.MeshBasicMaterial).color.copy(linearColor(dark ? 0xfff1dc : 0x55555a));
+        if (entry.dark) {
+          (entry.face.material as THREE.MeshStandardMaterial).map = dark ? entry.dark : entry.light;
+          (entry.face.material as THREE.MeshStandardMaterial).needsUpdate = true;
+        }
+      });
+
+      redrawHero();
+      renderOnce();
+    }
+    applyThemeRef.current = applyTheme;
+    applyTheme(isDarkRef.current);
+
+    /* Camera & hero ride state */
+    const cam = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
+    let tween: {
+      from: { pos: THREE.Vector3; look: THREE.Vector3 };
+      to: { pos: THREE.Vector3; look: THREE.Vector3 };
+      t0: number;
+      ms: number;
+      step?: (e: number, k: number) => void;
+      done: () => void;
+    } | null = null;
+    let busy = false;
+    let entered = false;
+    let heroBox: { w: number; h: number; stageH: number } | null = null;
+    let isPortrait = false;
+
+    const look = { yaw: 0, pitch: 0, dragYaw: 0, dragPitch: 0, resting: false };
+    const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+    function layoutHero() {
+      if (!stage || !heroScreenEl) return;
+      const r = stage.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const pad = 14;
+      const aspect = SCR.w / SCR.h;
+      const w = r.width - 2 * pad;
+      const h = r.height - 2 * pad;
+      isPortrait = r.width / r.height < 1;
+      if (isPortrait) {
+        heroBox = null;
+        heroScreenEl.style.cssText = "";
+        return;
+      }
+      const bw = Math.min(w, h * aspect);
+      const bh = bw / aspect;
+      heroBox = { w: bw, h: bh, stageH: r.height };
+      heroScreenEl.style.cssText = `left:${(r.width - bw) / 2}px;top:${(r.height - bh) / 2}px;width:${bw}px;height:${bh}px;right:auto;bottom:auto`;
+    }
+
+    function closeUp() {
+      const p = new THREE.Vector3();
+      const q = new THREE.Vector3();
+      screen.getWorldPosition(p);
+      screen.getWorldDirection(q);
+      const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const d = heroBox ? (SCR.h * heroBox.stageH) / (2 * t * heroBox.h) : (SCR.h / 2 / t) * 1.04;
+      return { pos: p.clone().add(q.multiplyScalar(d)), look: p };
+    }
+
+    function setCam(t: { pos: THREE.Vector3; look: THREE.Vector3 }) {
+      cam.pos.copy(t.pos);
+      cam.look.copy(t.look);
+      camera.position.copy(cam.pos);
+      camera.lookAt(cam.look);
+    }
+
+    function moveTo(
+      t: { pos: THREE.Vector3; look: THREE.Vector3 },
+      ms: number,
+      done?: () => void,
+      step?: (e: number, k: number) => void,
+    ) {
+      if (reduced || !ms) {
+        setCam(t);
+        renderOnce();
+        done?.();
+        return;
+      }
+      busy = true;
+      tween = {
+        from: { pos: cam.pos.clone(), look: cam.look.clone() },
+        to: t,
+        t0: performance.now(),
+        ms,
+        step,
+        done: () => {
+          busy = false;
+          done?.();
+        },
+      };
+    }
+
+    function screenMapping() {
+      camera.updateMatrixWorld();
+      screen.updateMatrixWorld();
+      const r = canvas!.getBoundingClientRect();
+      const xs: number[] = [];
+      const ys: number[] = [];
+      [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ].forEach(([cx, cy]) => {
+        const v = new THREE.Vector3((cx * SCR.w) / 2, (cy * SCR.h) / 2, 0);
+        screen.localToWorld(v);
+        v.project(camera);
+        xs.push(((v.x + 1) / 2) * r.width);
+        ys.push(((1 - v.y) / 2) * r.height);
+      });
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const ex = heroScreenEl!.offsetLeft;
+      const ey = heroScreenEl!.offsetTop;
+      const ew = heroScreenEl!.offsetWidth || 1;
+      const eh = heroScreenEl!.offsetHeight || 1;
+      const sx = (maxX - minX) / ew;
+      const sy = (maxY - minY) / eh;
+      if (isPortrait) {
+        // Uniform scale keeps portrait hero text crisp without horizontal squashing.
+        const s = Math.min(sx, sy);
+        const hcx = ex + ew / 2;
+        const hcy = ey + eh / 2;
+        const scx = (minX + maxX) / 2;
+        const scy = (minY + maxY) / 2;
+        return { sx: s, sy: s, tx: scx - hcx * s, ty: scy - hcy * s };
+      }
+      return { sx, sy, tx: minX - ex * sx, ty: minY - ey * sy };
+    }
+
+    function placeHero(m: { sx: number; sy: number; tx: number; ty: number }, amount: number, opacity: number) {
+      if (!hero) return;
+      const sx = 1 + (m.sx - 1) * amount;
+      const sy = 1 + (m.sy - 1) * amount;
+      hero.style.transformOrigin = "0 0";
+      hero.style.transform = `translate(${(m.tx * amount).toFixed(2)}px,${(m.ty * amount).toFixed(2)}px) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
+      hero.style.opacity = String(opacity);
+    }
+
+    function clearHeroStyle() {
+      if (!hero) return;
+      hero.style.transform = "";
+      hero.style.opacity = "";
+      hero.style.transition = "";
+      hero.style.pointerEvents = "";
+    }
+
+    function toWide(ms: number, step?: ((e: number, k: number) => void) | null, after?: () => void) {
+      moveTo(
+        WIDE,
+        ms,
+        () => {
+          look.yaw = 0;
+          look.pitch = 0;
+          look.dragYaw = 0;
+          look.dragPitch = 0;
+          look.resting = true;
+          after?.();
+        },
+        step ?? undefined,
+      );
+    }
+
+    function zoomTarget(mesh: THREE.Object3D, dist: number) {
+      const p = new THREE.Vector3();
+      const n = new THREE.Vector3();
+      mesh.getWorldPosition(p);
+      mesh.getWorldDirection(n);
+      return { pos: p.clone().add(n.multiplyScalar(dist)), look: p };
+    }
+
+    function zoomTo(mesh: THREE.Object3D, dist: number, done?: () => void) {
+      look.resting = false;
+      moveTo(zoomTarget(mesh, dist), 750, done);
+    }
+
+    /* Hint & Interactions */
+    let hintTimer: ReturnType<typeof setTimeout> | null = null;
+    function dismissHint() {
+      setHintVisible(false);
+      saveHintSeen();
+      if (hintTimer) {
+        clearTimeout(hintTimer);
+        hintTimer = null;
+      }
+    }
+    dismissHintRef.current = dismissHint;
+
+    function enterRoom(after?: (() => void) | null, target?: { pos: THREE.Vector3; look: THREE.Vector3 }) {
+      const doneCb = typeof after === "function" ? after : null;
+      if (entered) {
+        doneCb?.();
+        return;
+      }
+      entered = true;
+      setEnteredState(true);
+      if (!readHintSeen()) {
+        hintTimer = setTimeout(() => {
+          if (entered && !readHintSeen()) setHintVisible(true);
+        }, reduced ? 0 : 900);
+      }
+      setCam(closeUp());
+      const land = () => {
+        hero?.setAttribute("data-gone", "true");
+        hero?.removeAttribute("data-riding");
+        clearHeroStyle();
+        doneCb?.();
+      };
+      if (reduced) {
+        hero?.setAttribute("data-gone", "true");
+        hero?.removeAttribute("data-riding");
+        if (target) {
+          look.resting = false;
+          moveTo(target, 0, doneCb ?? undefined);
+        } else {
+          toWide(0, null, doneCb ?? undefined);
+        }
+        return;
+      }
+      if (hero) {
+        hero.setAttribute("data-riding", "true");
+        hero.style.transition = "none";
+        hero.style.pointerEvents = "none";
+      }
+      const ride = (_e: number, k: number) => {
+        placeHero(screenMapping(), smoothstep(0, 0.35, k), 1 - smoothstep(0.35, 0.8, k));
+      };
+      if (target) {
+        look.resting = false;
+        moveTo(target, 1300, land, ride);
+      } else {
+        toWide(1600, ride, land);
+      }
+    }
+
+    function backToScreen(after?: () => void) {
+      callbacksRef.current.onClosePeekState();
+      hideTag();
+      if (!entered) {
+        if (typeof after === "function") after();
+        return;
+      }
+      look.resting = false;
+      setHintVisible(false);
+      const finish = () => {
+        entered = false;
+        setEnteredState(false);
+        hero?.removeAttribute("data-gone");
+        hero?.removeAttribute("data-riding");
+        clearHeroStyle();
+        document.getElementById("enterRoomBtn")?.focus({ preventScroll: true });
+        if (typeof after === "function") after();
+      };
+      if (reduced) {
+        moveTo(closeUp(), 0, finish);
+        return;
+      }
+      if (hero) {
+        hero.setAttribute("data-riding", "true");
+        hero.style.transition = "none";
+        hero.style.pointerEvents = "none";
+        hero.removeAttribute("data-gone");
+      }
+      placeHero(screenMapping(), 1, 0);
+      moveTo(closeUp(), 1400, finish, (_e, k) => {
+        placeHero(screenMapping(), 1 - smoothstep(0.65, 1, k), smoothstep(0.2, 0.6, k));
+      });
+    }
+
+    function openCase(project: Project, swapDir?: 1 | -1) {
+      callbacksRef.current.onOpenPeek({ kind: "case", project, swapDir }, "work");
+    }
+    function openTerminal() {
+      callbacksRef.current.onOpenPeek({ kind: "terminal" }, "experience");
+    }
+    function openAbout() {
+      callbacksRef.current.onOpenPeek({ kind: "about" }, "about");
+    }
+    function openAll() {
+      callbacksRef.current.onOpenPeek({ kind: "all" }, "work");
+    }
+
+    function canvasDist(entry: { w: number; h: number }) {
+      return Math.max(entry.h, entry.w / 1.6) * 1.9;
+    }
+
+    function goTo(mesh: THREE.Object3D, dist: number, open: () => void) {
+      callbacksRef.current.onClosePeekState();
+      hideTag();
+      if (entered) zoomTo(mesh, dist, open);
+      else enterRoom(open, zoomTarget(mesh, dist));
+    }
+
+    function goToProject(index: number, dir?: 1 | -1) {
+      const n = roomProjects.length;
+      const i = ((index % n) + n) % n;
+      const p = roomProjects[i].project;
+      const c = canvasMeshes[p.slug];
+      if (peekRef.current?.kind === "case") {
+        openCase(p, dir ?? 1);
+        zoomTo(c.face, canvasDist(c));
+        return;
+      }
+      goTo(c.face, canvasDist(c), () => openCase(p));
+    }
+
+    function goToAll() {
+      goTo(refs.printsAnchor, 1.25, openAll);
+    }
+
+    function closePeekToWide() {
+      callbacksRef.current.onClosePeekState();
+      if (entered) toWide(750);
+    }
+
+    function roomNav(key: RoomNavKey): boolean {
+      if (key === "work") {
+        callbacksRef.current.onClosePeekState();
+        goToProject(0);
+        return true;
+      }
+      if (key === "experience") {
+        hideTag();
+        backToScreen(openTerminal);
+        return true;
+      }
+      if (key === "about") {
+        goTo(refs.neonSign, 1.9, openAbout);
+        return true;
+      }
+      return false;
+    }
+
+    registerActions({
+      enterRoom: () => enterRoom(),
+      backToScreen,
+      openTerminal,
+      goToProject,
+      goToAll,
+      closePeekToWide,
+      nav: roomNav,
+    });
+
+    /* Interactive object registry */
+    let playing = false;
+    let posterStraight = false;
+    let swingStart = -1;
+    let spinning = false;
+    let armAngle = 0.05;
+
+    const objects: InteractiveObj[] = [
+      { key: "imac", label: "desktop · back to the screen", hit: [screen], anchor: () => screen, act: () => backToScreen() },
+      { key: "window", label: "window · night mode", hit: [refs.windowHit], anchor: () => refs.windowHit, act: toggleTheme },
+      {
+        key: "neon",
+        label: "neon · flick it",
+        hit: [refs.neonSign],
+        anchor: () => refs.neonSign,
+        act: () => {
+          flickerUntil = performance.now() + 950;
+        },
+      },
+      {
+        key: "rack",
+        label: "synth rack · ▶ jam",
+        hit: [refs.rackHit],
+        anchor: () => refs.rackHit,
+        act: () => {
+          playing = !playing;
+          renderOnce();
+        },
+      },
+      {
+        key: "guitar",
+        label: "guitar · strum it",
+        hit: [refs.guitarHit],
+        anchor: () => refs.guitarHit,
+        act: () => {
+          swingStart = performance.now();
+        },
+      },
+      {
+        key: "poster",
+        label: "favorite album · straighten it",
+        hit: [refs.pst],
+        anchor: () => refs.pst,
+        act: () => {
+          posterStraight = !posterStraight;
+        },
+      },
+      {
+        key: "prints",
+        direct: true,
+        label: "all projects →",
+        hit: [refs.printsHit],
+        anchor: () => refs.printsHit,
+        act: () => goToAll(),
+      },
+      {
+        key: "turntable",
+        label: "record player · spin / stop",
+        hit: [refs.deckHit],
+        anchor: () => refs.deckHit,
+        act: () => {
+          spinning = !spinning;
+          renderOnce();
+        },
+      },
+    ];
+
+    roomProjects.forEach(({ project }, idx) => {
+      const c = canvasMeshes[project.slug];
+      objects.push({
+        key: project.slug,
+        direct: true,
+        label: `${project.title.split(":")[0].toLowerCase()} →`,
+        hit: [c.face],
+        anchor: () => c.face,
+        act: () => goToProject(idx),
+      });
+    });
+
+    const hitList: THREE.Object3D[] = [];
+    objects.forEach((o) => {
+      o.hit.forEach((m) => {
+        m.userData.obj = o;
+        hitList.push(m);
+      });
+    });
+    setKeyObjects(objects);
+
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const tmpV = new THREE.Vector3();
+    let hovered: InteractiveObj | null = null;
+
+    function projectObj(obj: THREE.Object3D) {
+      obj.getWorldPosition(tmpV);
+      tmpV.project(camera);
+      const r = canvas!.getBoundingClientRect();
+      return { x: ((tmpV.x + 1) / 2) * r.width, y: ((1 - tmpV.y) / 2) * r.height };
+    }
+
+    function showTag(o: InteractiveObj, x?: number, y?: number) {
+      const tagEl = tagRef.current;
+      if (!tagEl) return;
+      tagEl.textContent = o.label;
+      tagEl.hidden = false;
+      const pos = x === undefined || y === undefined ? projectObj(o.anchor()) : { x, y };
+      tagEl.style.left = `${pos.x}px`;
+      tagEl.style.top = `${pos.y}px`;
+    }
+
+    function hideTag() {
+      const tagEl = tagRef.current;
+      if (tagEl) tagEl.hidden = true;
+    }
+
+    showTagForObjRef.current = (o) => {
+      if (entered) showTag(o);
+    };
+    backToScreenRef.current = () => backToScreen();
+    hideTagRef.current = hideTag;
+    runKeyObjectRef.current = (o) => {
+      dismissHint();
+      if (o.direct) o.act();
+      else enterRoom(o.act);
+    };
+
+    function raycastAt(clientX: number, clientY: number): InteractiveObj | null {
+      const r = canvas!.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const hit = ray.intersectObjects(hitList, false)[0];
+      return hit ? ((hit.object.userData.obj as InteractiveObj | undefined) ?? null) : null;
+    }
+
+    function nudge(dx: number, dy: number) {
+      const yawLimit = isPortrait ? 0.65 : 0.4;
+      look.dragYaw = clamp(look.dragYaw - dx * 0.0022, -yawLimit, yawLimit);
+      look.dragPitch = clamp(look.dragPitch - dy * 0.0016, -0.12, 0.14);
+      hideTag();
+    }
+
+    /* Input listeners: mouse hover, scarlet dot cursor, trackpad 2-finger wheel, 1-finger & 2-finger touch pan */
+    function onWheel(e: WheelEvent) {
+      if (!entered || busy || peekRef.current) return;
+      e.preventDefault();
+      if (e.ctrlKey) return;
+      const k = e.deltaMode === 1 ? 16 : 1;
+      nudge(-e.deltaX * k, e.deltaY * k);
+    }
+
+    let touchOrigin: { x: number; y: number } | null = null;
+    let touchLast: { x: number; y: number } | null = null;
+    let touchCount = 0;
+    let dragged = false;
+
+    function touchMid(touches: TouchList) {
+      if (touches.length >= 2) {
+        return {
+          x: (touches[0].clientX + touches[1].clientX) / 2,
+          y: (touches[0].clientY + touches[1].clientY) / 2,
+        };
+      }
+      return { x: touches[0].clientX, y: touches[0].clientY };
+    }
+
+    function onTouchStart(e: TouchEvent) {
+      if (!entered || busy || peekRef.current) return;
+      if (e.touches.length === 1 || e.touches.length === 2) {
+        const m = touchMid(e.touches);
+        touchOrigin = m;
+        touchLast = m;
+        touchCount = e.touches.length;
+        dragged = false;
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!entered || busy || peekRef.current || !touchLast) return;
+      if (e.touches.length !== touchCount) {
+        touchLast = touchMid(e.touches);
+        touchCount = e.touches.length;
+        return;
+      }
+      const m = touchMid(e.touches);
+      const dx = m.x - touchLast.x;
+      const dy = m.y - touchLast.y;
+      if (touchOrigin && Math.hypot(m.x - touchOrigin.x, m.y - touchOrigin.y) > 6) {
+        dragged = true;
+      }
+      if (dragged || touchCount === 2) {
+        e.preventDefault();
+        nudge(dx, dy);
+      }
+      touchLast = m;
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (e.touches.length === 0) {
+        touchOrigin = null;
+        touchLast = null;
+        touchCount = 0;
+      } else {
+        touchLast = touchMid(e.touches);
+        touchCount = e.touches.length;
+      }
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      const dot = dotRef.current;
+      if (dot && e.pointerType === "mouse") {
+        const onRoom = e.target === canvas && !peekRef.current;
+        dot.classList.toggle("is-on", onRoom);
+        if (onRoom) {
+          dot.style.transform = `translate3d(${e.clientX}px,${e.clientY}px,0)`;
+        }
+      }
+      if (!entered || busy || peekRef.current || e.pointerType === "touch") return;
+      const hitObj = raycastAt(e.clientX, e.clientY);
+      hovered = hitObj;
+      canvas!.style.cursor = hovered ? "pointer" : "default";
+      dot?.classList.toggle("is-hot", Boolean(hovered));
+      const r = canvas!.getBoundingClientRect();
+      if (hovered) showTag(hovered, e.clientX - r.left, e.clientY - r.top);
+      else hideTag();
+    }
+
+    function onPointerLeave() {
+      hovered = null;
+      dotRef.current?.classList.remove("is-on", "is-hot");
+      hideTag();
+    }
+
+    function onWindowBlur() {
+      dotRef.current?.classList.remove("is-on", "is-hot");
+    }
+
+    function onCanvasClick(e: MouseEvent) {
+      if (dragged) {
+        dragged = false;
+        return;
+      }
+      if (!entered || busy || peekRef.current) return;
+      const targetObj = hovered ?? raycastAt(e.clientX, e.clientY);
+      if (targetObj) {
+        hideTag();
+        dismissHint();
+        targetObj.act();
+      }
+    }
+
+    /* Hero wheel & swipe to enter */
+    function onHeroWheel(e: WheelEvent) {
+      if (!entered && e.deltaY > 0 && heroScreenEl!.scrollTop === 0) {
+        e.preventDefault();
+        enterRoom();
+      }
+    }
+    let heroTouchY: number | null = null;
+    function onHeroTouchStart(e: TouchEvent) {
+      heroTouchY = e.touches[0].clientY;
+    }
+    function onHeroTouchMove(e: TouchEvent) {
+      if (!entered && heroTouchY !== null && heroTouchY - e.touches[0].clientY > 40) {
+        heroTouchY = null;
+        enterRoom();
+      }
+    }
+
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerleave", onPointerLeave);
+    canvas.addEventListener("click", onCanvasClick);
+    window.addEventListener("blur", onWindowBlur);
+    hero.addEventListener("wheel", onHeroWheel, { passive: false });
+    hero.addEventListener("touchstart", onHeroTouchStart, { passive: true });
+    hero.addEventListener("touchmove", onHeroTouchMove, { passive: true });
+
+    /* Resize & IntersectionObserver */
+    function resize() {
+      if (!stage || !canvas) return;
+      const r = stage.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const aspect = r.width / r.height;
+      renderer.setSize(r.width, r.height, false);
+      camera.aspect = aspect;
+      camera.fov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
+      camera.updateProjectionMatrix();
+      WIDE.pos.z = aspect < 1 ? 4.6 : aspect < 1.4 ? 4.9 : 4.1;
+      if (entered && look.resting && !tween) {
+        look.yaw += 1e-3;
+      }
+      layoutHero();
+      redrawHero();
+      if (!entered) setCam(closeUp());
+      renderOnce();
+    }
+
+    let stageOnScreen = true;
+    const io =
+      typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            stageOnScreen = entries[0]?.isIntersecting ?? true;
+          })
+        : null;
+    io?.observe(stage);
+
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    ro?.observe(stage);
+    window.addEventListener("resize", resize);
+
+    /* Render loop */
+    let rafId = 0;
+    let lastT = 0;
+    let lastDraw = 0;
+    let benchFrames = 0;
+    let benchWindowStart = performance.now();
+    let benchFrameMsSum = 0;
+
+    function frame(now: number) {
+      rafId = requestAnimationFrame(frame);
+      const dt = Math.min(0.1, (now - (lastT || now)) / 1000);
+      lastT = now;
+
+      let animating = false;
+      let ambient = false;
+      const viewIsRoom = document.documentElement.dataset.view !== "plain" && document.documentElement.dataset.view !== "about";
+      const visibleRoom = entered && !peekRef.current && stageOnScreen && viewIsRoom;
+
+      if (spinning && visibleRoom && !reduced) {
+        refs.record.rotation.y -= dt * 3.49;
+        ambient = true;
+      }
+      if (visibleRoom && !reduced) {
+        refs.rotor.rotation.y += dt * 0.85;
+        ambient = true;
+      }
+      const armTo = spinning ? -0.5 : 0.05;
+      if (Math.abs(armAngle - armTo) > 0.002) {
+        armAngle += (armTo - armAngle) * (reduced ? 1 : 0.1);
+        refs.arm.rotation.y = armAngle;
+        animating = true;
+      }
+
+      if (tween) {
+        const k = Math.min(1, (now - tween.t0) / tween.ms);
+        const e = easeInOutCubic(k);
+        cam.pos.lerpVectors(tween.from.pos, tween.to.pos, e);
+        cam.look.lerpVectors(tween.from.look, tween.to.look, e);
+        camera.position.copy(cam.pos);
+        camera.lookAt(cam.look);
+        animating = true;
+        tween.step?.(e, k);
+        if (k >= 1) {
+          const d = tween.done;
+          tween = null;
+          d();
+        }
+      }
+
+      if (now < flickerUntil) {
+        const on = isDarkRef.current ? (Math.sin(now / 23) > -0.2 ? 1 : 0.15) : Math.sin(now / 23) > 0 ? 0.6 : 0;
+        refs.neonMat.emissive.copy(linearColor(0xff5a3c));
+        refs.neonMat.emissiveIntensity = 1.8 * on;
+        refs.neonLight.intensity = 1.6 * on;
+        animating = true;
+      } else if (flickerUntil) {
+        flickerUntil = 0;
+        applyTheme(isDarkRef.current);
+      }
+
+      if (swingStart >= 0) {
+        shadowDirty = true;
+        const t = (now - swingStart) / 1000;
+        refs.guitar.rotation.z = reduced ? 0 : 0.09 * Math.exp(-2.2 * t) * Math.sin(t * 9);
+        animating = true;
+        if (t > 2.4) {
+          swingStart = -1;
+          refs.guitar.rotation.z = 0;
+        }
+      }
+
+      const posterTarget = posterStraight ? 0 : 0.06;
+      if (Math.abs(refs.poster.rotation.z - posterTarget) > 0.0005) {
+        shadowDirty = true;
+        refs.poster.rotation.z += (posterTarget - refs.poster.rotation.z) * (reduced ? 1 : 0.12);
+        animating = true;
+      }
+
+      if (playing) {
+        refs.keysMat.emissive.copy(linearColor(0xff3b1f));
+        refs.keysMat.emissiveIntensity = reduced ? 0.25 : 0.15 + 0.15 * Math.sin(now / 140);
+        if (!reduced) animating = true;
+      } else if (refs.keysMat.emissiveIntensity) {
+        refs.keysMat.emissiveIntensity = 0;
+        refs.keysMat.emissive.setHex(0x000000);
+        needsFrame = true;
+      }
+
+      if (entered && look.resting && !tween) {
+        const dyw = look.dragYaw - look.yaw;
+        const dpt = look.dragPitch - look.pitch;
+        if (Math.abs(dyw) + Math.abs(dpt) > 1e-4 || needsFrame) {
+          look.yaw += dyw * 0.08;
+          look.pitch += dpt * 0.08;
+          const off = new THREE.Vector3().subVectors(WIDE.pos, WIDE.look).applyAxisAngle(Y_AXIS, look.yaw);
+          const side = new THREE.Vector3().crossVectors(Y_AXIS, off).normalize();
+          off.applyAxisAngle(side, -look.pitch);
+          cam.pos.copy(WIDE.look).add(off);
+          cam.look.copy(WIDE.look);
+          camera.position.copy(cam.pos);
+          camera.lookAt(cam.look);
+          animating = true;
+        }
+      }
+
+      const dark = isDarkRef.current;
+      roomProjects.forEach(({ project }) => {
+        const c = canvasMeshes[project.slug];
+        const matHalo = c.halo.material as THREE.MeshBasicMaterial;
+        const want = (dark ? 0.85 : 0) + (hovered && hovered.key === project.slug ? (dark ? 0.35 : 0.55) : 0);
+        if (Math.abs(matHalo.opacity - want) > 0.01) {
+          matHalo.opacity += (want - matHalo.opacity) * (reduced ? 1 : 0.15);
+          animating = true;
+        }
+      });
+
+      if (animating || needsFrame || (ambient && now - lastDraw > 32)) {
+        const tRender0 = benchMode ? performance.now() : 0;
+        if (shadowDirty) {
+          renderer.shadowMap.needsUpdate = true;
+          shadowDirty = false;
+          shadowRedraws++;
+        }
+        renderer.render(scene, camera);
+        needsFrame = false;
+        lastDraw = now;
+
+        if (benchMode) {
+          benchFrames++;
+          benchFrameMsSum += performance.now() - tRender0;
+          if (now - benchWindowStart >= 1000) {
+            const fps = Math.round((benchFrames * 1000) / (now - benchWindowStart));
+            const avgMs = (benchFrameMsSum / benchFrames).toFixed(1);
+            setBenchText(`${fps} fps · ${avgMs}ms · dpr ${dpr} · sh ${shadowRedraws}`);
+            benchFrames = 0;
+            benchFrameMsSum = 0;
+            benchWindowStart = now;
+          }
+        }
+      }
+    }
+
+    resize();
+    callbacksRef.current.onReady();
+    rafId = requestAnimationFrame(frame);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (hintTimer) clearTimeout(hintTimer);
+      registerActions(null);
+      io?.disconnect();
+      ro?.disconnect();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("blur", onWindowBlur);
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
+      canvas.removeEventListener("click", onCanvasClick);
+      hero.removeEventListener("wheel", onHeroWheel);
+      hero.removeEventListener("touchstart", onHeroTouchStart);
+      hero.removeEventListener("touchmove", onHeroTouchMove);
+      if (heroTex) heroTex.dispose();
+      hero.removeAttribute("data-gone");
+      clearHeroStyle();
+      disposeRoomScene(scene);
+      renderer.dispose();
+    };
+  }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
+
+  // Apply theme changes to the 3D scene without rebuilding it.
+  useEffect(() => {
+    applyThemeRef.current?.(theme === "dark");
+  }, [theme]);
+
+  return (
+    <>
+      <canvas
+        ref={canvasRef}
+        id="scene"
+        className={enteredState ? "ln-stage__canvas is-entered" : "ln-stage__canvas"}
+        aria-hidden="true"
+      />
+
+      <div className="ln-stage__bar" hidden={!enteredState}>
+        <button
+          type="button"
+          className="ln-pill"
+          onClick={() => backToScreenRef.current?.()}
+          id="roomBackBtn"
+        >
+          ↺ back to the screen
+        </button>
+        {benchText && <span className="ln-bench">{benchText}</span>}
+      </div>
+
+      <div ref={tagRef} className="ln-tag" hidden />
+
+      <div className="ln-hint" role="status" hidden={!hintVisible}>
+        <span>
+          Feel free to hover around and explore. You can also view a{" "}
+          <button
+            type="button"
+            className="ln-hint__link"
+            onClick={() => {
+              dismissHintRef.current?.();
+              callbacksRef.current.onSwitchToPlain();
+            }}
+          >
+            plain version
+          </button>{" "}
+          of the site.
+        </span>
+        <button
+          type="button"
+          className="ln-hint__close"
+          aria-label="Dismiss tip"
+          onClick={() => dismissHintRef.current?.()}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="ln-keys" role="group" aria-label="Things in the room">
+        {keyObjects.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            onFocus={() => showTagForObjRef.current?.(o)}
+            onBlur={() => hideTagRef.current?.()}
+            onClick={() => runKeyObjectRef.current?.(o)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      {isFinePointer && <div ref={dotRef} className="ln-cursordot" aria-hidden="true" />}
+    </>
+  );
+}
