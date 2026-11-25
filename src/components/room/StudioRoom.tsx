@@ -70,8 +70,12 @@ const TOUR_STEPS: TourStep[] = [
     text: (portrait) => `The ${portrait ? "phone" : "desktop"} takes you back to the start screen.`,
   },
   {
-    rings: () => ["neon", "guitar", "rack", "turntable"],
-    text: () => "Most things do something. Flick the neon, strum the guitar, jam on the synths or spin a record.",
+    // A phone's narrow frame can't hold the whole room, so it circles the two toys that sit together.
+    rings: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
+    text: (portrait) =>
+      portrait
+        ? "Most things do something. Spin a record, jam on the synths, then look around for more."
+        : "Most things do something. Flick the neon, strum the guitar, jam on the synths or spin a record.",
   },
   {
     rings: () => ["window"],
