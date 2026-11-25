@@ -605,7 +605,7 @@ html[data-boot="revealing"] .ln-nav {
   top: 14px;
   right: 14px;
   bottom: 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-screen);
   background: var(--paper);
   color: var(--ink);
   display: grid;
@@ -712,7 +712,7 @@ html[data-boot="revealing"] .ln-nav {
 /* Phone boot: portrait stages swap the console for the desk phone's lock screen. */
 .ln-boot__lock { display: none; }
 @container (max-aspect-ratio: 1/1) {
-  .ln-boot__screen { border-radius: 28px; padding: 0; }
+  .ln-boot__screen { padding: 0; }
   .ln-boot__screen .ln-crop,
   .ln-boot__console { display: none; }
   .ln-boot__lock {
@@ -788,7 +788,7 @@ html[data-boot="revealing"] .ln-nav {
   bottom: 14px;
   container-type: size;
   overflow: auto;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-screen);
   background: var(--paper);
   color: var(--ink);
   display: flex;
