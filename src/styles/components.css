@@ -1068,6 +1068,9 @@ html[data-boot="revealing"] .ln-mbar {
 @media (prefers-reduced-motion: no-preference) {
   .ln-peek:not([hidden]) { animation: ln-peek-in .32s ease-out both; }
   .ln-peek:not([hidden]) > * { animation: ln-peek-card .38s cubic-bezier(.2, .8, .2, 1) both; }
+  /* Phone sheets rise on their own. Fading their layer in would hold back the glass blur until the
+     fade ended, since a parent below full opacity hides the room from backdrop-filter. */
+  .ln-peek--sheet:not([hidden]) > * { animation: none; }
 }
 @keyframes ln-peek-in { from { background: rgba(13, 13, 16, 0); } }
 @keyframes ln-peek-card { from { opacity: 0; transform: scale(.94) translateY(8px); } }
@@ -1924,6 +1927,8 @@ html[data-boot="revealing"] .ln-mbar {
   overflow: hidden;
   border-radius: 34px;
   isolation: isolate;
+  /* Its own layer from the first frame, so Safari blurs it while it rises. */
+  will-change: transform;
   background: linear-gradient(180deg, var(--glass-edge), transparent 24px), var(--glass-sheet);
   -webkit-backdrop-filter: blur(16px) saturate(190%);
   backdrop-filter: blur(16px) saturate(190%);
