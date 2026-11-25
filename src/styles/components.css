@@ -97,7 +97,7 @@ html[data-view="room"] #aboutView { display: none; }
   height: 44px;
   padding: 0 18px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-btn);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
   color: var(--ink);
@@ -140,24 +140,12 @@ html[data-view="room"] #aboutView { display: none; }
 }
 .ln-btn-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
-.ln-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
+/* Compact button: same shape and type as .ln-btn, for toolbars, sheets and the room's floating controls. */
+.ln-btn--sm {
+  height: 36px;
   padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 90%, transparent);
-  color: var(--ink);
-  box-shadow: 0 0 0 1px var(--rule);
-  font: 500 13px var(--font-mono);
-  letter-spacing: 0;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
+  font-size: 14px;
 }
-.ln-pill:hover { background: var(--paper-sunk); color: var(--ink); }
 
 /* Top bar (matches plans/studio-loft-handoff.md Section 5) */
 .ln-header {
@@ -386,7 +374,7 @@ html.ln-locked { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
+  height: 36px;
   padding: 0 8px 0 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--card) 90%, transparent);
@@ -1146,12 +1134,12 @@ html[data-boot="revealing"] .ln-nav {
   background: #2a2a2d;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
-.ln-term .ln-pill {
+.ln-term .ln-btn {
   background: rgba(255, 255, 255, 0.06);
   color: #e6edf3;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
-.ln-term .ln-pill:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.ln-term .ln-btn:not(.ln-btn--primary):not(.ln-btn--ink):hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .ln-term__screen {
   padding: 22px 24px;
   border-radius: 4px;
@@ -1491,9 +1479,9 @@ html[data-boot="revealing"] .ln-nav {
 .ln-piece__more {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-btn);
   background: rgba(255, 255, 255, 0.92);
   color: #1d1d1f;
   font: 600 14px var(--font-sans);

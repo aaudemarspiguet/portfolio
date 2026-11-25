@@ -269,7 +269,7 @@ function TerminalPeek({ roles, onClose }: { roles: Role[]; onClose: () => void }
       <div className="ln-term__screen">
         <div className="ln-term__row">
           <span className="g">{TERMINAL_PROMPT}cat experience/*.txt</span>
-          <button type="button" className="ln-pill" data-close onClick={onClose}>
+          <button type="button" className="ln-btn ln-btn--sm" data-close onClick={onClose}>
             exit
           </button>
         </div>

@@ -83,6 +83,7 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 999px;
+  --radius-btn: 12px; /* every button; pills are only for chips, tags, toggles and status */
 
   /* Layout: 1120px column with 16px gutters so nav pill and stage edges align exactly. */
   --layout-max: 1120px;

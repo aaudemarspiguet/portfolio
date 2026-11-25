@@ -258,7 +258,7 @@ function MobileMenu({
           {viewLabel && (
             <button
               type="button"
-              className="ln-pill"
+              className="ln-btn ln-btn--sm"
               onClick={() => {
                 hide();
                 onToggleView();
@@ -267,11 +267,11 @@ function MobileMenu({
               {viewLabel}
             </button>
           )}
-          <SfxToggle className="ln-pill ln-sheet__sfx" labeled />
+          <SfxToggle className="ln-btn ln-btn--sm ln-sheet__sfx" labeled />
         </div>
         <div className="ln-sheet__social">
           <a
-            className="ln-pill"
+            className="ln-btn ln-btn--sm"
             href={site.links.github}
             target="_blank"
             rel="noopener noreferrer"
@@ -279,7 +279,7 @@ function MobileMenu({
             GitHub ↗
           </a>
           <a
-            className="ln-pill"
+            className="ln-btn ln-btn--sm"
             href={site.links.linkedin}
             target="_blank"
             rel="noopener noreferrer"

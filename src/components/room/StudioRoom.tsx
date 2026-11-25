@@ -1504,7 +1504,7 @@ export default function StudioRoom({
       <div className="ln-stage__bar" hidden={!enteredState}>
         <button
           type="button"
-          className="ln-pill"
+          className="ln-btn ln-btn--sm"
           onClick={() => backToScreenRef.current?.()}
           id="roomBackBtn"
         >
