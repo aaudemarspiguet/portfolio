@@ -63,6 +63,11 @@ type TourStep = {
 
 const TOUR_STEPS: TourStep[] = [
   {
+    // The hello: nothing lit yet, the whole room in view.
+    focus: () => [],
+    text: () => "Welcome to my studio. Here's a quick tour.",
+  },
+  {
     canvases: true,
     focus: () => [],
     text: () => "My projects hang on the wall. Click one.",
