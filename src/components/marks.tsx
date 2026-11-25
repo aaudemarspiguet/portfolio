@@ -1,41 +1,4 @@
-// Small presentational pieces from the design system's "Friendly touches"
-// and "Scarlet marks" groups.
-
-import type { ReactNode } from "react";
-
-let wave = "M0 4 Q5 0 10 4";
-for (let x = 20; x <= 200; x += 10) wave += ` T${x} 4`;
-
-/** Scarlet hand-drawn underline under one phrase. */
-export function Squiggle({ children }: { children: ReactNode }) {
-  return (
-    <span className="ln-squiggle">
-      {children}
-      <svg viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
-        <path d={wave} pathLength={1} />
-      </svg>
-    </span>
-  );
-}
-
-/** Supporting status with the glowing scarlet availability dot. */
-export function Availability({ children }: { children: ReactNode }) {
-  return (
-    <span className="ln-live ln-label">
-      <span className="ln-live__dot" aria-hidden="true" />
-      {children}
-    </span>
-  );
-}
-
-export function NowChip({ children }: { children: ReactNode }) {
-  return (
-    <span className="ln-now">
-      <b>Now</b>
-      {children}
-    </span>
-  );
-}
+// Small presentational pieces from the design system's "Scarlet marks" group.
 
 export function SectionHeader({ label, heading }: { label?: string; heading: string }) {
   return (
