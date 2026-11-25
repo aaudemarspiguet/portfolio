@@ -79,8 +79,7 @@ body::before {
 
 /* Pre-hydration saved-view guards so saved "plain" never flashes the room stage. */
 html[data-view="plain"] #room { display: none; }
-html[data-view="room"] #plain,
-html[data-view="room"] #aboutView { display: none; }
+html[data-view="room"] #plain { display: none; }
 
 /* Buttons & pills */
 .ln-btn {
@@ -249,7 +248,6 @@ html[data-view="room"] #aboutView { display: none; }
   white-space: nowrap;
 }
 .ln-viewbtn:hover { background: var(--rule); }
-.ln-menubtn { display: none; }
 .ln-theme__sun { display: none; }
 :root[data-theme="dark"] .ln-theme__sun { display: block; }
 :root[data-theme="dark"] .ln-theme__moon { display: none; }
@@ -258,77 +256,6 @@ html[data-view="room"] #aboutView { display: none; }
   :root:not([data-theme="light"]) .ln-theme__moon { display: none; }
 }
 
-/* Mobile sheet */
-html.ln-locked { overflow: hidden; }
-.ln-sheet {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
-  margin: 0;
-  padding: calc(12px + env(safe-area-inset-top, 0px)) var(--gut-r) 24px var(--gut-l);
-  border: 0;
-  background: var(--paper);
-  color: var(--ink);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.ln-sheet[open] { display: flex; flex-direction: column; }
-.ln-sheet::backdrop { background: var(--paper); }
-.ln-sheet__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: var(--layout-nav);
-  padding: 0 8px 0 18px;
-}
-.ln-sheet__actions { display: flex; align-items: center; gap: 2px; }
-.ln-sheet__links { display: flex; flex-direction: column; padding-top: 40px; }
-.ln-sheet__links a {
-  padding: 6px 18px;
-  font-size: 28px;
-  line-height: 36px;
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  color: var(--ink);
-  text-decoration: none;
-}
-.ln-sheet__links a:hover,
-.ln-sheet__links a[aria-current] { color: var(--link); }
-/* Pinned to the bottom of the sheet: a row of settings, then a row of links. Each row splits
-   into equal columns, so a page without the plain-view switch gets one full-width sound button. */
-.ln-sheet__foot {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: auto;
-  padding: 32px 8px calc(4px + env(safe-area-inset-bottom, 0px));
-}
-.ln-sheet__row { display: flex; gap: 10px; }
-.ln-sheet__row .ln-btn { flex: 1 1 0; min-width: 0; justify-content: center; }
-.ln-sheet__sfx svg {
-  width: 15px;
-  height: 15px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .ln-sheet[open] { animation: ln-sheet-in .2s ease-out; }
-  @keyframes ln-sheet-in { from { opacity: 0; } }
-}
-@media (max-width: 640px) {
-  .ln-nav__links { display: none; }
-  .ln-nav { grid-template-columns: minmax(0, 1fr) auto; padding: 0 8px 0 14px; }
-  .ln-nav__social,
-  .ln-nav__sfx,
-  .ln-viewbtn { display: none; }
-  .ln-menubtn { display: inline-grid; }
-}
 
 /* Stage & 3D room */
 .ln-stage {
@@ -577,7 +504,8 @@ html.ln-locked { overflow: hidden; }
 }
 
 /* Coordinated reveal when booting finishes */
-html[data-boot="loading"] .ln-nav {
+html[data-boot="loading"] .ln-nav,
+html[data-boot="loading"] .ln-mbar {
   opacity: 0;
   transform: translateY(-14px);
   pointer-events: none;
@@ -591,14 +519,12 @@ html[data-boot="loading"] .ln-stage__canvas {
   transform: scale(1.028);
 }
 html[data-boot="loading"] .ln-room-hero__screen > :not(.ln-crop),
-html[data-boot="loading"] #plain,
-html[data-boot="loading"] #aboutView {
+html[data-boot="loading"] #plain {
   opacity: 0;
   transform: translateY(8px);
 }
 html[data-boot="revealing"] .ln-room-hero__screen > :not(.ln-crop),
-html[data-boot="revealing"] #plain,
-html[data-boot="revealing"] #aboutView {
+html[data-boot="revealing"] #plain {
   opacity: 1;
   transform: translateY(0);
   transition:
@@ -619,7 +545,8 @@ html[data-boot="revealing"] .ln-stage__canvas {
     opacity 0.54s cubic-bezier(0.22, 1, 0.36, 1) 0.12s,
     transform 0.66s cubic-bezier(0.16, 1, 0.3, 1) 0.12s;
 }
-html[data-boot="revealing"] .ln-nav {
+html[data-boot="revealing"] .ln-nav,
+html[data-boot="revealing"] .ln-mbar {
   opacity: 1;
   transform: translateY(0);
   transition:
@@ -1196,11 +1123,11 @@ html[data-boot="revealing"] .ln-nav {
   .ln-boot__lock,
   .ln-boot__steps li,
   html[data-boot="revealing"] .ln-nav,
+  html[data-boot="revealing"] .ln-mbar,
   html[data-boot="revealing"] .ln-stage,
   html[data-boot="revealing"] .ln-stage__canvas,
   html[data-boot="revealing"] .ln-room-hero__screen > :not(.ln-crop),
   html[data-boot="revealing"] #plain,
-  html[data-boot="revealing"] #aboutView,
   .ln-room-hero { transition: none; }
   .ln-caret,
   .ln-typing__caret { animation: none; }
@@ -1560,15 +1487,7 @@ html[data-boot="revealing"] .ln-nav {
   .ln-school__when { grid-column: 2; }
 }
 
-/* About view & copy */
-.ln-aboutpage { padding-block: 132px 96px; }
-.ln-aboutpage h1 {
-  margin: 0;
-  font-size: clamp(36px, 5vw, 56px);
-  line-height: 1.05;
-  font-weight: 500;
-  letter-spacing: -0.04em;
-}
+/* About copy, and the education and tools that close the About section */
 .ln-about-copy {
   display: flex;
   flex-direction: column;
@@ -1933,3 +1852,380 @@ html[data-boot="revealing"] .ln-nav {
 .ln-404 { padding-top: calc(72px + var(--space-12)); padding-bottom: var(--sec); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
 .ln-404 h1 { margin: 0; font-size: var(--big); line-height: 1.04; font-weight: 500; letter-spacing: -0.04em; }
 .ln-404 p { margin: 0; color: var(--ink-muted); }
+
+/* ------------------------------------------------------------------------------------------
+   Liquid Glass on phones: one top bar, pull-down menus, and swipe-up sheets.
+   Desktop keeps the pill nav and the centered peek cards. Glass is the existing --glass tokens.
+   Capsules are for glass controls only; content buttons keep --radius-btn.
+   ------------------------------------------------------------------------------------------ */
+.ln-mbar { display: none; }
+
+.ln-gbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color .15s, color .15s, transform .15s;
+}
+.ln-gbtn:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.ln-gbtn:active { transform: scale(0.94); }
+.ln-gbtn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ln-gbtn svg.ln-gbtn__dots,
+.ln-gbtn svg.ln-gbtn__fill { fill: currentColor; stroke: none; }
+.ln-gbtn[aria-pressed="true"] { color: var(--link); background: var(--link-tint); }
+.ln-gbtn--big { width: 52px; height: 52px; }
+.ln-gbtn--big svg { width: 26px; height: 26px; }
+
+/* Pull-down menus grow out of the button that opened them. */
+.ln-gmenu {
+  position: fixed;
+  z-index: 45;
+  min-width: 230px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--glass-edge), transparent 40%), color-mix(in srgb, var(--paper) 72%, transparent);
+  -webkit-backdrop-filter: saturate(190%) blur(30px);
+  backdrop-filter: saturate(190%) blur(30px);
+  box-shadow: var(--shadow-glass), 0 18px 50px rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  transform-origin: top left;
+}
+.ln-gmenu--end { min-width: 262px; transform-origin: top right; }
+@media (prefers-reduced-motion: no-preference) {
+  .ln-gmenu { animation: ln-gmenu-in .24s cubic-bezier(0.32, 0.72, 0, 1); }
+  @keyframes ln-gmenu-in { from { opacity: 0; transform: scale(0.6); } }
+}
+.ln-gmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  font: 400 16px/1.25 var(--font-sans);
+  letter-spacing: -0.01em;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ln-gmenu__item:hover,
+.ln-gmenu__item:focus-visible { background: color-mix(in srgb, var(--ink) 8%, transparent); outline: none; }
+.ln-gmenu__check { flex: none; width: 16px; font-weight: 600; }
+.ln-gmenu__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ln-gmenu__sub { font: 500 12px var(--font-mono); letter-spacing: 0; color: var(--ink-muted); }
+.ln-gmenu__icon { flex: none; color: var(--ink-muted); }
+.ln-gmenu__sep { height: 1px; margin: 6px 12px; background: var(--rule); }
+
+/* Swipe-up sheets: X in the top-left corner, dragged by the header, resting at detents. */
+.ln-peek--sheet { display: contents; }
+.ln-gsheet-layer { position: fixed; inset: 0; z-index: 40; }
+.ln-gsheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  transition: opacity .32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.ln-gsheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: calc(100dvh - 62px - env(safe-area-inset-top, 0px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), color-mix(in srgb, var(--paper) 88%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--glass-ring), 0 -10px 40px rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+  transition: height .34s cubic-bezier(0.32, 0.72, 0, 1), transform .34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.ln-gsheet[data-dragging] { transition: none; }
+.ln-gsheet-layer:has(.ln-gsheet[data-dragging]) .ln-gsheet__scrim { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ln-gsheet,
+  .ln-gsheet__scrim { transition: none; }
+}
+.ln-gsheet__head {
+  position: relative;
+  flex: none;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(44px, auto);
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px 8px;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.ln-gsheet[data-dragging] .ln-gsheet__head { cursor: grabbing; }
+.ln-gsheet__grab {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 36px;
+  height: 5px;
+  margin-left: -18px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+.ln-gsheet__x { width: 36px; height: 36px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.ln-gsheet__x svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.ln-gsheet__title {
+  margin: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 17px/1.2 var(--font-sans);
+  letter-spacing: -0.02em;
+}
+.ln-gsheet__end { display: flex; justify-content: flex-end; }
+.ln-gsheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 20px 20px;
+}
+.ln-gsheet__body:last-child { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+.ln-gsheet__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--rule);
+}
+/* The room's peeks inside a sheet keep their production type. */
+.ln-gsheet__body h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.08;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.ln-gsheet .ln-peek__text { gap: 12px; }
+.ln-gsheet .ln-peek__text p { font-size: 16px; line-height: 1.5; }
+.ln-gsheet .ln-about-copy p:first-child { font-size: 19px; color: var(--ink); }
+.ln-gsheet .ln-peek__fig img { max-height: 300px; }
+.ln-gsheet .ln-allgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ln-gsheet--term { background: #0d1117; color: #e6edf3; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 -10px 40px rgba(0, 0, 0, 0.3); }
+.ln-gsheet--term .ln-gsheet__grab { background: rgba(255, 255, 255, 0.3); }
+.ln-gsheet--term .ln-gsheet__x { color: #e6edf3; background: rgba(255, 255, 255, 0.1); }
+.ln-gsheet--term .ln-gsheet__title { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; }
+.ln-gsheet--term .ln-gsheet__body { padding: 0; }
+.ln-gsheet--term .ln-term__screen { padding: 8px 20px 28px; font-size: 13px; }
+
+/* About: Me and Background as two pages under one segmented control. */
+.ln-aboutpages { display: flex; flex-direction: column; gap: 20px; }
+.ln-aboutpages__bg { display: flex; flex-direction: column; gap: 16px; }
+.ln-aboutpages__bg[hidden],
+.ln-aboutpages .ln-peek__text[hidden] { display: none; }
+.ln-seg {
+  align-self: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  width: min(320px, 100%);
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-sunk);
+}
+.ln-seg button {
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+  font: 500 14px var(--font-sans);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.ln-seg button[aria-selected="true"] {
+  background: var(--card);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+.ln-gsheet .ln-seg { align-self: stretch; width: 100%; }
+
+/* About in the plain scroll: the paragraphs, then education and tools. */
+.ln-about-bg { display: flex; flex-direction: column; gap: 16px; margin-top: 48px; scroll-margin-top: 72px; }
+.ln-about-bg__heading { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; }
+
+/* Record player sheet */
+.ln-rec { display: flex; flex-direction: column; gap: 18px; }
+.ln-rec__now { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.ln-rec__disc {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #e8e6e1 0 4%, var(--label) 5% 27%, transparent 28%),
+    repeating-radial-gradient(circle, #161618 0 2px, #222225 2px 3px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ln-rec__disc.is-spinning { animation: ln-rec-spin 1.8s linear infinite; }
+  @keyframes ln-rec-spin { to { transform: rotate(360deg); } }
+}
+.ln-rec__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ln-rec__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 16px var(--font-mono);
+  letter-spacing: 0;
+}
+.ln-rec__by { font-size: 13px; color: var(--ink-muted); }
+.ln-rec__ctrls { display: flex; align-items: center; }
+.ln-rec__list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+.ln-rec__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 15px var(--font-mono);
+  letter-spacing: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.ln-rec__row + .ln-rec__row { box-shadow: inset 0 1px 0 var(--rule); }
+.ln-rec__row[aria-current] { color: var(--link); }
+.ln-rec__dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.ln-rec__name { flex: 1; min-width: 0; }
+.ln-rec__on { font-size: 12px; color: var(--ink-muted); }
+.ln-rec__show { justify-content: center; height: 48px; }
+
+@media (max-width: 640px) {
+  /* One full-width bar: the page name on the left, the room switch and ⋯ on the right. */
+  .ln-header { top: 0; left: 0; width: 100%; padding: 0; transform: none; }
+  .ln-nav { display: none; }
+  .ln-mbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) var(--gut-r) 0 var(--gut-l);
+    pointer-events: none;
+  }
+  .ln-mbar > * { pointer-events: auto; }
+  .ln-mbar__title,
+  .ln-mbar__end {
+    height: 44px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
+    -webkit-backdrop-filter: saturate(190%) blur(26px);
+    backdrop-filter: saturate(190%) blur(26px);
+    box-shadow: var(--shadow-glass);
+  }
+  .ln-mbar__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    max-width: 62vw;
+    padding: 0 12px 0 16px;
+    border: 0;
+    color: var(--ink);
+    font: 600 15px var(--font-sans);
+    letter-spacing: -0.02em;
+    cursor: pointer;
+  }
+  .ln-mbar__title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ln-mbar__title svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .2s;
+  }
+  .ln-mbar__title[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .ln-mbar__end { display: flex; align-items: center; padding: 2px; }
+  .ln-mbar__toast {
+    position: fixed;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .ln-mbar__toast span {
+    display: block;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
+    -webkit-backdrop-filter: saturate(190%) blur(26px);
+    backdrop-filter: saturate(190%) blur(26px);
+    box-shadow: var(--shadow-glass);
+    font: 500 14px var(--font-sans);
+  }
+
+  /* Full screen: the room fills the phone, edge to edge, under the bar. */
+  .ln-stage {
+    height: 100svh;
+    margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .ln-room-hero__screen {
+    inset: 0;
+    padding-top: calc(52px + env(safe-area-inset-top, 0px));
+    border-radius: 0;
+  }
+  /* The glass bar sits where the crop marks and dither were; desktop keeps both. */
+  .ln-room-hero__screen > .ln-crop { display: none; }
+  .ln-room-hero__screen::before { display: none; }
+
+  /* Back, Tour and the deck live in the bar's menus now. */
+  .ln-stage__bar > :not(.ln-bench) { display: none; }
+  .ln-stage__bar:not(:has(.ln-bench)) { display: none; }
+
+  /* The tour note floats in glass just under the bar. */
+  .ln-tour {
+    top: calc(60px + env(safe-area-inset-top, 0px));
+    background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
+    -webkit-backdrop-filter: saturate(190%) blur(26px);
+    backdrop-filter: saturate(190%) blur(26px);
+    box-shadow: var(--shadow-glass);
+  }
+}

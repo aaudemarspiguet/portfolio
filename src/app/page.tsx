@@ -1,5 +1,5 @@
 import { HomeStudio } from "@/components/HomeStudio";
-import { AboutCopy, AboutView, PlainView } from "@/components/PlainHome";
+import { AboutCopy, PlainView } from "@/components/PlainHome";
 import { getProject, highlightedProjectDTOs } from "@/content/projects";
 import { site } from "@/content/site";
 
@@ -17,7 +17,6 @@ export default function Home() {
       projects={highlightedProjectDTOs}
       roles={roles}
       aboutCopy={<AboutCopy />}
-      aboutView={<AboutView />}
       plainView={<PlainView projects={highlightedProjectDTOs} roles={roles} />}
     />
   );

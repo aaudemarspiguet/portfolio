@@ -1,9 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type MouseEvent } from "react";
 import { site } from "@/content/site";
 import { HomeLink } from "./HomeLink";
+import { MobileBar } from "./MobileBar";
 import { SfxToggle } from "./SfxToggle";
 import { useStudioNav, useStudioView, type RoomNavKey } from "./StudioViewProvider";
 import { ThemeToggle } from "./ThemeToggle";
@@ -14,15 +15,12 @@ const NAV_ITEMS: { key: RoomNavKey; label: string; hash: string }[] = [
   { key: "about", label: "About", hash: "#about" },
 ];
 
-type NavKey = RoomNavKey | "background";
-
-function useCurrentKey(pathname: string, caseStudySlug: string | null, workSlugs: string[]): NavKey | null {
+function useCurrentKey(pathname: string, caseStudySlug: string | null, workSlugs: string[]): RoomNavKey | null {
   const onHome = pathname === "/";
   const { view } = useStudioView();
   const { roomCurrent, plainSection } = useStudioNav();
 
   if (onHome) {
-    if (view === "about") return "about";
     if (view === "room") return roomCurrent;
     return plainSection;
   }
@@ -52,6 +50,7 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const onHome = pathname === "/";
   const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
   const current = useCurrentKey(pathname, caseStudySlug, workSlugs);
+  const router = useRouter();
   const { view, webglFailed, setView, navigateInRoom } = useStudioView();
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
@@ -59,30 +58,28 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const viewLabel = view === "room" ? "plain view" : "room view";
   const toggleView = () => setView(view === "room" ? "plain" : "room");
 
-  function handleNavClick(event: MouseEvent<HTMLAnchorElement>, key: NavKey) {
+  // Room view flies the camera; plain view scrolls the one long page to the section.
+  function goToSection(key: RoomNavKey) {
+    if (view === "room" && !webglFailed && navigateInRoom(key)) return;
+    setView("plain", key);
+  }
+
+  function handleNavClick(event: MouseEvent<HTMLAnchorElement>, key: RoomNavKey) {
     if (!onHome) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
+    goToSection(key);
+  }
 
-    if (key === "background") {
-      setView("plain", "background");
-      return;
-    }
-
-    if (view === "room" && !webglFailed && navigateInRoom(key)) {
-      return;
-    }
-
-    if (key === "about") {
-      setView("about", null, true);
-      return;
-    }
-
-    setView("plain", key);
+  function navFromMenu(key: RoomNavKey) {
+    if (onHome) goToSection(key);
+    else router.push(`/#${key}`);
   }
 
   return (
     <header className="ln-header">
+      {/* Phones get one full-width Liquid Glass bar instead of the pill. */}
+      <MobileBar current={current} onHome={onHome} canSwitchView={canSwitchView} onNav={navFromMenu} onToggleView={toggleView} />
       <div className="ln-nav">
         <HomeLink className="ln-nav__brand">{site.brand}</HomeLink>
 
@@ -92,7 +89,7 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
               key={key}
               href={href(hash)}
               className="ln-nav__item"
-              aria-current={current === key ? (key === "about" ? "page" : "true") : undefined}
+              aria-current={current === key ? "true" : undefined}
               onClick={(e) => handleNavClick(e, key)}
             >
               {label}
@@ -126,162 +123,8 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
           )}
           <SfxToggle className="ln-icon-btn ln-nav__sfx" />
           <ThemeToggle />
-          {/* Phones: the pill keeps the wordmark, theme and this menu, like production. The view
-              switch and sound live inside the menu. */}
-          <MobileMenu
-            current={current}
-            href={href}
-            onNavClick={handleNavClick}
-            viewLabel={canSwitchView ? viewLabel : null}
-            onToggleView={toggleView}
-          />
         </div>
       </div>
     </header>
-  );
-}
-
-function MobileMenu({
-  current,
-  href,
-  onNavClick,
-  viewLabel,
-  onToggleView,
-}: {
-  current: NavKey | null;
-  href: (hash: string) => string;
-  onNavClick: (event: MouseEvent<HTMLAnchorElement>, key: NavKey) => void;
-  viewLabel: string | null;
-  onToggleView: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const pathname = usePathname();
-
-  function show() {
-    document.documentElement.classList.add("ln-locked");
-    dialog.current?.showModal();
-    dialog.current?.querySelector<HTMLElement>("[data-close]")?.focus();
-    setOpen(true);
-  }
-
-  function hide() {
-    document.documentElement.classList.remove("ln-locked");
-    if (dialog.current?.open) dialog.current.close();
-    setOpen(false);
-    trigger.current?.focus({ preventScroll: true });
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    hide();
-  }
-
-  useEffect(() => {
-    if (!dialog.current?.open) return;
-    document.documentElement.classList.remove("ln-locked");
-    dialog.current.close();
-    setOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!open) return;
-    const wide = window.matchMedia("(min-width: 641px)");
-    const onChange = () => wide.matches && hide();
-    wide.addEventListener("change", onChange);
-    return () => wide.removeEventListener("change", onChange);
-  }, [open]);
-
-  const sheetItems: { key: NavKey; label: string; hash: string }[] = [
-    ...NAV_ITEMS,
-    { key: "background", label: "Background", hash: "#background" },
-  ];
-
-  return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className="ln-icon-btn ln-menubtn"
-        aria-label="Open menu"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls="ln-sheet"
-        onClick={show}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-      </button>
-
-      <dialog
-        ref={dialog}
-        id="ln-sheet"
-        className="ln-sheet"
-        aria-label="Menu"
-        onKeyDown={onKeyDown}
-        onCancel={(e) => {
-          e.preventDefault();
-          hide();
-        }}
-      >
-        <div className="ln-sheet__bar">
-          <HomeLink className="ln-nav__brand" onClick={hide}>
-            {site.brand}
-          </HomeLink>
-          <div className="ln-sheet__actions">
-            <ThemeToggle />
-            <button type="button" className="ln-icon-btn" aria-label="Close menu" data-close onClick={hide}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <nav aria-label="Menu" className="ln-sheet__links">
-          {sheetItems.map(({ key, label, hash }) => (
-            <a
-              key={key}
-              href={href(hash)}
-              aria-current={current === key ? (key === "about" ? "page" : "true") : undefined}
-              onClick={(e) => {
-                hide();
-                onNavClick(e, key);
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-        {/* Everything that isn't navigation sits at the bottom, in reach of a thumb. */}
-        <div className="ln-sheet__foot">
-          <div className="ln-sheet__row">
-            {viewLabel && (
-              <button
-                type="button"
-                className="ln-btn"
-                onClick={() => {
-                  hide();
-                  onToggleView();
-                }}
-              >
-                {viewLabel}
-              </button>
-            )}
-            <SfxToggle className="ln-btn ln-sheet__sfx" labeled />
-          </div>
-          <div className="ln-sheet__row">
-            <a className="ln-btn" href={site.links.github} target="_blank" rel="noopener noreferrer">
-              GitHub ↗
-            </a>
-            <a className="ln-btn" href={site.links.linkedin} target="_blank" rel="noopener noreferrer">
-              LinkedIn ↗
-            </a>
-          </div>
-        </div>
-      </dialog>
-    </>
   );
 }

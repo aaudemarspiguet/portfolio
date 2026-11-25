@@ -18,6 +18,7 @@ import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furnitur
 import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
 import { TypedLine } from "./TypedLine";
+import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 
@@ -1000,6 +1001,51 @@ export default function StudioRoom({
       return false;
     }
 
+    // The phone bar's ⋯ menu and record player sheet reach the room through the room bus.
+    let showingDeck = false;
+    function deckShot() {
+      const p = new THREE.Vector3();
+      refs.deckHit.getWorldPosition(p);
+      // Aim a little under the deck, so it sits above the compact record player sheet.
+      return { pos: p.clone().add(new THREE.Vector3(0, 0.75, 1.5)), look: p.clone().add(new THREE.Vector3(0, -0.12, 0)) };
+    }
+    function showDeck() {
+      callbacksRef.current.onClosePeekState();
+      hideTag();
+      pauseTour();
+      showingDeck = true;
+      if (entered) {
+        look.resting = false;
+        moveTo(deckShot(), 1200);
+      } else {
+        enterRoom(null, deckShot());
+      }
+    }
+    function leaveDeck() {
+      if (!showingDeck) return;
+      showingDeck = false;
+      if (entered && !peekRef.current) toWide(900, null, resumeTour);
+    }
+    function replayTourFromBar() {
+      if (!entered) {
+        enterRoom(() => showTourStep(0));
+        return;
+      }
+      if (look.resting && !peekRef.current) {
+        showTourStep(0);
+        return;
+      }
+      callbacksRef.current.onClosePeekState();
+      hideTag();
+      toWide(750, null, () => showTourStep(0));
+    }
+    registerRoomCommands({
+      replayTour: replayTourFromBar,
+      deck: (track, play) => syncDeck(track, play),
+      showDeck,
+      leaveDeck,
+    });
+
     registerActions({
       enterRoom: () => enterRoom(),
       backToScreen,
@@ -1607,7 +1653,7 @@ export default function StudioRoom({
 
       let animating = false;
       let ambient = false;
-      const viewIsRoom = document.documentElement.dataset.view !== "plain" && document.documentElement.dataset.view !== "about";
+      const viewIsRoom = document.documentElement.dataset.view !== "plain";
       const visibleRoom = entered && !peekRef.current && stageOnScreen && viewIsRoom;
 
       const targetPlatterSpeed = spinning ? 3.49 : 0;
@@ -1798,6 +1844,7 @@ export default function StudioRoom({
       if (clockTimer) clearTimeout(clockTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       registerActions(null);
+      registerRoomCommands(null);
       io?.disconnect();
       ro?.disconnect();
       window.removeEventListener("resize", resize);
@@ -1840,6 +1887,12 @@ export default function StudioRoom({
       renderer.dispose();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
+
+  // Tell the phone bar what the room is doing.
+  useEffect(() => {
+    publishRoom({ mounted: true, touring: tour !== null, trackIndex, playing: deckPlaying });
+  }, [tour, trackIndex, deckPlaying]);
+  useEffect(() => () => publishRoom({ mounted: false, touring: false, playing: false }), []);
 
   // Apply theme changes to the 3D scene without rebuilding it.
   useEffect(() => {

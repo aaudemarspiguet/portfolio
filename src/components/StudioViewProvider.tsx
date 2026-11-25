@@ -13,9 +13,9 @@ import {
   type ReactNode,
 } from "react";
 
-export type StudioView = "room" | "plain" | "about";
+export type StudioView = "room" | "plain";
 export type RoomNavKey = "work" | "experience" | "about";
-export type PlainSectionKey = "work" | "experience" | "background";
+export type PlainSectionKey = "work" | "experience" | "about";
 
 const VIEW_STORAGE_KEY = "view";
 
@@ -41,7 +41,7 @@ function readViewSnapshot(): StudioView {
   if (currentView) return currentView;
   if (typeof document !== "undefined") {
     const attr = document.documentElement.dataset.view;
-    if (attr === "plain" || attr === "room" || attr === "about") {
+    if (attr === "plain" || attr === "room") {
       currentView = attr;
       return attr;
     }
@@ -68,7 +68,7 @@ function writeViewStore(next: StudioView, noSave?: boolean) {
   if (typeof document !== "undefined") {
     document.documentElement.dataset.view = next;
   }
-  if (!noSave && next !== "about") {
+  if (!noSave) {
     saveView(next);
   }
   viewListeners.forEach((fn) => fn());
@@ -121,12 +121,6 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
       const targetView = webglFailed && next === "room" ? "plain" : next;
       writeViewStore(targetView, noSave);
 
-      if (targetView === "about") {
-        setPendingSection(null);
-        window.scrollTo(0, 0);
-        return;
-      }
-
       if (targetView === "plain") {
         if (section) {
           setPendingSection(section);
@@ -162,7 +156,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
         if (view === "room" && !webglFailed && roomHandlersRef.current) {
           roomHandlersRef.current.nav("about");
         } else {
-          setView("about", null, true);
+          setView("plain", "about", true);
         }
         return;
       }

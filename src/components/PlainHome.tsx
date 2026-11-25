@@ -1,16 +1,17 @@
 import Link from "next/link";
 import type { HomeProject } from "@/content/project-types";
 import { site, type Role } from "@/content/site";
+import { BackgroundBlock } from "./Background";
 import { ContactPanel } from "./ContactPanel";
 import { ExperienceRow } from "./ExperienceRow";
 import { HeroIntro } from "./HeroIntro";
 import { SectionHeader } from "./marks";
 import { ProjectCollage } from "./ProjectCollage";
 
-// The home page's plain and About views. They render on the server and reach HomeStudio as
-// slots, so room state changes on the client never re-render them.
+// The home page's plain view (one long scroll). It renders on the server and reaches HomeStudio as
+// a slot, so room state changes on the client never re-render it.
 
-/** The About view's copy. The room's About peek shows the same paragraphs. */
+/** The About paragraphs. The room's About sheet shows the same copy. */
 export function AboutCopy() {
   return (
     <div className="ln-about-copy">
@@ -21,17 +22,7 @@ export function AboutCopy() {
   );
 }
 
-export function AboutView() {
-  return (
-    <section className="ln-section ln-aboutpage" id="about">
-      <SectionHeader as="h1" heading={site.about.heading} />
-      <AboutCopy />
-    </section>
-  );
-}
-
 export function PlainView({ projects, roles }: { projects: HomeProject[]; roles: Role[] }) {
-  const { education, stack } = site;
   return (
     <>
       <div className="ln-wrap">
@@ -70,33 +61,14 @@ export function PlainView({ projects, roles }: { projects: HomeProject[]; roles:
           </ul>
         </section>
 
-        <section className="ln-section" id="background">
-          <SectionHeader heading="Education and tools" label="background" />
-          <div className="ln-school">
-            {education.logo && (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={education.logo.light} alt={`${education.school} logo`} />
-            )}
-            <div className="ln-school__text">
-              <span className="ln-school__name">{education.school}</span>
-              <span className="ln-school__deg">{education.degree}</span>
-              <span className="ln-school__deg">{education.line}</span>
-            </div>
-            <span className="ln-school__when">{education.when.toLowerCase()}</span>
-          </div>
-          <div className="ln-stack">
-            {stack.groups.map((g) => (
-              <div key={g.label} className="ln-stack__row">
-                <span className="ln-label">{g.label}</span>
-                <div className="ln-stack__chips">
-                  {g.items.map((item) => (
-                    <span key={item} className="ln-chip">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+        {/* About and Background are one section now: the paragraphs, then education and tools.
+            The #background anchor stays on the second half so old links still land there. */}
+        <section className="ln-section" id="about">
+          <SectionHeader heading={site.about.heading} label="about" />
+          <AboutCopy />
+          <div className="ln-about-bg" id="background">
+            <h3 className="ln-about-bg__heading">Education and tools</h3>
+            <BackgroundBlock />
           </div>
         </section>
       </div>

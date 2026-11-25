@@ -38,22 +38,20 @@ class RoomErrorBoundary extends Component<
 
 /**
  * The home page's client shell: the 3D room, its hero and peeks, and the switch between the
- * room, plain and About views. The plain and About views arrive pre-rendered from the server as
- * slots, so state changes here never re-render them.
+ * room and plain views. The plain view arrives pre-rendered from the server as a slot, so state
+ * changes here never re-render it.
  */
 export function HomeStudio({
   hero,
   projects,
   roles,
   aboutCopy,
-  aboutView,
   plainView,
 }: {
   hero: HeroData;
   projects: HomeProject[];
   roles: Role[];
   aboutCopy: ReactNode;
-  aboutView: ReactNode;
   plainView: ReactNode;
 }) {
   const {
@@ -149,7 +147,7 @@ export function HomeStudio({
   // Plain view section spy.
   useEffect(() => {
     if (view !== "plain" || typeof IntersectionObserver === "undefined") return;
-    const ids: PlainSectionKey[] = ["work", "experience", "background"];
+    const ids: PlainSectionKey[] = ["work", "experience", "about"];
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -230,10 +228,6 @@ export function HomeStudio({
           />
         </section>
       </div>
-
-      <main className="ln-wrap" id="aboutView" hidden={view !== "about"}>
-        {aboutView}
-      </main>
 
       <main id="plain" hidden={view !== "plain"}>
         {plainView}
