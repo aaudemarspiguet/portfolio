@@ -390,6 +390,8 @@ export function buildRoomScene(
     if (tDark) {
       tDark.colorSpace = THREE.SRGBColorSpace;
       tDark.anisotropy = 4;
+      // Only one theme's cover is on the face at a time; this lets disposeRoomScene free the other.
+      face.userData.extraTextures = [t, tDark];
     }
     const halo = new THREE.Mesh(
       new THREE.PlaneGeometry(w + 0.62, h + 0.62),
