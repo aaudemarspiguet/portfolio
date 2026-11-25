@@ -12,12 +12,10 @@ import {
 } from "react";
 import type { HomeProject } from "@/content/project-types";
 import type { site as SiteType } from "@/content/site";
-import { CopyEmail } from "./CopyEmail";
 import { ExperienceRow } from "./ExperienceRow";
+import { HeroIntro } from "./HeroIntro";
 import { SectionHeader } from "./marks";
-import { NameTooltip } from "./NameTooltip";
 import { ProjectCollage } from "./ProjectCollage";
-import { TypingTagline } from "./TypingTagline";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
 import type { RoomActions } from "./room/StudioRoom";
@@ -163,7 +161,6 @@ export function HomeStudio({
     return () => io.disconnect();
   }, [view, setPlainSection]);
 
-  const heroMeta = `${siteData.role.toLowerCase()} · ${siteData.city.toLowerCase()} · ${siteData.availability.toLowerCase()}`;
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
 
   return (
@@ -198,18 +195,7 @@ export function HomeStudio({
               <span className="ln-crop ln-crop--bl" aria-hidden="true" />
               <span className="ln-crop ln-crop--br" aria-hidden="true" />
 
-              <h1>
-                <NameTooltip pronunciation={siteData.say.pronunciation} meaning={siteData.say.meaning}>
-                  {siteData.name}
-                  <span className="ln-dot">.</span>
-                </NameTooltip>
-              </h1>
-              <span className="ln-meta-line">{heroMeta}</span>
-              <TypingTagline lines={siteData.taglines} className="ln-room-hero__lede" />
-              <div className="ln-btn-row">
-                <a className="ln-btn ln-btn--primary" href={`mailto:${siteData.email}`}>
-                  Email me
-                </a>
+              <HeroIntro hero={siteData} taglineClass="ln-room-hero__lede">
                 <button
                   type="button"
                   id="enterRoomBtn"
@@ -225,24 +211,7 @@ export function HomeStudio({
                 >
                   Experience
                 </button>
-                <a
-                  className="ln-btn ln-btn--text"
-                  href={siteData.links.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub ↗
-                </a>
-                <a
-                  className="ln-btn ln-btn--text"
-                  href={siteData.links.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LinkedIn ↗
-                </a>
-              </div>
-              <CopyEmail email={siteData.email} />
+              </HeroIntro>
             </div>
           </div>
 
@@ -273,36 +242,7 @@ export function HomeStudio({
       <main id="plain" hidden={view !== "plain"}>
         <div className="ln-wrap">
           <section className="ln-plainhero" aria-label="Intro">
-            <h1>
-              <NameTooltip pronunciation={siteData.say.pronunciation} meaning={siteData.say.meaning}>
-                {siteData.name}
-                <span className="ln-dot">.</span>
-              </NameTooltip>
-            </h1>
-            <span className="ln-meta-line">{heroMeta}</span>
-            <TypingTagline lines={siteData.taglines} className="ln-plainhero__lede" />
-            <div className="ln-btn-row">
-              <a className="ln-btn ln-btn--primary" href={`mailto:${siteData.email}`}>
-                Email me
-              </a>
-              <a
-                className="ln-btn ln-btn--text"
-                href={siteData.links.github}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                GitHub ↗
-              </a>
-              <a
-                className="ln-btn ln-btn--text"
-                href={siteData.links.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn ↗
-              </a>
-            </div>
-            <CopyEmail email={siteData.email} />
+            <HeroIntro hero={siteData} taglineClass="ln-plainhero__lede" />
           </section>
 
           <section className="ln-section" id="work">
