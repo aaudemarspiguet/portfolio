@@ -39,6 +39,7 @@ Static media lives in `public/` and ships with each deploy, served from Vercel's
 
 - **Audio.** Run new sounds through `scripts/encode-audio.sh` (needs ffmpeg). It brings them to -16 LUFS with true peaks under -1.1 dBTP and writes 256 kbps AAC with `+faststart`, so every clip plays at the same level and starts before it has fully downloaded. Don't put ALAC or WAV in `public/audio/`: Chrome and Firefox can't play ALAC, and a WAV is about eight times the size. The tiny UI clicks in `public/sfx/` are the exception, since Web Audio decodes them once up front.
 - **On demand.** Music and instrument audio use `preload="none"`, so nothing downloads until someone presses play.
+- **Caching.** `next.config.ts` gives media a one-day browser cache plus a week of stale-while-revalidate. A visitor can keep an old copy of a replaced file for up to a week, so give a changed file a new name (`track-02.v2.m4a`) instead of overwriting it.
 - **Drafts.** Never put unreleased screenshots or videos in `public/`. Anything there can be fetched by URL, even when `server-only` hides the page that links to it.
 - **When to move it.** Switch to object storage (Cloudflare R2 or S3) only if `public/` passes about 50 MB, the site leaves Vercel for a single server, or some files need a login.
 
