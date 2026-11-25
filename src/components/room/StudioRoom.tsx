@@ -331,6 +331,10 @@ export default function StudioRoom({
         });
     }
 
+    // A shadowed light costs a shadow-map lookup on every pixel of every frame, so phones (already
+    // capped at 1.5x DPR) keep the fan light unshadowed; the lamp and sun still cast theirs.
+    refs.fanLight.castShadow = !isCoarse;
+
     /* Day / Night theme synchronization */
     let flickerUntil = 0;
     function applyTheme(dark: boolean) {
@@ -356,7 +360,8 @@ export default function StudioRoom({
       refs.neonMat.color.copy(linearColor(dark ? 0xffd6cc : 0x8f8a83));
 
       refs.screenGlow.intensity = dark ? 1.1 : 0;
-      refs.bowlMat.emissive.copy(linearColor(dark ? 0x8a6a3a : 0x000000));
+      refs.bowlMat.emissive.copy(linearColor(dark ? 0xffe2b0 : 0x000000));
+      refs.fanLight.intensity = dark ? 1.6 : 0;
 
       roomProjects.forEach(({ project }) => {
         const entry = canvasMeshes[project.slug];

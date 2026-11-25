@@ -53,6 +53,7 @@ export type RoomSceneRefs = {
   arm: THREE.Group;
   rotor: THREE.Group;
   bowlMat: THREE.MeshStandardMaterial;
+  fanLight: THREE.PointLight;
   lampLight: THREE.PointLight;
   lampSpot: THREE.SpotLight;
   shadeMat: THREE.MeshStandardMaterial;
@@ -1099,6 +1100,12 @@ export function buildRoomScene(
   fanParts.forEach((m) => {
     m.castShadow = false;
   });
+  // The fan's light, switched on at night. Its shadow is turned on per device in StudioRoom.
+  const fanLight = new THREE.PointLight(linearColor(0xffd9a8), 0, 6.5, 1.6);
+  fanLight.position.y = -0.52;
+  fanLight.shadow.mapSize.set(512, 512);
+  fanLight.shadow.bias = -0.002;
+  fan.add(fanLight);
 
   /* Project prints on desk return */
   const prints = new THREE.Group();
@@ -1187,6 +1194,7 @@ export function buildRoomScene(
     arm,
     rotor,
     bowlMat,
+    fanLight,
     lampLight,
     lampSpot,
     shadeMat,
