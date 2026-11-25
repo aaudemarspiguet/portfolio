@@ -307,7 +307,7 @@ function CaseSheet({
   return (
     <Sheet
       key="case"
-      title={project.title}
+      title="Projects"
       eyebrow={`${i + 1} of ${n}`}
       onClose={onClose}
       className="ln-gsheet--case"
