@@ -1,99 +1,33 @@
+import "server-only";
 import { showDrafts } from "./env";
 import { placeholder, placeholderMedia } from "./placeholder";
+import type {
+  CaseStudy,
+  HomeProject,
+  Media,
+  Metric,
+  Person,
+  Project,
+  ProjectFlag,
+} from "./project-types";
 
-export type Metric = { label?: string; value: string; base: string };
-
-/** Card or case-study media. `focus` works like CSS object-position. */
-export type Media = { kind: "image" | "gif" | "video"; src: string; alt: string; focus?: string; /** Shown instead of `src` in dark mode (images only). */ srcDark?: string };
-
-/** Someone credited on a case study. `link` is their LinkedIn when we have it. */
-export type Person = { name: string; link?: string };
-
-/** A captioned image in a case study. Width and height are the file's pixels, so the frame reserves its space. */
-export type Figure = { src: string; alt: string; caption: string; width: number; height: number; /** Shown instead of `src` in dark mode, same size. */ srcDark?: string };
-
-/** One paragraph, or several. */
-export type Body = string | string[];
-/** `more` adds one link after the body, e.g. to the case study that already teaches a term. */
-export type Section = { heading: string; body: Body; more?: { href: string; label: string } };
+export type {
+  Architecture,
+  Body,
+  CaseStudy,
+  Figure,
+  HomeProject,
+  Media,
+  Metric,
+  Person,
+  Project,
+  ProjectFlag,
+  Section,
+  Side,
+} from "./project-types";
 
 /** The anchor id for a case-study heading, so other pages can link to a section. */
 export const sectionId = (heading: string) => heading.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-/** A side of a box in the architecture diagram: left, right, top, bottom. */
-export type Side = "l" | "r" | "t" | "b";
-
-/**
- * A system diagram drawn from the evidence kit's `visuals/architecture`.
- * Boxes sit on a grid (`at` is [column, row]); edges route at right angles.
- * An edge with `step` shows a numbered badge that matches the walkthrough's list item.
- */
-export type Architecture = {
-  cols: number;
-  rows: number;
-  nodes: { id: string; label: string; sub?: string; at: [number, number]; kind?: "store" | "model" | "stop" }[];
-  /** `dashed` is for control flow rather than data, e.g. a runner that drives a step. */
-  edges: { from: string; to: string; step?: number; exit?: Side; enter?: Side; stop?: boolean; dashed?: boolean }[];
-  groups?: { label: string; nodes: string[] }[];
-  caption: string;
-};
-
-export type CaseStudy = {
-  title: string;
-  lede: string;
-  /**
-   * `role` is a plain, recognisable title; the story carries the specifics.
-   * Team work lists `partners` (shown as "Partners"). `team` is free text for the rest.
-   */
-  meta: { role: string; timeline: string; team?: string; partners?: Person[]; stack: string };
-  /** The one-line strip under the meta row. Superseded by `architecture` where a kit has a system diagram. */
-  diagram?: { steps: string[]; model: number; caption: string };
-  context?: Section;
-  problem?: Section;
-  /** Teaches the one idea a reader needs before the system makes sense. */
-  explainer?: Section;
-  architecture?: Architecture;
-  /** One request's trip through the architecture. Item n matches badge n. */
-  walkthrough?: { heading: string; intro?: string; steps: string[] };
-  approach: { heading: string; body: Body; steps?: string[] };
-  figures?: Figure[];
-  /** Deeper sections after the figures: the hard part, the evaluation. */
-  sections?: Section[];
-  result?: { heading: string; metrics: Metric[]; body?: string };
-  lessons?: { title: string; body: string }[];
-};
-
-/**
- * Project flags. Add either or both to a `kind: "project"` entry.
- * - `highlighted`: shown in the home page carousel, in list order.
- * - `current`: still being worked on. Gets a "Current" chip on its cover, and the
- *   first highlighted current project starts in the middle of the carousel.
- */
-export type ProjectFlag = "current" | "highlighted";
-
-/**
- * A case study. `kind: "project"` entries are the home page's project cards.
- * `kind: "work"` entries belong to a job and are linked from its experience row.
- */
-export type Project = {
-  slug: string;
-  kind: "project" | "work";
-  area: string;
-  year: string;
-  title: string;
-  summary: string;
-  cover: Media;
-  /** Org tied to the project, shown as a small square logo before `area` on the card. */
-  org?: { name: string; logo: string };
-  flags?: ProjectFlag[];
-  /** Still in template copy: hidden from the production site (see env.ts), shown in dev and previews. */
-  draft?: boolean;
-  links?: { live?: string; repo?: string };
-  /** The card's headline result. Leave it out rather than fill it with a count of tests or commits. */
-  metric?: Metric;
-  tags: string[];
-  caseStudy: CaseStudy;
-};
 
 // ---- People ------------------------------------------------------------------
 // Missing LinkedIn links are tracked as GitHub issues; add them here when they arrive.
@@ -169,8 +103,12 @@ const allCaseStudies: Project[] = [
     slug: "find-the-outfit", kind: "project", area: "University capstone", year: "2026",
     title: "Find the Outfit", flags: ["current", "highlighted"],
     summary: "Guess a Shopbop item from a corner of its photo. An AI model scores how close your description is in meaning, and the photo widens as you go.",
-    cover: { kind: "image", src: "/projects/find-the-outfit/06-you-found-it.jpg", alt: "The game's win screen: \"You found it.\" above the full photo of a black dress with a floral panel", focus: "center 22%" },
+    cover: { kind: "image", src: "/projects/find-the-outfit/03-you-found-it.jpg", videoSrc: "/projects/find-the-outfit/demo-iphone.mp4", videoPoster: "/projects/find-the-outfit/01-landing.jpg", alt: "Find the Outfit iPhone screen showing \"You found it.\" above the solved daily Shopbop piece", focus: "center 22%" },
     org: { name: "Amazon", logo: "/logos/amazon.jpg" },
+    orgs: [
+      { name: "Amazon", logo: "/logos/amazon.jpg" },
+      { name: "Shopbop", logo: "/logos/shopbop.svg" },
+    ],
     tags: ["TypeScript", "AWS Lambda", "Bedrock"],
     caseStudy: {
       title: "Scoring fashion guesses by meaning with Bedrock embeddings",
@@ -250,8 +188,10 @@ const allCaseStudies: Project[] = [
         ],
       },
       figures: [
-        { src: "/projects/find-the-outfit/04-two-tiles-found.jpg", alt: "The game after two guesses: a cropped photo of a dark dress, the heat meter, and the category and color tiles matched under \"black silk dress\"", caption: "Step 6 on screen. \"Black silk dress\" matches the category and color tiles, and the meter moves well past guess 1. These captures run on the app's built-in sample puzzle with local scoring, so no Bedrock call is behind them.", width: 657, height: 1421 },
-        { src: "/projects/find-the-outfit/05-photo-zooms-out.jpg", alt: "Guess 3, \"mini dress with a leopard print\", with category and pattern matched and length missed, and a wider crop of the photo", caption: "Guess 3 finds the pattern but misses on length, and the photo widens. The meter still marks guess 2 as the best so far.", width: 657, height: 1421 },
+        { src: "/projects/find-the-outfit/01-landing.jpg", alt: "Find the Outfit iPhone landing screen with Daily Puzzle No. 83 and Would You Wear It occasion mode", caption: "The iPhone home screen pairs the daily six-guess puzzle with an occasion-based outfit picker.", width: 780, height: 1688 },
+        { src: "/projects/find-the-outfit/02-guess-meter.jpg", alt: "Mid-game iPhone screen at image stage 3 of 5 showing the heat meter and three guesses", caption: "Step 6 on screen: each guess plots on the Freezing-to-Hot meter while the photo widens across five stages.", width: 780, height: 1688 },
+        { src: "/projects/find-the-outfit/03-you-found-it.jpg", alt: "Win screen reading \"You found it.\" above the full Shopbop photo of brown balloon pants", caption: "Solving the puzzle reveals the full photo, brand details, and complementary outfit picks.", width: 780, height: 1688 },
+        { src: "/projects/find-the-outfit/04-occasion-mode.jpg", alt: "Would You Wear It occasion picker on iPhone with Everyday Casual, Work, Date Night, Wedding Guest, Vacation, and Formal Event", caption: "Occasion mode lets visitors browse looks by setting and save favorites.", width: 780, height: 1688 },
       ],
       sections: [
         {
@@ -267,7 +207,7 @@ const allCaseStudies: Project[] = [
         metrics: [
           { label: "Puzzles published", value: "7", base: "October 20 to 26, each approved by a person" },
         ],
-        body: "We didn't run the live Bedrock scoring for this write-up, so the similarity ranges above come from notes in the code, not from a rerun. It's still rough in places, too. Puzzles are built and published in batches by script, and there's no nightly job yet, so a day with no published puzzle has nothing to serve. The stretch and the 60/40 blend come from a handful of live puzzles, not a labelled set. And the tiles' keywords are extracted by simple matching, which is why a person reviews each puzzle before it goes live.",
+        body: "The live deployment URL is kept private and isn't linked here; the iPhone screens and walkthrough clip above are captured from the deployed app. We didn't rerun the Bedrock calibration numbers for this write-up, so the similarity ranges above come from notes in the code. Puzzles are built and published in batches by script with no nightly job yet, the stretch and 60/40 blend come from live puzzles rather than a labelled set, and keywords are extracted by simple matching, which is why a person reviews each puzzle before it goes live.",
       },
       lessons: [
         { title: "Calibrate the score on real examples before you trust it.", body: "The model's similarity range was nowhere near 0 to 1, and the meter looked broken until we rescaled it." },
@@ -649,8 +589,11 @@ const allCaseStudies: Project[] = [
 /** Every case study this build serves. Drafts drop out of production, so their pages 404 and nothing links to them. */
 export const caseStudies = allCaseStudies.filter((p) => showDrafts || !p.draft);
 
-/** Prerender draft paths too, so their production not-found responses are static HTTP 404s. */
-export const caseStudySlugs = allCaseStudies.map((p) => p.slug);
+/** Only active case-study slugs are prerendered; disabled drafts 404 dynamically without appearing in manifests. */
+export const caseStudySlugs = caseStudies.map((p) => p.slug);
+
+/** Active `kind: "work"` slugs for nav highlighting without exposing project lists to the client. */
+export const workSlugs = caseStudies.filter((p) => p.kind === "work").map((p) => p.slug);
 
 /** Every heading on a case study page that renders with an anchor id. */
 function headingIds(cs: CaseStudy) {
@@ -694,17 +637,39 @@ export const projects = caseStudies.filter((p) => p.kind === "project");
 
 export const hasFlag = (p: Project, flag: ProjectFlag) => p.flags?.includes(flag) ?? false;
 
-/** The home page carousel. */
+/** The home page's highlighted project grid. */
 export const highlightedProjects = projects.filter((p) => hasFlag(p, "highlighted"));
+
+/** Minimal, flag-stripped project DTO, safe to serialize across the RSC boundary. */
+const toHomeProject = (p: Project): HomeProject => ({
+  slug: p.slug,
+  area: p.area,
+  year: p.year,
+  title: p.title,
+  summary: p.summary,
+  cover: p.cover,
+  org: p.org,
+  orgs: p.orgs,
+  tags: p.tags,
+  lede: p.caseStudy.lede,
+});
+
+/** The home page's highlighted projects. */
+export const highlightedProjectDTOs: HomeProject[] = highlightedProjects.map(toHomeProject);
+
+/** Every project, for /projects. */
+export const projectDTOs: HomeProject[] = projects.map(toHomeProject);
 
 export function getProject(slug: string) {
   return caseStudies.find((p) => p.slug === slug);
 }
 
-/** The next case study of the same kind, wrapping around. */
+/** The next case study of the same kind, wrapping around only when another exists. */
 export function nextProject(slug: string) {
   const current = getProject(slug);
-  const group = caseStudies.filter((p) => p.kind === current?.kind);
+  if (!current) return undefined;
+  const group = caseStudies.filter((p) => p.kind === current.kind);
+  if (group.length < 2) return undefined;
   const i = group.findIndex((p) => p.slug === slug);
   return group[(i + 1) % group.length];
 }

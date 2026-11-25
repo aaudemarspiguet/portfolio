@@ -51,6 +51,14 @@ export const site = {
     highlight: "I build LLM apps, evals and ETL pipelines.",
     rest: " Recent work: a RAG bot that knows when to stay quiet, and an ingest job cut from 60 minutes to 3.",
   },
+  taglines: [
+    "building shared threads for AI coding agents",
+    "evaluating RAG retrieval across embedding models",
+    "probing safety directions inside open LLMs",
+    "cutting a 60-minute ETL pipeline down to 3",
+    "scoring fashion guesses by meaning with Bedrock",
+    "writing music in Madison",
+  ],
   now: "Capstone for Amazon Fashion Labs",
   email: "amoghparuvelli@gmail.com",
   links: {

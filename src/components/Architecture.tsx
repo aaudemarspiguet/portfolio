@@ -1,4 +1,4 @@
-import type { Architecture as Arch, Side } from "@/content/projects";
+import type { Architecture as Arch, Side } from "@/content/project-types";
 
 // Grid geometry in SVG units. At the desktop column width one unit is about one pixel,
 // so 14-unit labels render near 14px. Narrow screens scroll the figure sideways instead

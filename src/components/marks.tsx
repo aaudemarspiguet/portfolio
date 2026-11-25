@@ -1,57 +1,45 @@
-// Small presentational pieces from the design system's "Friendly touches"
-// and "Scarlet marks" groups.
+// Small presentational pieces from the design system's "Scarlet marks" group.
 
 import type { ReactNode } from "react";
 
-let wave = "M0 4 Q5 0 10 4";
-for (let x = 20; x <= 200; x += 10) wave += ` T${x} 4`;
-
-/** Scarlet hand-drawn underline under one phrase. */
-export function Squiggle({ children }: { children: ReactNode }) {
+/** Four corner crop marks framing a screen (the room hero and the boot screen). */
+export function CropMarks() {
   return (
-    <span className="ln-squiggle">
-      {children}
-      <svg viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
-        <path d={wave} pathLength={1} />
-      </svg>
-    </span>
+    <>
+      <span className="ln-crop ln-crop--tl" aria-hidden="true" />
+      <span className="ln-crop ln-crop--tr" aria-hidden="true" />
+      <span className="ln-crop ln-crop--bl" aria-hidden="true" />
+      <span className="ln-crop ln-crop--br" aria-hidden="true" />
+    </>
   );
 }
 
-/** Supporting status with the glowing scarlet availability dot. */
-export function Availability({ children }: { children: ReactNode }) {
+/** A section's heading over its mono label. An `action` (a link) shares the label's row, pushed right. */
+export function SectionHeader({
+  heading,
+  label,
+  action,
+  as: Heading = "h2",
+  id,
+}: {
+  heading: string;
+  label?: string;
+  action?: ReactNode;
+  as?: "h1" | "h2";
+  id?: string;
+}) {
+  const labelEl = label && <span className="ln-label">{label}</span>;
   return (
-    <span className="ln-live ln-label">
-      <span className="ln-live__dot" aria-hidden="true" />
-      {children}
-    </span>
-  );
-}
-
-export function NowChip({ children }: { children: ReactNode }) {
-  return (
-    <span className="ln-now">
-      <b>Now</b>
-      {children}
-    </span>
-  );
-}
-
-export function SectionHeader({ label, heading }: { label?: string; heading: string }) {
-  return (
-    <header className="ln-section-head">
-      <h2>{heading}</h2>
-      {label && <span className="ln-label">{label}</span>}
-    </header>
-  );
-}
-
-export function Tags({ items }: { items: string[] }) {
-  return (
-    <div className="ln-tags">
-      {items.map((t) => (
-        <span key={t} className="ln-tag">{t}</span>
-      ))}
+    <div className="ln-section-head">
+      <Heading id={id}>{heading}</Heading>
+      {action ? (
+        <div className="ln-section-head__sub">
+          {labelEl}
+          {action}
+        </div>
+      ) : (
+        labelEl
+      )}
     </div>
   );
 }
