@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import type { HomeProject } from "@/content/project-types";
 import type { Role } from "@/content/site";
 import { useTheme } from "../ThemeToggle";
@@ -100,14 +100,27 @@ export function RoomPeeks({
   );
 }
 
-// Wide screens: a pill row above the content. Phones: the same row is pinned to the bottom of
-// the card as a footer (Close on the left, Back / count / Next on the right), so the labels swap.
+// Every peek keeps all of its actions together in one bar along the bottom of the card, laid
+// out like a wizard footer: the "go" actions, then Back / count / Next, then Close. On phones the
+// bar is pinned while the text scrolls, and the labels shorten.
 function CloseButton({ onClose }: { onClose: () => void }) {
   return (
     <button type="button" className="ln-pill ln-peek__close" data-close onClick={onClose}>
       <span className="ln-peek__wide">← back to the room</span>
       <span className="ln-peek__narrow">Close</span>
     </button>
+  );
+}
+
+function PeekActions({ go, steps, onClose }: { go?: ReactNode; steps?: ReactNode; onClose: () => void }) {
+  return (
+    <div className="ln-peek__actions">
+      {go && <div className="ln-peek__go">{go}</div>}
+      <div className="ln-peek__nav">
+        {steps ?? <span />}
+        <CloseButton onClose={onClose} />
+      </div>
+    </div>
   );
 }
 
@@ -134,35 +147,6 @@ function CasePeek({
 
   return (
     <div className="ln-peek__card" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
-      <div className="ln-peek__top">
-        <CloseButton onClose={onClose} />
-        <span className="ln-peek__steps">
-          <button
-            type="button"
-            className="ln-pill"
-            data-step="-1"
-            aria-label={`Previous project: ${prev.title}`}
-            onClick={() => onStepProject(i - 1, -1)}
-          >
-            ‹ <span className="ln-peek__wide">prev</span>
-            <span className="ln-peek__narrow">Back</span>
-          </button>
-          <span className="ln-peek__count">
-            {i + 1} / {n}
-          </span>
-          <button
-            type="button"
-            className="ln-pill"
-            data-step="1"
-            aria-label={`Next project: ${next.title}`}
-            onClick={() => onStepProject(i + 1, 1)}
-          >
-            <span className="ln-peek__wide">next</span>
-            <span className="ln-peek__narrow">Next</span> ›
-          </button>
-        </span>
-      </div>
-
       <div className="ln-peek__text">
         <span className="ln-peek__code">
           {project.area.toLowerCase()} · {project.year}
@@ -170,20 +154,53 @@ function CasePeek({
         <h2 id="peekTitle">{project.title}</h2>
         <p>{project.lede}</p>
         <span className="ln-peek__tags">{project.tags.join(" · ").toLowerCase()}</span>
-        <div className="ln-btn-row">
-          <Link href={`/work/${project.slug}`} className="ln-btn ln-btn--primary">
-            Read the case study ↗
-          </Link>
-          <button type="button" className="ln-btn ln-btn--text" onClick={onAllProjects}>
-            All projects →
-          </button>
-        </div>
       </div>
 
       <figure className="ln-peek__fig">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imgSrc} alt={project.cover.alt} />
       </figure>
+
+      <PeekActions
+        onClose={onClose}
+        go={
+          <>
+            <Link href={`/work/${project.slug}`} className="ln-btn ln-btn--primary">
+              Read the case study ↗
+            </Link>
+            <button type="button" className="ln-btn ln-btn--text" onClick={onAllProjects}>
+              All projects →
+            </button>
+          </>
+        }
+        steps={
+          <span className="ln-peek__steps">
+            <button
+              type="button"
+              className="ln-pill"
+              data-step="-1"
+              aria-label={`Previous project: ${prev.title}`}
+              onClick={() => onStepProject(i - 1, -1)}
+            >
+              ‹ <span className="ln-peek__wide">prev</span>
+              <span className="ln-peek__narrow">Back</span>
+            </button>
+            <span className="ln-peek__count">
+              {i + 1} / {n}
+            </span>
+            <button
+              type="button"
+              className="ln-pill"
+              data-step="1"
+              aria-label={`Next project: ${next.title}`}
+              onClick={() => onStepProject(i + 1, 1)}
+            >
+              <span className="ln-peek__wide">next</span>
+              <span className="ln-peek__narrow">Next</span> ›
+            </button>
+          </span>
+        }
+      />
     </div>
   );
 }
@@ -201,9 +218,6 @@ function AllProjectsPeek({
 }) {
   return (
     <div className="ln-peek__card ln-peek__card--one ln-peek__card--all" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
-      <div className="ln-peek__top">
-        <CloseButton onClose={onClose} />
-      </div>
       <div className="ln-peek__text">
         <h2 id="peekTitle">All projects</h2>
       </div>
@@ -219,11 +233,14 @@ function AllProjectsPeek({
           </button>
         ))}
       </div>
-      <div className="ln-btn-row">
-        <Link href="/projects" className="ln-btn ln-btn--text">
-          Full project list ↗
-        </Link>
-      </div>
+      <PeekActions
+        onClose={onClose}
+        go={
+          <Link href="/projects" className="ln-btn ln-btn--text">
+            Full project list ↗
+          </Link>
+        }
+      />
     </div>
   );
 }
@@ -231,9 +248,6 @@ function AllProjectsPeek({
 function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () => void }) {
   return (
     <div className="ln-peek__card ln-peek__card--one" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
-      <div className="ln-peek__top">
-        <CloseButton onClose={onClose} />
-      </div>
       <div className="ln-peek__text">
         <h2 id="peekTitle">A little about me</h2>
         <div className="ln-about-copy">
@@ -242,6 +256,7 @@ function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () 
           ))}
         </div>
       </div>
+      <PeekActions onClose={onClose} />
     </div>
   );
 }
