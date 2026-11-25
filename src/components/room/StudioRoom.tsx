@@ -17,6 +17,7 @@ import { useStudioView, type RoomNavKey } from "../StudioViewProvider";
 import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furniture";
 import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
+import { TypedLine } from "./TypedLine";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 
@@ -54,38 +55,36 @@ function resolveObjLabel(o: InteractiveObj, isDark: boolean): string {
 type TourStep = {
   focus: (portrait: boolean) => string[];
   canvases?: boolean;
+  /** One short line in my voice, typed out on the note; keep it to one line on a wide stage. */
   text: (portrait: boolean) => string;
-  /** Ends the text with a link to the plain view. */
-  plainLink?: boolean;
+  /** A phrase in `text` that links to the plain view. */
+  plainLink?: string;
 };
 
 const TOUR_STEPS: TourStep[] = [
   {
     canvases: true,
     focus: () => [],
-    text: () => "My projects hang on the wall. Click a canvas to open it.",
+    text: () => "My projects hang on the wall. Click one.",
   },
   {
     // On phones the desk phone is the way back to the hero; on wide screens it's the iMac.
     focus: (portrait) => [portrait ? "phone" : "imac"],
-    text: (portrait) => `The ${portrait ? "phone" : "desktop"} takes you back to the start screen.`,
+    text: (portrait) => `My ${portrait ? "phone" : "desktop"} takes you back to the start.`,
   },
   {
     // A phone's narrow frame can't hold the whole room, so it lights the two toys that sit together.
     focus: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
-    text: (portrait) =>
-      portrait
-        ? "Most things do something. Spin a record, jam on the synths, then look around for more."
-        : "Most things do something. Flick the neon, strum the guitar, jam on the synths or spin a record.",
+    text: () => "Most things in here do something. Try them.",
   },
   {
     focus: () => ["window"],
-    text: () => "The window switches the room between day and night.",
+    text: () => "The window switches day and night.",
   },
   {
     focus: () => [],
-    text: () => "That's the tour. Hover around for the rest, or read the",
-    plainLink: true,
+    text: () => "Explore away, or see the plain version.",
+    plainLink: "plain version",
   },
 ];
 
@@ -1905,25 +1904,15 @@ export default function StudioRoom({
 
       {tour && (
         <div className="ln-tour" role="region" aria-label="Room tour">
-          <p className="ln-tour__text" aria-live="polite">
-            {TOUR_STEPS[tour.step].text(tour.portrait)}
-            {TOUR_STEPS[tour.step].plainLink && (
-              <>
-                {" "}
-                <button
-                  type="button"
-                  className="ln-tour__link"
-                  onClick={() => {
-                    tourEndRef.current?.();
-                    callbacksRef.current.onSwitchToPlain();
-                  }}
-                >
-                  plain version
-                </button>{" "}
-                of the site.
-              </>
-            )}
-          </p>
+          <TypedLine
+            key={tour.step}
+            text={TOUR_STEPS[tour.step].text(tour.portrait)}
+            link={TOUR_STEPS[tour.step].plainLink}
+            onLink={() => {
+              tourEndRef.current?.();
+              callbacksRef.current.onSwitchToPlain();
+            }}
+          />
           <div className="ln-tour__actions">
             <span className="ln-tour__count">
               {tour.step + 1} / {TOUR_STEPS.length}
