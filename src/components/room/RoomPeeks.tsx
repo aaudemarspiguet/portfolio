@@ -100,6 +100,17 @@ export function RoomPeeks({
   );
 }
 
+// Wide screens: a pill row above the content. Phones: the same row is pinned to the bottom of
+// the card as a footer (Close on the left, Back / count / Next on the right), so the labels swap.
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button type="button" className="ln-pill ln-peek__close" data-close onClick={onClose}>
+      <span className="ln-peek__wide">← back to the room</span>
+      <span className="ln-peek__narrow">Close</span>
+    </button>
+  );
+}
+
 function CasePeek({
   project,
   projects,
@@ -124,9 +135,7 @@ function CasePeek({
   return (
     <div className="ln-peek__card" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
       <div className="ln-peek__top">
-        <button type="button" className="ln-pill" data-close onClick={onClose}>
-          ← back to the room
-        </button>
+        <CloseButton onClose={onClose} />
         <span className="ln-peek__steps">
           <button
             type="button"
@@ -135,7 +144,8 @@ function CasePeek({
             aria-label={`Previous project: ${prev.title}`}
             onClick={() => onStepProject(i - 1, -1)}
           >
-            ‹ prev
+            ‹ <span className="ln-peek__wide">prev</span>
+            <span className="ln-peek__narrow">Back</span>
           </button>
           <span className="ln-peek__count">
             {i + 1} / {n}
@@ -147,7 +157,8 @@ function CasePeek({
             aria-label={`Next project: ${next.title}`}
             onClick={() => onStepProject(i + 1, 1)}
           >
-            next ›
+            <span className="ln-peek__wide">next</span>
+            <span className="ln-peek__narrow">Next</span> ›
           </button>
         </span>
       </div>
@@ -191,9 +202,7 @@ function AllProjectsPeek({
   return (
     <div className="ln-peek__card ln-peek__card--one ln-peek__card--all" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
       <div className="ln-peek__top">
-        <button type="button" className="ln-pill" data-close onClick={onClose}>
-          ← back to the room
-        </button>
+        <CloseButton onClose={onClose} />
       </div>
       <div className="ln-peek__text">
         <h2 id="peekTitle">All projects</h2>
@@ -223,9 +232,7 @@ function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () 
   return (
     <div className="ln-peek__card ln-peek__card--one" role="dialog" aria-modal="true" aria-labelledby="peekTitle">
       <div className="ln-peek__top">
-        <button type="button" className="ln-pill" data-close onClick={onClose}>
-          ← back to the room
-        </button>
+        <CloseButton onClose={onClose} />
       </div>
       <div className="ln-peek__text">
         <h2 id="peekTitle">A little about me</h2>

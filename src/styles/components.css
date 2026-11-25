@@ -1030,6 +1030,41 @@ html[data-boot="revealing"] .ln-nav {
   .ln-peek { padding: 12px; }
   .ln-peek__card { grid-template-columns: 1fr; padding: 24px; gap: 20px; }
 }
+.ln-peek__narrow { display: none; }
+/* Phones: the controls become a footer pinned to the bottom of the scrolling card. */
+@media (max-width: 640px) {
+  .ln-peek__wide { display: none; }
+  .ln-peek__narrow { display: inline; }
+  .ln-peek__card { padding: 20px 20px 0; gap: 16px; }
+  .ln-peek__card h2 { font-size: 28px; }
+  .ln-peek__text { gap: 12px; }
+  .ln-peek__text p { font-size: 16px; line-height: 1.5; }
+  .ln-peek__text .ln-btn--text { padding-inline: 0; }
+  .ln-peek__top {
+    order: 99;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    flex-wrap: nowrap;
+    margin: 0 -20px;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .ln-peek__top .ln-pill {
+    height: 40px;
+    padding: 0 16px;
+    font: 500 15px var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+  .ln-peek__close.ln-pill {
+    padding: 0 4px;
+    background: none;
+    box-shadow: none;
+    color: var(--ink-muted);
+  }
+  .ln-peek__steps { gap: 6px; }
+}
 
 /* Terminal (Experience peek) */
 .ln-term {
