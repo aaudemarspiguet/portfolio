@@ -23,6 +23,18 @@ export function canvasTex(
   return t;
 }
 
+/** Repaints a canvasTex texture in place, reusing its canvas and GPU texture. */
+function repaintCanvasTex(t: THREE.CanvasTexture, draw: (g: CanvasRenderingContext2D, w: number, h: number) => void) {
+  const c = t.image as HTMLCanvasElement;
+  const g = c.getContext("2d");
+  if (!g) return;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, c.width, c.height);
+  draw(g, c.width, c.height);
+  t.needsUpdate = true;
+}
+
 export function createBrickTexture(): THREE.CanvasTexture {
   return canvasTex(
     512,
@@ -469,52 +481,63 @@ export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture
 /**
  * Face for whichever screen is not showing the hero: a lock screen on the desk phone (wide
  * screens), or a quiet wordmark on the iMac (phones, where the hero lives on the desk phone).
- * Colors come from the live hero so both faces follow the theme.
+ * Colors come from the live hero so both faces follow the theme. Pass the previous face as
+ * `reuse` and, when it is the same size, it is repainted in place instead of allocating a new
+ * canvas and GPU texture on every minute tick.
  */
-export function drawIdleScreen(kind: "phone" | "desktop", bg: string, fg: string): THREE.CanvasTexture {
-  if (kind === "phone") {
-    const W = 390 * 2;
-    const H = 844 * 2;
-    return canvasTex(W, H, (g) => {
-      g.scale(2, 2);
-      g.fillStyle = bg;
-      g.fillRect(0, 0, 390, 844);
-      g.fillStyle = fg;
-      g.textAlign = "center";
-      g.textBaseline = "alphabetic";
-      g.font = "500 15px Inter, system-ui, sans-serif";
-      g.globalAlpha = 0.7;
-      g.fillText(dateLabel(), 195, 150);
-      g.globalAlpha = 1;
-      g.font = "500 96px Inter, system-ui, sans-serif";
-      g.fillText(clockLabel(), 195, 250);
-      g.font = "500 13px 'Geist Mono', ui-monospace, monospace";
-      g.globalAlpha = 0.55;
-      g.fillText("amoghmade.dev", 195, 780);
-      g.globalAlpha = 0.35;
-      g.fillRect(130, 812, 130, 5);
-      g.globalAlpha = 1;
-    });
+export function drawIdleScreen(
+  kind: "phone" | "desktop",
+  bg: string,
+  fg: string,
+  reuse?: THREE.CanvasTexture | null,
+): THREE.CanvasTexture {
+  const phone = kind === "phone";
+  const W = phone ? 390 * 2 : 1120 * 2;
+  const H = phone ? 844 * 2 : 630 * 2;
+  const paint = phone
+    ? (g: CanvasRenderingContext2D) => {
+        g.scale(2, 2);
+        g.fillStyle = bg;
+        g.fillRect(0, 0, 390, 844);
+        g.fillStyle = fg;
+        g.textAlign = "center";
+        g.textBaseline = "alphabetic";
+        g.font = "500 15px Inter, system-ui, sans-serif";
+        g.globalAlpha = 0.7;
+        g.fillText(dateLabel(), 195, 150);
+        g.globalAlpha = 1;
+        g.font = "500 96px Inter, system-ui, sans-serif";
+        g.fillText(clockLabel(), 195, 250);
+        g.font = "500 13px 'Geist Mono', ui-monospace, monospace";
+        g.globalAlpha = 0.55;
+        g.fillText("amoghmade.dev", 195, 780);
+        g.globalAlpha = 0.35;
+        g.fillRect(130, 812, 130, 5);
+        g.globalAlpha = 1;
+      }
+    : (g: CanvasRenderingContext2D) => {
+        g.scale(2, 2);
+        g.fillStyle = bg;
+        g.fillRect(0, 0, 1120, 630);
+        // A Mac lock screen: date and clock up top, the site's address at the bottom.
+        g.fillStyle = fg;
+        g.textAlign = "center";
+        g.textBaseline = "alphabetic";
+        g.font = "500 24px Inter, system-ui, sans-serif";
+        g.globalAlpha = 0.7;
+        g.fillText(dateLabel(), 560, 120);
+        g.globalAlpha = 1;
+        g.font = "600 150px Inter, system-ui, sans-serif";
+        g.fillText(clockLabel(), 560, 260);
+        g.font = "500 18px 'Geist Mono', ui-monospace, monospace";
+        g.globalAlpha = 0.55;
+        g.fillText("amoghmade.dev", 560, 570);
+        g.globalAlpha = 1;
+      };
+  const img = reuse?.image as HTMLCanvasElement | undefined;
+  if (reuse && img?.width === W && img.height === H) {
+    repaintCanvasTex(reuse, paint);
+    return reuse;
   }
-  const W = 1120 * 2;
-  const H = 630 * 2;
-  return canvasTex(W, H, (g) => {
-    g.scale(2, 2);
-    g.fillStyle = bg;
-    g.fillRect(0, 0, 1120, 630);
-    // A Mac lock screen: date and clock up top, the site's address at the bottom.
-    g.fillStyle = fg;
-    g.textAlign = "center";
-    g.textBaseline = "alphabetic";
-    g.font = "500 24px Inter, system-ui, sans-serif";
-    g.globalAlpha = 0.7;
-    g.fillText(dateLabel(), 560, 120);
-    g.globalAlpha = 1;
-    g.font = "600 150px Inter, system-ui, sans-serif";
-    g.fillText(clockLabel(), 560, 260);
-    g.font = "500 18px 'Geist Mono', ui-monospace, monospace";
-    g.globalAlpha = 0.55;
-    g.fillText("amoghmade.dev", 560, 570);
-    g.globalAlpha = 1;
-  });
+  return canvasTex(W, H, paint);
 }

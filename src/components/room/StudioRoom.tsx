@@ -272,11 +272,13 @@ export default function StudioRoom({
       if (!heroScreenEl) return;
       const target = heroTarget();
       const st = getComputedStyle(heroScreenEl);
-      const nextIdle = drawIdleScreen(target.idleKind, st.backgroundColor, st.color);
-      if (idleTex) idleTex.dispose();
+      const nextIdle = drawIdleScreen(target.idleKind, st.backgroundColor, st.color, idleTex);
+      if (idleTex && idleTex !== nextIdle) idleTex.dispose();
       idleTex = nextIdle;
-      target.idle.map = idleTex;
-      target.idle.needsUpdate = true;
+      if (target.idle.map !== idleTex) {
+        target.idle.map = idleTex;
+        target.idle.needsUpdate = true;
+      }
       renderOnce();
     }
     function redrawHero() {
