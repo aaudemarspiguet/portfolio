@@ -143,25 +143,33 @@ export function HomeStudio({
     }
   }, [view, pendingSection, clearPendingSection]);
 
-  // Plain view section spy.
+  // Plain view section spy: the last section whose top has passed 45% of the screen, or none
+  // (Home) while you're still on the hero.
   useEffect(() => {
-    if (view !== "plain" || typeof IntersectionObserver === "undefined") return;
+    if (view !== "plain") return;
     const ids: PlainSectionKey[] = ["work", "experience", "about"];
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setPlainSection(entry.target.id as PlainSectionKey);
-          }
-        }
-      },
-      { rootMargin: "-40% 0px -55% 0px" },
-    );
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) io.observe(el);
-    });
-    return () => io.disconnect();
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const line = window.innerHeight * 0.45;
+      let current: PlainSectionKey | null = null;
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      setPlainSection(current);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [view, setPlainSection]);
 
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
