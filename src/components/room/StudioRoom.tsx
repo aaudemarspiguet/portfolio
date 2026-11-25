@@ -646,9 +646,11 @@ export default function StudioRoom({
         centre.divideScalar(meshes.length);
         const base = new THREE.Vector3().subVectors(WIDE.look, WIDE.pos);
         const to = new THREE.Vector3().subVectors(centre, WIDE.pos);
-        const yaw = Math.atan2(to.x, to.z) - Math.atan2(base.x, base.z);
+        // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
+        let yaw = Math.atan2(to.x, to.z) - Math.atan2(base.x, base.z);
+        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
         const lim = yawLimit();
-        look.dragYaw = clamp(isPortrait ? yaw : yaw * 0.5, -lim, lim);
+        look.dragYaw = clamp(yaw, -lim, lim);
         look.dragPitch = 0;
       } else if (look.resting) {
         look.dragYaw = 0;
