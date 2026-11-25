@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { clockLabel, dateLabel } from "@/lib/clock";
 
 let sessionBooted = false;
@@ -13,10 +13,11 @@ const noopSubscribe = () => () => {};
  * telemetry; portrait stages (phones) show the desk phone's lock screen instead.
  */
 export function BootScreen({
-  targetProgress,
+  progress,
   ready,
 }: {
-  targetProgress: number;
+  /** Real load progress (0 to 1), read on each animation frame. */
+  progress: RefObject<number>;
   ready: boolean;
 }) {
   const [displayPct, setDisplayPct] = useState(0);
@@ -26,13 +27,11 @@ export function BootScreen({
   const today = useSyncExternalStore(noopSubscribe, dateLabel, () => "");
   const now = useSyncExternalStore(noopSubscribe, clockLabel, () => "");
 
-  const targetRef = useRef(targetProgress);
   const readyRef = useRef(ready);
 
   useEffect(() => {
-    targetRef.current = targetProgress;
     readyRef.current = ready;
-  }, [targetProgress, ready]);
+  }, [ready]);
 
   useEffect(() => {
     if (unmounted || typeof window === "undefined") return;
@@ -63,7 +62,7 @@ export function BootScreen({
       const pacedCeiling = Math.min(100, Math.max(2, baseCurve + wobble));
 
       const preMountCap = 38 * (1 - Math.exp(-elapsed / 420));
-      const realCap = readyRef.current ? 100 : Math.max(preMountCap, Math.min(94, targetRef.current * 100));
+      const realCap = readyRef.current ? 100 : Math.max(preMountCap, Math.min(94, progress.current * 100));
       const desired = Math.min(pacedCeiling, realCap);
 
       // Keep progression strictly monotonic so numbers never tick backward.
@@ -96,7 +95,7 @@ export function BootScreen({
       if (unmountTimer) clearTimeout(unmountTimer);
       delete document.documentElement.dataset.boot;
     };
-  }, [unmounted]);
+  }, [unmounted, progress]);
 
   if (unmounted) return null;
 

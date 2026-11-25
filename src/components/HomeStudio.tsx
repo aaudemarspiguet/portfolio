@@ -69,8 +69,9 @@ export function HomeStudio({
   const heroScreenRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<RoomActions | null>(null);
 
+  // Load progress goes straight to the boot screen's animation loop, so it never re-renders this tree.
+  const progressRef = useRef(0);
   const [roomReady, setRoomReady] = useState(false);
-  const [roomProgress, setRoomProgress] = useState(0);
   const [peek, setPeek] = useState<PeekState>(null);
 
   const handleRegisterActions = useCallback(
@@ -122,12 +123,12 @@ export function HomeStudio({
   }, [setView]);
 
   const handleRoomReady = useCallback(() => {
-    setRoomProgress(1);
+    progressRef.current = 1;
     setRoomReady(true);
   }, []);
 
   const handleRoomProgress = useCallback((ratio: number) => {
-    setRoomProgress((prev) => Math.max(prev, ratio));
+    progressRef.current = Math.max(progressRef.current, ratio);
   }, []);
 
   // Scroll to a requested section after switching into plain view.
@@ -166,7 +167,7 @@ export function HomeStudio({
 
   return (
     <>
-      <BootScreen targetProgress={roomProgress} ready={bootReady} />
+      <BootScreen progress={progressRef} ready={bootReady} />
 
       <div className="ln-wrap">
         <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
