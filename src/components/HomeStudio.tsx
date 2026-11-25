@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import {
   Component,
   useCallback,
@@ -11,11 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import type { HomeProject } from "@/content/project-types";
-import type { site as SiteType } from "@/content/site";
-import { ExperienceRow } from "./ExperienceRow";
-import { HeroIntro } from "./HeroIntro";
-import { SectionHeader } from "./marks";
-import { ProjectCollage } from "./ProjectCollage";
+import type { Role } from "@/content/site";
+import { HeroIntro, type HeroData } from "./HeroIntro";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
 import type { RoomActions } from "./room/StudioRoom";
@@ -39,16 +35,25 @@ class RoomErrorBoundary extends Component<
   }
 }
 
+/**
+ * The home page's client shell: the 3D room, its hero and peeks, and the switch between the
+ * room, plain and About views. The plain and About views arrive pre-rendered from the server as
+ * slots, so state changes here never re-render them.
+ */
 export function HomeStudio({
-  siteData,
+  hero,
   projects,
-  roleCaseStudies,
-  contactPanel,
+  roles,
+  aboutCopy,
+  aboutView,
+  plainView,
 }: {
-  siteData: typeof SiteType;
+  hero: HeroData;
   projects: HomeProject[];
-  roleCaseStudies: Record<string, string | undefined>;
-  contactPanel: ReactNode;
+  roles: Role[];
+  aboutCopy: ReactNode;
+  aboutView: ReactNode;
+  plainView: ReactNode;
 }) {
   const {
     view,
@@ -195,7 +200,7 @@ export function HomeStudio({
               <span className="ln-crop ln-crop--bl" aria-hidden="true" />
               <span className="ln-crop ln-crop--br" aria-hidden="true" />
 
-              <HeroIntro hero={siteData} taglineClass="ln-room-hero__lede">
+              <HeroIntro hero={hero} taglineClass="ln-room-hero__lede">
                 <button
                   type="button"
                   id="enterRoomBtn"
@@ -218,8 +223,8 @@ export function HomeStudio({
           <RoomPeeks
             peek={peek}
             projects={projects}
-            roles={siteData.experience.roles}
-            aboutParagraphs={siteData.about.paragraphs}
+            roles={roles}
+            aboutCopy={aboutCopy}
             onClose={handleClosePeek}
             onStepProject={handleStepProject}
             onSelectProject={handleSelectProject}
@@ -229,88 +234,11 @@ export function HomeStudio({
       </div>
 
       <main className="ln-wrap" id="aboutView" hidden={view !== "about"}>
-        <section className="ln-section ln-aboutpage" id="about">
-          <SectionHeader as="h1" heading={siteData.about.heading} />
-          <div className="ln-about-copy">
-            {siteData.about.paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </section>
+        {aboutView}
       </main>
 
       <main id="plain" hidden={view !== "plain"}>
-        <div className="ln-wrap">
-          <section className="ln-plainhero" aria-label="Intro">
-            <HeroIntro hero={siteData} taglineClass="ln-plainhero__lede" />
-          </section>
-
-          <section className="ln-section" id="work">
-            <SectionHeader
-              heading={siteData.projects.heading}
-              label={`highlighted projects · ${projects.length}`}
-              action={
-                <Link href="/projects" className="ln-link ln-more">
-                  All projects →
-                </Link>
-              }
-            />
-            <ProjectCollage projects={projects} />
-          </section>
-
-          <section className="ln-section" id="experience">
-            <SectionHeader
-              heading={siteData.experience.heading}
-              label={`experience · ${siteData.experience.roles.length} roles`}
-            />
-            <ul className="ln-list">
-              {siteData.experience.roles.map((r) => (
-                <ExperienceRow
-                  key={`${r.org}-${r.when}`}
-                  title={r.title}
-                  org={r.org}
-                  logo={r.logo}
-                  line={r.line}
-                  when={r.when}
-                  where={r.where}
-                  caseStudy={r.caseStudy ? roleCaseStudies[r.caseStudy] : undefined}
-                />
-              ))}
-            </ul>
-          </section>
-
-          <section className="ln-section" id="background">
-            <SectionHeader heading="Education and tools" label="background" />
-            <div className="ln-school">
-              {siteData.education.logo && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={siteData.education.logo.light} alt={`${siteData.education.school} logo`} />
-              )}
-              <div className="ln-school__text">
-                <span className="ln-school__name">{siteData.education.school}</span>
-                <span className="ln-school__deg">{siteData.education.degree}</span>
-                <span className="ln-school__deg">{siteData.education.line}</span>
-              </div>
-              <span className="ln-school__when">{siteData.education.when.toLowerCase()}</span>
-            </div>
-            <div className="ln-stack">
-              {siteData.stack.groups.map((g) => (
-                <div key={g.label} className="ln-stack__row">
-                  <span className="ln-label">{g.label}</span>
-                  <div className="ln-stack__chips">
-                    {g.items.map((item) => (
-                      <span key={item} className="ln-chip">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {contactPanel}
+        {plainView}
       </main>
     </>
   );

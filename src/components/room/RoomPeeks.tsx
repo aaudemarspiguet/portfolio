@@ -18,7 +18,7 @@ export function RoomPeeks({
   peek,
   projects,
   roles,
-  aboutParagraphs,
+  aboutCopy,
   onClose,
   onStepProject,
   onSelectProject,
@@ -27,7 +27,8 @@ export function RoomPeeks({
   peek: PeekState;
   projects: HomeProject[];
   roles: Role[];
-  aboutParagraphs: string[];
+  /** The About paragraphs, rendered on the server. */
+  aboutCopy: ReactNode;
   onClose: () => void;
   onStepProject: (index: number, dir: 1 | -1) => void;
   onSelectProject: (index: number) => void;
@@ -94,7 +95,7 @@ export function RoomPeeks({
     >
       {peek.kind === "case" && <CasePeek project={peek.project} projects={projects} isDark={isDark} onClose={onClose} onStepProject={onStepProject} onAllProjects={onAllProjects} />}
       {peek.kind === "all" && <AllProjectsPeek projects={projects} isDark={isDark} onClose={onClose} onSelectProject={onSelectProject} />}
-      {peek.kind === "about" && <AboutPeek paragraphs={aboutParagraphs} onClose={onClose} />}
+      {peek.kind === "about" && <AboutPeek copy={aboutCopy} onClose={onClose} />}
       {peek.kind === "terminal" && <TerminalPeek roles={roles} onClose={onClose} />}
     </div>
   );
@@ -248,16 +249,12 @@ function AllProjectsPeek({
   );
 }
 
-function AboutPeek({ paragraphs, onClose }: { paragraphs: string[]; onClose: () => void }) {
+function AboutPeek({ copy, onClose }: { copy: ReactNode; onClose: () => void }) {
   return (
     <PeekCard className="ln-peek__card--one" onClose={onClose}>
       <div className="ln-peek__text">
         <h2 id="peekTitle">A little about me</h2>
-        <div className="ln-about-copy">
-          {paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
+        {copy}
       </div>
     </PeekCard>
   );
