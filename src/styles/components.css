@@ -1250,8 +1250,9 @@ html[data-boot="revealing"] .ln-nav {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  aspect-ratio: 390 / 844;
   border-radius: 30px;
-  background: #faf8f4;
+  background: #fcfbf9;
 }
 .ln-iphone__status {
   display: grid;
@@ -1259,7 +1260,7 @@ html[data-boot="revealing"] .ln-nav {
   align-items: center;
   padding: 7px 14px 4px;
   color: #1d1d1f;
-  background: #faf8f4;
+  background: #fcfbf9;
 }
 .ln-iphone__time {
   font: 600 9px/1 var(--font-sans);
@@ -1321,6 +1322,7 @@ html[data-boot="revealing"] .ln-nav {
   display: block;
   width: 100%;
   height: auto;
+  flex: none;
   aspect-ratio: 780 / 1328;
   border-radius: 0;
   box-shadow: none;
@@ -1329,7 +1331,7 @@ html[data-boot="revealing"] .ln-nav {
   display: block;
   width: 34%;
   height: 3.5px;
-  margin: 6px auto 5px;
+  margin: auto auto 5px;
   border-radius: 999px;
   background: rgba(29, 29, 31, 0.28);
 }
