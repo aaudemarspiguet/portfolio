@@ -179,7 +179,7 @@ export async function caseStudyCard(project: Project, size = ogSize) {
           style={{
             display: "flex",
             width: 480,
-            borderRadius: 16,
+            borderRadius: 16, // --radius-card
             overflow: "hidden",
             background: c.card,
             boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.06), 0 24px 48px -20px rgba(0, 0, 0, 0.22)",

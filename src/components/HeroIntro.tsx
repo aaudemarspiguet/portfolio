@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { site } from "@/content/site";
 import { CopyEmail } from "./CopyEmail";
 import { NameTooltip } from "./NameTooltip";
@@ -10,17 +9,14 @@ export type HeroData = Pick<
 >;
 
 /**
- * The intro the room hero and the plain hero share: name, meta line, typing tagline, the button
- * row and copy-email. `children` are extra buttons placed after "Email me".
+ * The one hero both views share: name, meta line, typing tagline, the button row and copy-email.
  */
 export function HeroIntro({
   hero,
   taglineClass,
-  children,
 }: {
   hero: HeroData;
   taglineClass: string;
-  children?: ReactNode;
 }) {
   const meta = [hero.role, hero.city, hero.availability].join(" · ").toLowerCase();
   return (
@@ -37,7 +33,6 @@ export function HeroIntro({
         <a className="ln-btn ln-btn--primary" href={`mailto:${hero.email}`}>
           Email me
         </a>
-        {children}
         <a className="ln-btn ln-btn--text" href={hero.links.github} target="_blank" rel="noopener noreferrer">
           GitHub ↗
         </a>

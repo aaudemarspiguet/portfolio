@@ -12,6 +12,11 @@ const PAD_TOP = 36; // room for a group label above row 0
 const PAD_BOTTOM = 16;
 const ARROW = 7;
 const BADGE_R = 10;
+// Same shapes as the site's CSS tokens: nodes are blocks (10px), and a group is a panel around them,
+// concentric at its 14px inset (10 + 14 = 24), like the room stage and its screen.
+const NODE_RX = 10;
+const GROUP_PAD = 14;
+const GROUP_RX = NODE_RX + GROUP_PAD;
 
 type Pt = [number, number];
 type Box = { x: number; y: number; cx: number; cy: number };
@@ -83,13 +88,13 @@ export function Architecture({ arch, labelId }: { arch: Arch; labelId: string })
     <svg className="ln-arch" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={labelId}>
       {arch.groups?.map((g) => {
         const bs = g.nodes.map((id) => boxes.get(id)!);
-        const x = Math.min(...bs.map((b) => b.x)) - 14;
+        const x = Math.min(...bs.map((b) => b.x)) - GROUP_PAD;
         const y = Math.min(...bs.map((b) => b.y)) - 30;
-        const r = Math.max(...bs.map((b) => b.x + NODE_W)) + 14;
-        const btm = Math.max(...bs.map((b) => b.y + NODE_H)) + 14;
+        const r = Math.max(...bs.map((b) => b.x + NODE_W)) + GROUP_PAD;
+        const btm = Math.max(...bs.map((b) => b.y + NODE_H)) + GROUP_PAD;
         return (
           <g key={g.label} className="ln-arch__group">
-            <rect x={x} y={y} width={r - x} height={btm - y} rx={16} />
+            <rect x={x} y={y} width={r - x} height={btm - y} rx={GROUP_RX} />
             <text x={x + 14} y={y + 19}>{g.label}</text>
           </g>
         );
@@ -113,7 +118,7 @@ export function Architecture({ arch, labelId }: { arch: Arch; labelId: string })
         const b = boxes.get(n.id)!;
         return (
           <g key={n.id} className={`ln-arch__node${n.kind ? ` ln-arch__node--${n.kind}` : ""}`}>
-            <rect x={b.x} y={b.y} width={NODE_W} height={NODE_H} rx={10} />
+            <rect x={b.x} y={b.y} width={NODE_W} height={NODE_H} rx={NODE_RX} />
             {n.kind === "store" && <path d={`M${b.x} ${b.y + 11} Q${b.cx} ${b.y + 21} ${b.x + NODE_W} ${b.y + 11}`} />}
             <text x={b.cx} y={n.sub ? b.cy - 2 : b.cy + 5} className="ln-arch__label">{n.label}</text>
             {n.sub && <text x={b.cx} y={b.cy + 16} className="ln-arch__sub">{n.sub}</text>}

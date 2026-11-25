@@ -359,54 +359,29 @@ function isPaint(c: string) {
   return Boolean(c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c));
 }
 
-export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture | null {
+/**
+ * Draws the hero into a texture for the iMac or phone screen. `aspect` is the screen's width over
+ * height: when the hero is a different shape (it fills the whole stage now), it is centered on
+ * paper at that shape rather than stretched, matching the uniform scale of the zoom-out.
+ */
+export function drawHeroToCanvas(heroScreenEl: HTMLElement, aspect?: number): THREE.CanvasTexture | null {
   const box = heroScreenEl.getBoundingClientRect();
   if (!box.width || !box.height) return null;
-  const S = Math.min(2, 2048 / box.width);
-  return canvasTex(Math.round(box.width * S), Math.round(box.height * S), (g) => {
+  let W = box.width;
+  let H = box.height;
+  if (aspect) {
+    if (W / H < aspect) W = H * aspect;
+    else H = W / aspect;
+  }
+  const ox = (W - box.width) / 2;
+  const oy = (H - box.height) / 2;
+  const S = Math.min(2, 2048 / W);
+  return canvasTex(Math.round(W * S), Math.round(H * S), (g) => {
     g.scale(S, S);
     const screenStyle = getComputedStyle(heroScreenEl);
     g.fillStyle = screenStyle.backgroundColor;
-    g.fillRect(0, 0, box.width, box.height);
-
-    // ASCII dither matching the HTML hero background.
-    const tile = document.createElement("canvas");
-    tile.width = 72;
-    tile.height = 72;
-    const tg = tile.getContext("2d");
-    if (tg) {
-      const asciiRows = [
-        [".", "+", ":", "#", "-", "*"],
-        ["*", "-", "#", ":", "+", "."],
-        [":", "#", ".", "*", "-", "+"],
-        ["+", ".", "*", "-", "#", ":"],
-        ["-", "*", "+", ".", ":", "#"],
-        ["#", ":", "-", "+", "*", "."],
-      ];
-      const glyphAlpha: Record<string, number> = {
-        ".": 0.45,
-        ":": 0.52,
-        "-": 0.58,
-        "+": 0.72,
-        "*": 0.82,
-        "#": 0.9,
-      };
-      tg.fillStyle = screenStyle.color;
-      tg.font = '500 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
-      tg.textAlign = "center";
-      tg.textBaseline = "middle";
-      asciiRows.forEach((row, r) => {
-        row.forEach((ch, c) => {
-          tg.globalAlpha = (glyphAlpha[ch] ?? 0.6) * 0.22;
-          tg.fillText(ch, c * 12 + 6, r * 12 + 6);
-        });
-      });
-      const pat = g.createPattern(tile, "repeat");
-      if (pat) {
-        g.fillStyle = pat;
-        g.fillRect(0, 0, box.width, box.height);
-      }
-    }
+    g.fillRect(0, 0, W, H);
+    g.translate(ox, oy);
 
     heroScreenEl.querySelectorAll<HTMLElement>("*").forEach((el) => {
       if (el.closest(".ln-say__tip")) return;

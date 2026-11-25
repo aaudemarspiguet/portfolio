@@ -12,7 +12,6 @@ import {
 import type { HomeProject } from "@/content/project-types";
 import type { Role } from "@/content/site";
 import { HeroIntro, type HeroData } from "./HeroIntro";
-import { CropMarks } from "./marks";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
 import type { RoomActions } from "./room/StudioRoom";
@@ -38,22 +37,20 @@ class RoomErrorBoundary extends Component<
 
 /**
  * The home page's client shell: the 3D room, its hero and peeks, and the switch between the
- * room, plain and About views. The plain and About views arrive pre-rendered from the server as
- * slots, so state changes here never re-render them.
+ * room and plain views. The plain view arrives pre-rendered from the server as a slot, so state
+ * changes here never re-render it.
  */
 export function HomeStudio({
   hero,
   projects,
   roles,
   aboutCopy,
-  aboutView,
   plainView,
 }: {
   hero: HeroData;
   projects: HomeProject[];
   roles: Role[];
   aboutCopy: ReactNode;
-  aboutView: ReactNode;
   plainView: ReactNode;
 }) {
   const {
@@ -62,11 +59,12 @@ export function HomeStudio({
     webglFailed,
     pendingSection,
     clearPendingSection,
-    setView,
     setRoomCurrent,
     setPlainSection,
     markWebglFailed,
     registerRoomHandlers,
+    runPendingRoomAction,
+    switchView,
   } = useStudioView();
 
   const stageRef = useRef<HTMLElement>(null);
@@ -78,6 +76,10 @@ export function HomeStudio({
   const progressRef = useRef(0);
   const [roomReady, setRoomReady] = useState(false);
   const [peek, setPeek] = useState<PeekState>(null);
+  // Once built, the room stays loaded while you read the plain view, so switching back is instant
+  // and the toggle can zoom straight into it. It pauses while hidden.
+  const [roomBuilt, setRoomBuilt] = useState(false);
+  if (hydrated && view === "room" && !webglFailed && !roomBuilt) setRoomBuilt(true);
 
   const handleRegisterActions = useCallback(
     (actions: RoomActions | null) => {
@@ -85,6 +87,7 @@ export function HomeStudio({
       if (actions) {
         registerRoomHandlers({
           nav: actions.nav,
+          enterRoom: actions.enterRoom,
           backToScreen: actions.backToScreen,
         });
       } else {
@@ -123,14 +126,17 @@ export function HomeStudio({
     actionsRef.current?.goToAll();
   }, []);
 
+  // The tour's "plain view" link goes the same way as the toggle: back into the screen, then the page.
   const handleSwitchToPlain = useCallback(() => {
-    setView("plain");
-  }, [setView]);
+    switchView();
+  }, [switchView]);
 
   const handleRoomReady = useCallback(() => {
     progressRef.current = 1;
     setRoomReady(true);
-  }, []);
+    // The toggle was pressed before the room existed: make its move once the room has faded in.
+    setTimeout(runPendingRoomAction, 450);
+  }, [runPendingRoomAction]);
 
   const handleRoomProgress = useCallback((ratio: number) => {
     progressRef.current = Math.max(progressRef.current, ratio);
@@ -146,25 +152,33 @@ export function HomeStudio({
     }
   }, [view, pendingSection, clearPendingSection]);
 
-  // Plain view section spy.
+  // Plain view section spy: the last section whose top has passed 45% of the screen, or none
+  // (Home) while you're still on the hero.
   useEffect(() => {
-    if (view !== "plain" || typeof IntersectionObserver === "undefined") return;
-    const ids: PlainSectionKey[] = ["work", "experience", "background"];
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setPlainSection(entry.target.id as PlainSectionKey);
-          }
-        }
-      },
-      { rootMargin: "-40% 0px -55% 0px" },
-    );
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) io.observe(el);
-    });
-    return () => io.disconnect();
+    if (view !== "plain") return;
+    const ids: PlainSectionKey[] = ["work", "experience", "about"];
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const line = window.innerHeight * 0.45;
+      let current: PlainSectionKey | null = null;
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      setPlainSection(current);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [view, setPlainSection]);
 
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
@@ -175,7 +189,7 @@ export function HomeStudio({
 
       <div className="ln-wrap">
         <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
-          {hydrated && view === "room" && !webglFailed && (
+          {hydrated && roomBuilt && !webglFailed && (
             <RoomErrorBoundary onError={markWebglFailed}>
               <StudioRoom
                 projects={projects}
@@ -195,26 +209,9 @@ export function HomeStudio({
           )}
 
           <div ref={heroRef} className="ln-room-hero" id="hero">
-            <div ref={heroScreenRef} className="ln-room-hero__screen">
-              <CropMarks />
-
-              <HeroIntro hero={hero} taglineClass="ln-room-hero__lede">
-                <button
-                  type="button"
-                  id="enterRoomBtn"
-                  className="ln-btn ln-btn--ink"
-                  onClick={() => actionsRef.current?.enterRoom()}
-                >
-                  Enter the room ↓
-                </button>
-                <button
-                  type="button"
-                  className="ln-btn ln-btn--text"
-                  onClick={() => actionsRef.current?.openTerminal()}
-                >
-                  Experience
-                </button>
-              </HeroIntro>
+            {/* The same hero as plain view. Scrolling or swiping up zooms out into the room. */}
+            <div ref={heroScreenRef} className="ln-room-hero__screen" tabIndex={-1}>
+              <HeroIntro hero={hero} taglineClass="ln-room-hero__lede" />
             </div>
           </div>
 
@@ -230,10 +227,6 @@ export function HomeStudio({
           />
         </section>
       </div>
-
-      <main className="ln-wrap" id="aboutView" hidden={view !== "about"}>
-        {aboutView}
-      </main>
 
       <main id="plain" hidden={view !== "plain"}>
         {plainView}

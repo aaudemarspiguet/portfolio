@@ -2,18 +2,6 @@
 
 import type { ReactNode } from "react";
 
-/** Four corner crop marks framing a screen (the room hero and the boot screen). */
-export function CropMarks() {
-  return (
-    <>
-      <span className="ln-crop ln-crop--tl" aria-hidden="true" />
-      <span className="ln-crop ln-crop--tr" aria-hidden="true" />
-      <span className="ln-crop ln-crop--bl" aria-hidden="true" />
-      <span className="ln-crop ln-crop--br" aria-hidden="true" />
-    </>
-  );
-}
-
 /** A section's heading over its mono label. An `action` (a link) shares the label's row, pushed right. */
 export function SectionHeader({
   heading,

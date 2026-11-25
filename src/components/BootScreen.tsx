@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { clockLabel, dateLabel } from "@/lib/clock";
-import { CropMarks } from "./marks";
+import { slideIn } from "@/lib/slideCards";
 
 let sessionBooted = false;
 const MIN_BOOT_MS = 1250;
@@ -77,6 +77,8 @@ export function BootScreen({
         sessionBooted = true;
         exitTimer = setTimeout(() => {
           document.documentElement.dataset.boot = "revealing";
+          // On a first load into the plain view, its cards rise in one after another.
+          if (document.documentElement.dataset.view === "plain") void slideIn(document.getElementById("plain"));
           setExiting(true);
           unmountTimer = setTimeout(() => {
             delete document.documentElement.dataset.boot;
@@ -114,7 +116,6 @@ export function BootScreen({
       <div className="ln-wrap ln-boot__wrap">
         <div className="ln-boot__stage">
           <div className="ln-boot__screen">
-            <CropMarks />
 
             <div className="ln-boot__console">
               <div className="ln-boot__top">

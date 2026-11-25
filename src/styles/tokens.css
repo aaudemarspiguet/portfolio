@@ -18,6 +18,8 @@
   --glass: rgba(255, 255, 255, 0.52);
   --glass-edge: rgba(255, 255, 255, 0.7);
   --glass-ring: rgba(0, 0, 0, 0.08);
+  /* Sheets and modals: a clearer lens than a solid card, so the room shows through, blurred. */
+  --glass-sheet: rgba(255, 255, 255, 0.66);
 
   --rule: rgba(29, 29, 31, 0.12);
   --rule-strong: #86868b;
@@ -76,15 +78,43 @@
   --space-16: 64px;
   --space-30: 120px;
 
-  /* Radius */
+  /* Radius scale (raw values; components use the shape tokens below, never these directly). */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 999px;
-  --radius-screen: calc(var(--radius-xl) - 14px); /* hero/boot screen: concentric with the 24px stage at its 14px inset */
-  --radius-btn: 12px; /* every button; pills are only for chips, tags, toggles and status */
+
+  /* Shapes: one shape per kind of object, used everywhere on the site.
+     Capsule  -> anything you tap that is glass, or a small label: glass bar and its buttons, toggles,
+                 segmented control, chips, tags, status pills, tooltips, toasts.
+     Rounded  -> content: buttons, small blocks, cards, panels, menus, sheets. The radius grows with size.
+     Squircle -> logos, as a share of their size, like app icons. */
+  --radius-control: var(--radius-pill); /* glass controls and small labels */
+  --radius-btn: 12px;                   /* content buttons (rounded rect, never a capsule) */
+  --radius-block: var(--radius-md);     /* 10px: images, video, code blocks, diagram nodes */
+  --radius-card: var(--radius-lg);      /* 16px: cards, lists, tiles, image frames */
+  --radius-panel: var(--radius-xl);     /* 24px: the room stage, the contact panel, the terminal case */
+  --radius-menu: 26px;                  /* pull-down glass menus */
+  --radius-sheet: 34px;                 /* sheets and peek cards */
+  --radius-logo: 22.5%;                 /* org and school logos */
+
+  /* Concentric nesting: a rounded thing inside a rounded thing takes the outer radius minus the gap,
+     so both curves share one center. These are the shapes above, nested. Where the gap is bigger than
+     the outer radius (so this would be 0 or less), the inner piece keeps its own shape, as Apple does. */
+  --stage-inset: 14px;                  /* boot screen, the stage's bottom bar, the terminal's screen */
+  --radius-screen: calc(var(--radius-panel) - var(--stage-inset)); /* 10px: a screen in a panel */
+  --radius-panel-btn: var(--radius-screen); /* 10px: a button in a panel's corner */
+  --sheet-inset: 14px;                  /* the X and stepper capsules: 34 - 14 = 20, half their 40px */
+  --sheet-foot-inset: 16px;
+  --radius-sheet-btn: calc(var(--radius-sheet) - var(--sheet-foot-inset)); /* 18px: footer buttons */
+  --menu-inset: 8px;
+  --radius-menu-item: calc(var(--radius-menu) - var(--menu-inset)); /* 18px: a menu row's highlight */
+  --tile-inset: 8px;
+  --radius-tile-img: calc(var(--radius-card) - var(--tile-inset)); /* 8px: the image in a tile */
+  --tour-inset: 6px;
+  --radius-tour: calc(var(--radius-btn) + var(--tour-inset)); /* 18px: the tour note around its buttons */
 
   /* Layout: 1120px column with 16px gutters so nav pill and stage edges align exactly. */
   --layout-max: 1120px;
@@ -138,6 +168,7 @@
     --glass: rgba(30, 30, 34, 0.5);
     --glass-edge: rgba(255, 255, 255, 0.14);
     --glass-ring: rgba(255, 255, 255, 0.08);
+    --glass-sheet: rgba(38, 38, 42, 0.56);
     --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
     --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
     --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
@@ -175,6 +206,7 @@
   --glass: rgba(30, 30, 34, 0.5);
   --glass-edge: rgba(255, 255, 255, 0.14);
   --glass-ring: rgba(255, 255, 255, 0.08);
+  --glass-sheet: rgba(38, 38, 42, 0.56);
   --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
   --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
   --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
