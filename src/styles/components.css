@@ -166,7 +166,7 @@ html[data-view="room"] #aboutView { display: none; }
   gap: 12px;
   height: var(--layout-nav);
   padding: 0 8px 0 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
   -webkit-backdrop-filter: saturate(190%) blur(26px);
   backdrop-filter: saturate(190%) blur(26px);
@@ -189,7 +189,7 @@ html[data-view="room"] #aboutView { display: none; }
   color: var(--ink-muted);
   text-decoration: none;
   padding: 7px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   transition: color .15s, background-color .15s;
 }
 .ln-nav__item:hover { color: var(--ink); background: var(--paper-sunk); }
@@ -215,7 +215,7 @@ html[data-view="room"] #aboutView { display: none; }
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -247,7 +247,7 @@ html[data-view="room"] #aboutView { display: none; }
   height: 32px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--paper-sunk);
   color: var(--ink);
   font: 500 14px var(--font-sans);
@@ -340,7 +340,7 @@ html.ln-locked { overflow: hidden; }
   margin-top: 72px;
   margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: #141519;
   box-shadow: 0 0 0 1px var(--rule);
 }
@@ -376,7 +376,7 @@ html.ln-locked { overflow: hidden; }
   gap: 6px;
   height: 36px;
   padding: 0 8px 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--card) 90%, transparent);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule);
@@ -409,7 +409,7 @@ html.ln-locked { overflow: hidden; }
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink);
   font: 500 12px/1 var(--font-mono);
@@ -424,7 +424,7 @@ html.ln-locked { overflow: hidden; }
 .ln-bench {
   margin-left: auto;
   padding: 4px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(13, 13, 16, 0.78);
   color: #e6edf3;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
@@ -439,7 +439,7 @@ html.ln-locked { overflow: hidden; }
   transform: translate(-50%, -140%);
   white-space: nowrap;
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: #1d1d1f;
   color: #f4f3ef;
   font: 500 12px/16px var(--font-mono);
@@ -470,7 +470,7 @@ html.ln-locked { overflow: hidden; }
   clip: auto;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: #1d1d1f;
   font: 500 12px var(--font-mono);
@@ -487,7 +487,7 @@ html.ln-locked { overflow: hidden; }
   width: max-content;
   max-width: calc(100% - 28px);
   padding: 6px 6px 6px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--card) 92%, transparent);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -512,7 +512,7 @@ html.ln-locked { overflow: hidden; }
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-muted);
   font: 400 18px/1 var(--font-sans);
@@ -662,7 +662,7 @@ html[data-boot="revealing"] .ln-nav {
 .ln-boot__dot {
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--scarlet);
 }
 .ln-boot__pct {
@@ -757,7 +757,7 @@ html[data-boot="revealing"] .ln-nav {
   display: block;
   width: 100%;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--rule);
   overflow: hidden;
 }
@@ -791,7 +791,7 @@ html[data-boot="revealing"] .ln-nav {
   bottom: 14px;
   container-type: size;
   overflow: auto;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--paper);
   color: var(--ink);
   display: flex;
@@ -878,7 +878,7 @@ html[data-boot="revealing"] .ln-nav {
 }
 .ln-typing {
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #0d1117;
   color: #e6edf3;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.14);
@@ -931,7 +931,7 @@ html[data-boot="revealing"] .ln-nav {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--paper);
   color: var(--ink);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
@@ -977,7 +977,7 @@ html[data-boot="revealing"] .ln-nav {
   max-height: 420px;
   object-fit: contain;
   background: var(--paper-sunk);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 0 0 1px var(--rule);
 }
 .ln-peek__code {
@@ -1035,7 +1035,7 @@ html[data-boot="revealing"] .ln-nav {
   gap: 8px;
   padding: 8px 8px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--card);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule);
@@ -1056,7 +1056,7 @@ html[data-boot="revealing"] .ln-nav {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   object-position: center top;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--paper-sunk);
 }
 .ln-alltile b {
@@ -1109,7 +1109,7 @@ html[data-boot="revealing"] .ln-nav {
   max-height: 100%;
   overflow: auto;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: #2a2a2d;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
@@ -1121,7 +1121,7 @@ html[data-boot="revealing"] .ln-nav {
 .ln-term .ln-btn:not(.ln-btn--primary):not(.ln-btn--ink):hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .ln-term__screen {
   padding: 22px 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: #0d1117;
   color: #e6edf3;
   font: 400 14px/1.7 var(--font-mono);
@@ -1286,7 +1286,7 @@ html[data-boot="revealing"] .ln-nav {
   align-items: center;
   justify-content: center;
   padding: clamp(18px, 2.4vw, 28px);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--paper-sunk);
   box-shadow: 0 0 0 1px var(--rule);
   overflow: hidden;
@@ -1305,7 +1305,7 @@ html[data-boot="revealing"] .ln-nav {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 0 0 1px var(--rule), 0 12px 28px rgba(0, 0, 0, 0.1);
 }
 .ln-piece--find-the-outfit .ln-piece__frame { flex: 1; }
@@ -1355,7 +1355,7 @@ html[data-boot="revealing"] .ln-nav {
 .ln-iphone__island {
   width: 58px;
   height: 15px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #09090b;
   position: relative;
 }
@@ -1418,7 +1418,7 @@ html[data-boot="revealing"] .ln-nav {
   width: 34%;
   height: 3.5px;
   margin: auto auto 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(29, 29, 31, 0.28);
 }
 .ln-piece--saw .ln-piece__frame {
@@ -1502,14 +1502,14 @@ html[data-boot="revealing"] .ln-nav {
   align-items: start;
   padding: 18px 20px;
   margin-bottom: 28px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
 .ln-school img {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   background: #fff;
 }
@@ -1600,7 +1600,7 @@ html[data-boot="revealing"] .ln-nav {
   position: relative;
   display: inline-block;
   cursor: help;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   outline-offset: 6px;
 }
 .ln-say__tip {
@@ -1609,7 +1609,7 @@ html[data-boot="revealing"] .ln-nav {
   bottom: calc(100% + 8px);
   z-index: 4;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ink);
   color: var(--paper);
   font: 500 13px/18px var(--font-sans);
@@ -1635,7 +1635,7 @@ html[data-boot="revealing"] .ln-nav {
 .ln-org {
   width: var(--mark, 20px);
   height: var(--mark, 20px);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   outline-offset: 3px;
   cursor: default;
 }
@@ -1644,7 +1644,7 @@ html[data-boot="revealing"] .ln-nav {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   background: var(--logo-tile);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
@@ -1686,7 +1686,7 @@ html[data-boot="revealing"] .ln-nav {
   align-items: center;
   height: 24px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ink);
   color: var(--paper);
   font: 500 12px var(--font-sans);
@@ -1699,7 +1699,7 @@ html[data-boot="revealing"] .ln-nav {
 .ln-chip {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--paper-sunk);
   font: 500 13px/20px var(--font-mono);
   letter-spacing: 0;
@@ -1751,7 +1751,7 @@ html[data-boot="revealing"] .ln-nav {
   margin: 0;
   padding: 0 24px;
   list-style: none;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
   --mark: 20px;
@@ -1815,7 +1815,7 @@ html[data-boot="revealing"] .ln-nav {
   flex-direction: column;
   gap: 24px;
   padding: var(--panel-pad);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   background: var(--panel);
   color: var(--on-panel);
 }
