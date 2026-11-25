@@ -12,7 +12,6 @@ import {
 import type { HomeProject } from "@/content/project-types";
 import type { Role } from "@/content/site";
 import { HeroIntro, type HeroData } from "./HeroIntro";
-import { CropMarks } from "./marks";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
 import type { RoomActions } from "./room/StudioRoom";
@@ -194,7 +193,6 @@ export function HomeStudio({
 
           <div ref={heroRef} className="ln-room-hero" id="hero">
             <div ref={heroScreenRef} className="ln-room-hero__screen">
-              <CropMarks />
 
               <HeroIntro hero={hero} taglineClass="ln-room-hero__lede">
                 <button

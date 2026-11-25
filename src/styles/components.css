@@ -225,35 +225,12 @@ html[data-view="room"] #plain { display: none; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.ln-icon-btn[aria-pressed="true"] { color: var(--link); background: var(--link-tint); }
 .ln-icon-btn svg.ln-fillicon {
   width: 17px;
   height: 17px;
   fill: currentColor;
   stroke: none;
-}
-.ln-viewbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 94px;
-  height: 32px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--paper-sunk);
-  color: var(--ink);
-  font: 500 14px var(--font-sans);
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.ln-viewbtn:hover { background: var(--rule); }
-.ln-theme__sun { display: none; }
-:root[data-theme="dark"] .ln-theme__sun { display: block; }
-:root[data-theme="dark"] .ln-theme__moon { display: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .ln-theme__sun { display: block; }
-  :root:not([data-theme="light"]) .ln-theme__moon { display: none; }
 }
 
 
@@ -416,9 +393,11 @@ html[data-view="room"] #plain { display: none; }
   max-width: min(640px, calc(100% - 28px));
   padding: 6px;
   border-radius: calc(var(--radius-btn) + 6px);
-  background: color-mix(in srgb, var(--card) 92%, transparent);
+  background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
+  -webkit-backdrop-filter: saturate(190%) blur(26px);
+  backdrop-filter: saturate(190%) blur(26px);
   color: var(--ink);
-  box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-glass);
 }
 .ln-tour__text {
   flex: 1 1 auto;
@@ -518,12 +497,12 @@ html[data-boot="loading"] .ln-stage__canvas {
   opacity: 0;
   transform: scale(1.028);
 }
-html[data-boot="loading"] .ln-room-hero__screen > :not(.ln-crop),
+html[data-boot="loading"] .ln-room-hero__screen > *,
 html[data-boot="loading"] #plain {
   opacity: 0;
   transform: translateY(8px);
 }
-html[data-boot="revealing"] .ln-room-hero__screen > :not(.ln-crop),
+html[data-boot="revealing"] .ln-room-hero__screen > *,
 html[data-boot="revealing"] #plain {
   opacity: 1;
   transform: translateY(0);
@@ -679,7 +658,6 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-boot__lock { display: none; }
 @container (max-aspect-ratio: 1/1) {
   .ln-boot__screen { padding: 0; }
-  .ln-boot__screen .ln-crop,
   .ln-boot__console { display: none; }
   .ln-boot__lock {
     position: absolute;
@@ -776,49 +754,10 @@ html[data-boot="revealing"] .ln-mbar {
     height: min(calc(100cqh - 28px), calc((100cqw - 28px) * 9 / 16));
   }
 }
-.ln-room-hero__screen,
-.ln-plainhero {
-  --hero-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg font-family='ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace' font-size='11' font-weight='500' text-anchor='middle' dominant-baseline='central' fill='%231d1d1f'%3E%3Ctext x='6' y='6' opacity='.45'%3E.%3C/text%3E%3Ctext x='18' y='6' opacity='.72'%3E+%3C/text%3E%3Ctext x='30' y='6' opacity='.52'%3E:%3C/text%3E%3Ctext x='42' y='6' opacity='.9'%3E%23%3C/text%3E%3Ctext x='54' y='6' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='6' opacity='.82'%3E*%3C/text%3E%3Ctext x='6' y='18' opacity='.82'%3E*%3C/text%3E%3Ctext x='18' y='18' opacity='.58'%3E-%3C/text%3E%3Ctext x='30' y='18' opacity='.9'%3E%23%3C/text%3E%3Ctext x='42' y='18' opacity='.52'%3E:%3C/text%3E%3Ctext x='54' y='18' opacity='.72'%3E+%3C/text%3E%3Ctext x='66' y='18' opacity='.45'%3E.%3C/text%3E%3Ctext x='6' y='30' opacity='.52'%3E:%3C/text%3E%3Ctext x='18' y='30' opacity='.9'%3E%23%3C/text%3E%3Ctext x='30' y='30' opacity='.45'%3E.%3C/text%3E%3Ctext x='42' y='30' opacity='.82'%3E*%3C/text%3E%3Ctext x='54' y='30' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='30' opacity='.72'%3E+%3C/text%3E%3Ctext x='6' y='42' opacity='.72'%3E+%3C/text%3E%3Ctext x='18' y='42' opacity='.45'%3E.%3C/text%3E%3Ctext x='30' y='42' opacity='.82'%3E*%3C/text%3E%3Ctext x='42' y='42' opacity='.58'%3E-%3C/text%3E%3Ctext x='54' y='42' opacity='.9'%3E%23%3C/text%3E%3Ctext x='66' y='42' opacity='.52'%3E:%3C/text%3E%3Ctext x='6' y='54' opacity='.58'%3E-%3C/text%3E%3Ctext x='18' y='54' opacity='.82'%3E*%3C/text%3E%3Ctext x='30' y='54' opacity='.72'%3E+%3C/text%3E%3Ctext x='42' y='54' opacity='.45'%3E.%3C/text%3E%3Ctext x='54' y='54' opacity='.52'%3E:%3C/text%3E%3Ctext x='66' y='54' opacity='.9'%3E%23%3C/text%3E%3Ctext x='6' y='66' opacity='.9'%3E%23%3C/text%3E%3Ctext x='18' y='66' opacity='.52'%3E:%3C/text%3E%3Ctext x='30' y='66' opacity='.58'%3E-%3C/text%3E%3Ctext x='42' y='66' opacity='.72'%3E+%3C/text%3E%3Ctext x='54' y='66' opacity='.82'%3E*%3C/text%3E%3Ctext x='66' y='66' opacity='.45'%3E.%3C/text%3E%3C/g%3E%3C/svg%3E");
-}
-:root[data-theme="dark"] .ln-room-hero__screen,
-:root[data-theme="dark"] .ln-plainhero {
-  --hero-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg font-family='ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace' font-size='11' font-weight='500' text-anchor='middle' dominant-baseline='central' fill='%23ececef'%3E%3Ctext x='6' y='6' opacity='.45'%3E.%3C/text%3E%3Ctext x='18' y='6' opacity='.72'%3E+%3C/text%3E%3Ctext x='30' y='6' opacity='.52'%3E:%3C/text%3E%3Ctext x='42' y='6' opacity='.9'%3E%23%3C/text%3E%3Ctext x='54' y='6' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='6' opacity='.82'%3E*%3C/text%3E%3Ctext x='6' y='18' opacity='.82'%3E*%3C/text%3E%3Ctext x='18' y='18' opacity='.58'%3E-%3C/text%3E%3Ctext x='30' y='18' opacity='.9'%3E%23%3C/text%3E%3Ctext x='42' y='18' opacity='.52'%3E:%3C/text%3E%3Ctext x='54' y='18' opacity='.72'%3E+%3C/text%3E%3Ctext x='66' y='18' opacity='.45'%3E.%3C/text%3E%3Ctext x='6' y='30' opacity='.52'%3E:%3C/text%3E%3Ctext x='18' y='30' opacity='.9'%3E%23%3C/text%3E%3Ctext x='30' y='30' opacity='.45'%3E.%3C/text%3E%3Ctext x='42' y='30' opacity='.82'%3E*%3C/text%3E%3Ctext x='54' y='30' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='30' opacity='.72'%3E+%3C/text%3E%3Ctext x='6' y='42' opacity='.72'%3E+%3C/text%3E%3Ctext x='18' y='42' opacity='.45'%3E.%3C/text%3E%3Ctext x='30' y='42' opacity='.82'%3E*%3C/text%3E%3Ctext x='42' y='42' opacity='.58'%3E-%3C/text%3E%3Ctext x='54' y='42' opacity='.9'%3E%23%3C/text%3E%3Ctext x='66' y='42' opacity='.52'%3E:%3C/text%3E%3Ctext x='6' y='54' opacity='.58'%3E-%3C/text%3E%3Ctext x='18' y='54' opacity='.82'%3E*%3C/text%3E%3Ctext x='30' y='54' opacity='.72'%3E+%3C/text%3E%3Ctext x='42' y='54' opacity='.45'%3E.%3C/text%3E%3Ctext x='54' y='54' opacity='.52'%3E:%3C/text%3E%3Ctext x='66' y='54' opacity='.9'%3E%23%3C/text%3E%3Ctext x='6' y='66' opacity='.9'%3E%23%3C/text%3E%3Ctext x='18' y='66' opacity='.52'%3E:%3C/text%3E%3Ctext x='30' y='66' opacity='.58'%3E-%3C/text%3E%3Ctext x='42' y='66' opacity='.72'%3E+%3C/text%3E%3Ctext x='54' y='66' opacity='.82'%3E*%3C/text%3E%3Ctext x='66' y='66' opacity='.45'%3E.%3C/text%3E%3C/g%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .ln-room-hero__screen,
-  :root:not([data-theme="light"]) .ln-plainhero {
-    --hero-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg font-family='ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace' font-size='11' font-weight='500' text-anchor='middle' dominant-baseline='central' fill='%23ececef'%3E%3Ctext x='6' y='6' opacity='.45'%3E.%3C/text%3E%3Ctext x='18' y='6' opacity='.72'%3E+%3C/text%3E%3Ctext x='30' y='6' opacity='.52'%3E:%3C/text%3E%3Ctext x='42' y='6' opacity='.9'%3E%23%3C/text%3E%3Ctext x='54' y='6' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='6' opacity='.82'%3E*%3C/text%3E%3Ctext x='6' y='18' opacity='.82'%3E*%3C/text%3E%3Ctext x='18' y='18' opacity='.58'%3E-%3C/text%3E%3Ctext x='30' y='18' opacity='.9'%3E%23%3C/text%3E%3Ctext x='42' y='18' opacity='.52'%3E:%3C/text%3E%3Ctext x='54' y='18' opacity='.72'%3E+%3C/text%3E%3Ctext x='66' y='18' opacity='.45'%3E.%3C/text%3E%3Ctext x='6' y='30' opacity='.52'%3E:%3C/text%3E%3Ctext x='18' y='30' opacity='.9'%3E%23%3C/text%3E%3Ctext x='30' y='30' opacity='.45'%3E.%3C/text%3E%3Ctext x='42' y='30' opacity='.82'%3E*%3C/text%3E%3Ctext x='54' y='30' opacity='.58'%3E-%3C/text%3E%3Ctext x='66' y='30' opacity='.72'%3E+%3C/text%3E%3Ctext x='6' y='42' opacity='.72'%3E+%3C/text%3E%3Ctext x='18' y='42' opacity='.45'%3E.%3C/text%3E%3Ctext x='30' y='42' opacity='.82'%3E*%3C/text%3E%3Ctext x='42' y='42' opacity='.58'%3E-%3C/text%3E%3Ctext x='54' y='42' opacity='.9'%3E%23%3C/text%3E%3Ctext x='66' y='42' opacity='.52'%3E:%3C/text%3E%3Ctext x='6' y='54' opacity='.58'%3E-%3C/text%3E%3Ctext x='18' y='54' opacity='.82'%3E*%3C/text%3E%3Ctext x='30' y='54' opacity='.72'%3E+%3C/text%3E%3Ctext x='42' y='54' opacity='.45'%3E.%3C/text%3E%3Ctext x='54' y='54' opacity='.52'%3E:%3C/text%3E%3Ctext x='66' y='54' opacity='.9'%3E%23%3C/text%3E%3Ctext x='6' y='66' opacity='.9'%3E%23%3C/text%3E%3Ctext x='18' y='66' opacity='.52'%3E:%3C/text%3E%3Ctext x='30' y='66' opacity='.58'%3E-%3C/text%3E%3Ctext x='42' y='66' opacity='.72'%3E+%3C/text%3E%3Ctext x='54' y='66' opacity='.82'%3E*%3C/text%3E%3Ctext x='66' y='66' opacity='.45'%3E.%3C/text%3E%3C/g%3E%3C/svg%3E");
-  }
-}
-.ln-room-hero__screen::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: var(--hero-dither);
-  background-size: 72px 72px;
-  opacity: 0.24;
-  -webkit-mask-image: linear-gradient(120deg, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 1) 100%);
-  mask-image: linear-gradient(120deg, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 1) 100%);
-}
-.ln-room-hero__screen > :not(.ln-crop) {
+.ln-room-hero__screen > * {
   position: relative;
   z-index: 1;
 }
-.ln-crop {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-color: var(--link);
-  border-style: solid;
-  opacity: 0.7;
-  pointer-events: none;
-}
-.ln-crop--tl { top: 14px; left: 14px; border-width: 1px 0 0 1px; }
-.ln-crop--tr { top: 14px; right: 14px; border-width: 1px 1px 0 0; }
-.ln-crop--bl { bottom: 14px; left: 14px; border-width: 0 0 1px 1px; }
-.ln-crop--br { bottom: 14px; right: 14px; border-width: 0 1px 1px 0; }
 
 .ln-room-hero h1 {
   margin: 0;
@@ -895,9 +834,20 @@ html[data-boot="revealing"] .ln-mbar {
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--paper);
+  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), color-mix(in srgb, var(--paper) 90%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
   color: var(--ink);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--glass-ring), 0 30px 60px rgba(0, 0, 0, 0.35);
+}
+/* The same header as the phone sheets: close on the left, the peek's name in the middle. */
+.ln-peek__head {
+  flex: none;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 4px;
 }
 .ln-peek__body {
   min-height: 0;
@@ -906,17 +856,9 @@ html[data-boot="revealing"] .ln-mbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 32px;
-  padding: var(--peek-pad);
+  padding: 8px var(--peek-pad) var(--peek-pad);
 }
 .ln-peek__card--case .ln-peek__body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.ln-peek__x {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
-  background: var(--paper);
-  box-shadow: 0 0 0 1px var(--rule), 0 4px 12px rgba(0, 0, 0, 0.08);
-}
 .ln-peek__card h2 {
   margin: 0;
   font-size: clamp(26px, 3.4vw, 40px);
@@ -965,7 +907,6 @@ html[data-boot="revealing"] .ln-mbar {
   gap: 12px 24px;
   padding: 16px var(--peek-pad);
   border-top: 1px solid var(--rule);
-  background: var(--paper);
 }
 .ln-peek__go { display: flex; align-items: center; gap: 12px; }
 .ln-peek__icon {
@@ -1047,7 +988,7 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-peek__wide { display: none; }
   .ln-peek__card { --peek-pad: 20px; }
   .ln-peek__body { gap: 16px; }
-  .ln-peek__card h2 { font-size: 28px; padding-right: 36px; }
+  .ln-peek__card h2 { font-size: 28px; }
   .ln-peek__text { gap: 12px; }
   .ln-peek__text p { font-size: 16px; line-height: 1.5; }
   .ln-peek__actions {
@@ -1126,7 +1067,7 @@ html[data-boot="revealing"] .ln-mbar {
   html[data-boot="revealing"] .ln-mbar,
   html[data-boot="revealing"] .ln-stage,
   html[data-boot="revealing"] .ln-stage__canvas,
-  html[data-boot="revealing"] .ln-room-hero__screen > :not(.ln-crop),
+  html[data-boot="revealing"] .ln-room-hero__screen > *,
   html[data-boot="revealing"] #plain,
   .ln-room-hero { transition: none; }
   .ln-caret,
@@ -1163,18 +1104,6 @@ html[data-boot="revealing"] .ln-mbar {
   align-items: flex-start;
   gap: 18px;
   padding-block: 132px 8px;
-}
-.ln-plainhero::before {
-  content: "";
-  position: absolute;
-  inset: 72px 0 -24px;
-  z-index: 0;
-  pointer-events: none;
-  background-image: var(--hero-dither);
-  background-size: 72px 72px;
-  opacity: 0.24;
-  -webkit-mask-image: radial-gradient(ellipse 85% 85% at 72% 44%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.55) 58%, transparent 90%);
-  mask-image: radial-gradient(ellipse 85% 85% at 72% 44%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.55) 58%, transparent 90%);
 }
 .ln-plainhero > * {
   position: relative;
@@ -1854,8 +1783,9 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-404 p { margin: 0; color: var(--ink-muted); }
 
 /* ------------------------------------------------------------------------------------------
-   Liquid Glass on phones: one top bar, pull-down menus, and swipe-up sheets.
-   Desktop keeps the pill nav and the centered peek cards. Glass is the existing --glass tokens.
+   Liquid Glass: one set of glass controls, menus and sheets for every screen size. Phones get one
+   full-width top bar and swipe-up peeks; desktop keeps the pill nav and centered peek cards.
+   Glass is the existing --glass tokens.
    Capsules are for glass controls only; content buttons keep --radius-btn.
    ------------------------------------------------------------------------------------------ */
 .ln-mbar { display: none; }
@@ -1884,11 +1814,33 @@ html[data-boot="revealing"] .ln-mbar {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.ln-gbtn svg.ln-gbtn__dots,
-.ln-gbtn svg.ln-gbtn__fill { fill: currentColor; stroke: none; }
+.ln-gbtn svg.ln-gbtn__fill,
+.ln-gbtn svg.ln-dots,
+.ln-icon-btn svg.ln-dots { fill: currentColor; stroke: none; }
 .ln-gbtn[aria-pressed="true"] { color: var(--link); background: var(--link-tint); }
 .ln-gbtn--big { width: 52px; height: 52px; }
 .ln-gbtn--big svg { width: 26px; height: 26px; }
+
+/* A short confirmation under the bar, like "Email copied". */
+.ln-toast {
+  position: fixed;
+  z-index: 46;
+  top: calc(76px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ln-toast span {
+  display: block;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
+  -webkit-backdrop-filter: saturate(190%) blur(26px);
+  backdrop-filter: saturate(190%) blur(26px);
+  box-shadow: var(--shadow-glass);
+  color: var(--ink);
+  font: 500 14px var(--font-sans);
+}
 
 /* Pull-down menus grow out of the button that opened them. */
 .ln-gmenu {
@@ -1989,6 +1941,9 @@ html[data-boot="revealing"] .ln-mbar {
   margin-left: -18px;
   border-radius: 3px;
   background: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+@media (min-width: 641px) {
+  .ln-gsheet { width: min(480px, calc(100% - 32px)); margin-inline: auto; max-height: calc(100dvh - 96px); }
 }
 .ln-gsheet__x { width: 36px; height: 36px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .ln-gsheet__x svg { width: 16px; height: 16px; stroke-width: 2.2; }
@@ -2182,23 +2137,7 @@ html[data-boot="revealing"] .ln-mbar {
   }
   .ln-mbar__title[aria-expanded="true"] svg { transform: rotate(180deg); }
   .ln-mbar__end { display: flex; align-items: center; padding: 2px; }
-  .ln-mbar__toast {
-    position: fixed;
-    top: calc(64px + env(safe-area-inset-top, 0px));
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: none;
-  }
-  .ln-mbar__toast span {
-    display: block;
-    padding: 8px 14px;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
-    -webkit-backdrop-filter: saturate(190%) blur(26px);
-    backdrop-filter: saturate(190%) blur(26px);
-    box-shadow: var(--shadow-glass);
-    font: 500 14px var(--font-sans);
-  }
+  .ln-toast { top: calc(64px + env(safe-area-inset-top, 0px)); }
 
   /* Full screen: the room fills the phone, edge to edge, under the bar. */
   .ln-stage {
@@ -2212,20 +2151,11 @@ html[data-boot="revealing"] .ln-mbar {
     padding-top: calc(52px + env(safe-area-inset-top, 0px));
     border-radius: 0;
   }
-  /* The glass bar sits where the crop marks and dither were; desktop keeps both. */
-  .ln-room-hero__screen > .ln-crop { display: none; }
-  .ln-room-hero__screen::before { display: none; }
 
   /* Back, Tour and the deck live in the bar's menus now. */
   .ln-stage__bar > :not(.ln-bench) { display: none; }
   .ln-stage__bar:not(:has(.ln-bench)) { display: none; }
 
-  /* The tour note floats in glass just under the bar. */
-  .ln-tour {
-    top: calc(60px + env(safe-area-inset-top, 0px));
-    background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
-    -webkit-backdrop-filter: saturate(190%) blur(26px);
-    backdrop-filter: saturate(190%) blur(26px);
-    box-shadow: var(--shadow-glass);
-  }
+  /* The tour note sits just under the bar. */
+  .ln-tour { top: calc(60px + env(safe-area-inset-top, 0px)); }
 }

@@ -1,13 +1,15 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { type MouseEvent } from "react";
+import { useEffect, type MouseEvent } from "react";
 import { site } from "@/content/site";
+import { initGlobalSfx } from "@/lib/sfx";
+import { CubeIcon } from "./CubeIcon";
 import { HomeLink } from "./HomeLink";
 import { MobileBar } from "./MobileBar";
-import { SfxToggle } from "./SfxToggle";
+import { MoreMenu } from "./MoreMenu";
 import { useStudioNav, useStudioView, type RoomNavKey } from "./StudioViewProvider";
-import { ThemeToggle } from "./ThemeToggle";
+import { useApplySavedTheme } from "./ThemeToggle";
 
 const NAV_ITEMS: { key: RoomNavKey; label: string; hash: string }[] = [
   { key: "work", label: "Projects", hash: "#work" },
@@ -55,8 +57,11 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
   const canSwitchView = onHome && !webglFailed;
-  const viewLabel = view === "room" ? "plain view" : "room view";
   const toggleView = () => setView(view === "room" ? "plain" : "room");
+
+  // Click sounds and the saved appearance are set up once, here, for every screen size.
+  useEffect(() => initGlobalSfx(), []);
+  useApplySavedTheme();
 
   // Room view flies the camera; plain view scrolls the one long page to the section.
   function goToSection(key: RoomNavKey) {
@@ -117,12 +122,18 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
             <LinkedInIcon />
           </a>
           {canSwitchView && (
-            <button type="button" className="ln-viewbtn" aria-pressed={view !== "room"} onClick={toggleView}>
-              {viewLabel}
+            <button
+              type="button"
+              className="ln-icon-btn ln-nav__cube"
+              aria-label="Room view"
+              title="Room view"
+              aria-pressed={view === "room"}
+              onClick={toggleView}
+            >
+              <CubeIcon />
             </button>
           )}
-          <SfxToggle className="ln-icon-btn ln-nav__sfx" />
-          <ThemeToggle />
+          <MoreMenu buttonClassName="ln-icon-btn" withLinks={false} />
         </div>
       </div>
     </header>

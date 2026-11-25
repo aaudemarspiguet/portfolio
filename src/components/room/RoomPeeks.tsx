@@ -131,14 +131,19 @@ export function RoomPeeks({
   );
 }
 
-// Each peek is a modal card: a close (×) pinned in the top-right corner, a scrolling body, and one
-// footer that holds every other action together (main links, then prev / count / next).
+// Each peek is a modal card with the same glass header as the phone sheets: close (×) in the
+// top-left corner, the peek's name in the middle, then a scrolling body and one footer of actions.
 function PeekCard({
+  title,
+  titleId,
   className = "",
   onClose,
   actions,
   children,
 }: {
+  title: string;
+  /** Set when the header's name is the dialog's only title. */
+  titleId?: string;
   className?: string;
   onClose: () => void;
   actions?: ReactNode;
@@ -146,11 +151,17 @@ function PeekCard({
 }) {
   return (
     <div className={`ln-peek__card ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="peekTitle">
-      <button type="button" className="ln-icon-btn ln-peek__x" data-close aria-label="Close" onClick={onClose}>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+      <div className="ln-peek__head">
+        <button type="button" className="ln-gbtn ln-gsheet__x" data-close aria-label="Close" onClick={onClose}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <span id={titleId} className="ln-gsheet__title">
+          {title}
+        </span>
+        <span aria-hidden="true" />
+      </div>
       <div className="ln-peek__body">{children}</div>
       {actions && <div className="ln-peek__actions">{actions}</div>}
     </div>
@@ -262,6 +273,7 @@ function CasePeek({
 }) {
   return (
     <PeekCard
+      title="Projects"
       className="ln-peek__card--case"
       onClose={onClose}
       actions={<CaseActions project={project} projects={projects} onStepProject={onStepProject} onAllProjects={onAllProjects} />}
@@ -336,10 +348,7 @@ function AllProjectsPeek({
   onSelectProject: (index: number) => void;
 }) {
   return (
-    <PeekCard className="ln-peek__card--one ln-peek__card--all" onClose={onClose}>
-      <div className="ln-peek__text">
-        <h2 id="peekTitle">All projects</h2>
-      </div>
+    <PeekCard title="All projects" titleId="peekTitle" className="ln-peek__card--one ln-peek__card--all" onClose={onClose}>
       <AllGrid projects={projects} isDark={isDark} onSelectProject={onSelectProject} />
     </PeekCard>
   );
@@ -382,7 +391,7 @@ function AboutPages({ copy, titleId }: { copy: ReactNode; titleId?: string }) {
 
 function AboutPeek({ copy, onClose }: { copy: ReactNode; onClose: () => void }) {
   return (
-    <PeekCard className="ln-peek__card--one" onClose={onClose}>
+    <PeekCard title="About" className="ln-peek__card--one" onClose={onClose}>
       <AboutPages copy={copy} titleId="peekTitle" />
     </PeekCard>
   );

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { clockLabel, dateLabel } from "@/lib/clock";
-import { CropMarks } from "./marks";
 
 let sessionBooted = false;
 const MIN_BOOT_MS = 1250;
@@ -114,7 +113,6 @@ export function BootScreen({
       <div className="ln-wrap ln-boot__wrap">
         <div className="ln-boot__stage">
           <div className="ln-boot__screen">
-            <CropMarks />
 
             <div className="ln-boot__console">
               <div className="ln-boot__top">

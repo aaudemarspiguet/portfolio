@@ -369,45 +369,6 @@ export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture
     g.fillStyle = screenStyle.backgroundColor;
     g.fillRect(0, 0, box.width, box.height);
 
-    // ASCII dither matching the HTML hero background.
-    const tile = document.createElement("canvas");
-    tile.width = 72;
-    tile.height = 72;
-    const tg = tile.getContext("2d");
-    if (tg) {
-      const asciiRows = [
-        [".", "+", ":", "#", "-", "*"],
-        ["*", "-", "#", ":", "+", "."],
-        [":", "#", ".", "*", "-", "+"],
-        ["+", ".", "*", "-", "#", ":"],
-        ["-", "*", "+", ".", ":", "#"],
-        ["#", ":", "-", "+", "*", "."],
-      ];
-      const glyphAlpha: Record<string, number> = {
-        ".": 0.45,
-        ":": 0.52,
-        "-": 0.58,
-        "+": 0.72,
-        "*": 0.82,
-        "#": 0.9,
-      };
-      tg.fillStyle = screenStyle.color;
-      tg.font = '500 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
-      tg.textAlign = "center";
-      tg.textBaseline = "middle";
-      asciiRows.forEach((row, r) => {
-        row.forEach((ch, c) => {
-          tg.globalAlpha = (glyphAlpha[ch] ?? 0.6) * 0.22;
-          tg.fillText(ch, c * 12 + 6, r * 12 + 6);
-        });
-      });
-      const pat = g.createPattern(tile, "repeat");
-      if (pat) {
-        g.fillStyle = pat;
-        g.fillRect(0, 0, box.width, box.height);
-      }
-    }
-
     heroScreenEl.querySelectorAll<HTMLElement>("*").forEach((el) => {
       if (el.closest(".ln-say__tip")) return;
       const st = getComputedStyle(el);

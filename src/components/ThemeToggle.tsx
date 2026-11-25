@@ -69,29 +69,10 @@ export function useTheme() {
   return useSyncExternalStore(subscribe, readTheme, () => "light" as Theme);
 }
 
-export function ThemeToggle() {
-  const theme = useTheme();
-
-  // Re-apply the saved choice or system preference after React's dev remount.
+/** Re-applies the saved choice or system preference after React's dev remount. */
+export function useApplySavedTheme() {
   useLayoutEffect(() => {
     const fallback: Theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", savedTheme() ?? fallback);
   }, []);
-
-  return (
-    <button
-      type="button"
-      className="ln-icon-btn"
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      onClick={toggleTheme}
-    >
-      <svg className="ln-theme__moon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
-      </svg>
-      <svg className="ln-theme__sun" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
-      </svg>
-    </button>
-  );
 }
