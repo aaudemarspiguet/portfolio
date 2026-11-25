@@ -2219,6 +2219,21 @@ html[data-boot="revealing"] .ln-mbar {
   }
   :root[data-theme] .ln-stage,
   :root .ln-stage { background: var(--paper); }
+  /* Edge to edge, the way plain view does it: Safari only draws page content under its bars, so the
+     room has to be real content there. In room view the paper strip over the status bar goes, the
+     canvas runs 160px past the stage so the room carries on under the toolbar, and the page is
+     locked so that extra length never scrolls. The camera stays framed to the stage (resize in
+     StudioRoom), so the extra rows only continue the picture. */
+  html:has(#room:not([hidden])),
+  html:has(#room:not([hidden])) body { overflow: hidden; overscroll-behavior: none; }
+  html:has(#room:not([hidden])) body::before { display: none; }
+  .ln-stage { overflow: visible; }
+  .ln-stage__canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: calc(100% + 160px);
+  }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }
   /* The boot lock screen fills the phone too, so it hands straight over to the room. */

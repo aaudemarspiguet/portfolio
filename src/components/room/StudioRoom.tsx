@@ -1667,9 +1667,14 @@ export default function StudioRoom({
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
-      renderer.setSize(r.width, r.height, false);
+      // On phones the canvas runs past the stage, under Safari's toolbar. Size the buffer to the
+      // canvas and frame the camera to the stage, so the extra rows only continue the picture.
+      const canvasH = Math.max(r.height, canvas.getBoundingClientRect().height);
+      renderer.setSize(r.width, canvasH, false);
       sizeFocusMask();
       camera.aspect = aspect;
+      if (canvasH > r.height + 1) camera.setViewOffset(r.width, r.height, 0, 0, r.width, canvasH);
+      else camera.clearViewOffset();
       baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
       applyFov();
       WIDE.pos.z = aspect < 1 ? 4.6 : aspect < 1.4 ? 4.9 : 4.1;
