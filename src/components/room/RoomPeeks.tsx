@@ -230,17 +230,7 @@ function AllProjectsPeek({
   onSelectProject: (index: number) => void;
 }) {
   return (
-    <PeekCard
-      className="ln-peek__card--one ln-peek__card--all"
-      onClose={onClose}
-      actions={
-        <div className="ln-peek__go">
-          <Link href="/projects" className="ln-btn ln-btn--ghost">
-            Full project list ↗
-          </Link>
-        </div>
-      }
-    >
+    <PeekCard className="ln-peek__card--one ln-peek__card--all" onClose={onClose}>
       <div className="ln-peek__text">
         <h2 id="peekTitle">All projects</h2>
       </div>
