@@ -14,6 +14,7 @@ import type { HomeProject } from "@/content/project-types";
 import type { site as SiteType } from "@/content/site";
 import { CopyEmail } from "./CopyEmail";
 import { ExperienceRow } from "./ExperienceRow";
+import { SectionHeader } from "./marks";
 import { NameTooltip } from "./NameTooltip";
 import { ProjectCollage } from "./ProjectCollage";
 import { TypingTagline } from "./TypingTagline";
@@ -260,9 +261,7 @@ export function HomeStudio({
 
       <main className="ln-wrap" id="aboutView" hidden={view !== "about"}>
         <section className="ln-section ln-aboutpage" id="about">
-          <div className="ln-section-head">
-            <h1>{siteData.about.heading}</h1>
-          </div>
+          <SectionHeader as="h1" heading={siteData.about.heading} />
           <div className="ln-about-copy">
             {siteData.about.paragraphs.map((p, i) => (
               <p key={i}>{p}</p>
@@ -307,23 +306,23 @@ export function HomeStudio({
           </section>
 
           <section className="ln-section" id="work">
-            <div className="ln-section-head">
-              <h2>{siteData.projects.heading}</h2>
-              <div className="ln-section-head__sub">
-                <span className="ln-label">highlighted projects · {projects.length}</span>
+            <SectionHeader
+              heading={siteData.projects.heading}
+              label={`highlighted projects · ${projects.length}`}
+              action={
                 <Link href="/projects" className="ln-link ln-more">
                   All projects →
                 </Link>
-              </div>
-            </div>
+              }
+            />
             <ProjectCollage projects={projects} />
           </section>
 
           <section className="ln-section" id="experience">
-            <div className="ln-section-head">
-              <h2>{siteData.experience.heading}</h2>
-              <span className="ln-label">experience · {siteData.experience.roles.length} roles</span>
-            </div>
+            <SectionHeader
+              heading={siteData.experience.heading}
+              label={`experience · ${siteData.experience.roles.length} roles`}
+            />
             <ul className="ln-list">
               {siteData.experience.roles.map((r) => (
                 <ExperienceRow
@@ -341,10 +340,7 @@ export function HomeStudio({
           </section>
 
           <section className="ln-section" id="background">
-            <div className="ln-section-head">
-              <h2>Education and tools</h2>
-              <span className="ln-label">background</span>
-            </div>
+            <SectionHeader heading="Education and tools" label="background" />
             <div className="ln-school">
               {siteData.education.logo && (
                 /* eslint-disable-next-line @next/next/no-img-element */

@@ -1,11 +1,34 @@
 // Small presentational pieces from the design system's "Scarlet marks" group.
 
-export function SectionHeader({ label, heading }: { label?: string; heading: string }) {
+import type { ReactNode } from "react";
+
+/** A section's heading over its mono label. An `action` (a link) shares the label's row, pushed right. */
+export function SectionHeader({
+  heading,
+  label,
+  action,
+  as: Heading = "h2",
+  id,
+}: {
+  heading: string;
+  label?: string;
+  action?: ReactNode;
+  as?: "h1" | "h2";
+  id?: string;
+}) {
+  const labelEl = label && <span className="ln-label">{label}</span>;
   return (
-    <header className="ln-section-head">
-      <h2>{heading}</h2>
-      {label && <span className="ln-label">{label}</span>}
-    </header>
+    <div className="ln-section-head">
+      <Heading id={id}>{heading}</Heading>
+      {action ? (
+        <div className="ln-section-head__sub">
+          {labelEl}
+          {action}
+        </div>
+      ) : (
+        labelEl
+      )}
+    </div>
   );
 }
 

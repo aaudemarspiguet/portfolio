@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactPanel } from "@/components/ContactPanel";
+import { SectionHeader } from "@/components/marks";
 import { ProjectCollage } from "@/components/ProjectCollage";
 import { projectDTOs } from "@/content/projects";
 import { site } from "@/content/site";
@@ -17,12 +18,7 @@ export default function ProjectsPage() {
       <div className="ln-wrap ln-page">
         <Link href="/#work" className="ln-link ln-back">← Home</Link>
         <section className="ln-section" aria-labelledby="all-projects">
-          <div className="ln-section-head">
-            <h1 id="all-projects">All projects</h1>
-            <div className="ln-section-head__sub">
-              <span className="ln-label">every project · {projectDTOs.length}</span>
-            </div>
-          </div>
+          <SectionHeader as="h1" id="all-projects" heading="All projects" label={`every project · ${projectDTOs.length}`} />
           <ProjectCollage projects={projectDTOs} />
         </section>
       </div>
