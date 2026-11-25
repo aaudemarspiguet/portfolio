@@ -2236,6 +2236,13 @@ html[data-boot="revealing"] .ln-mbar {
   html[data-lockroot]:has(#room:not([hidden])) { overflow: hidden; }
   .ln-room-hero,
   .ln-stage__canvas { touch-action: none; }
+  /* Safari tints the status bar with whatever fixed element touches the viewport's top edge, and
+     the phone bar's full-width header did, transparent, so Safari filled in the page's background
+     colour there instead of showing the room. In room view the header starts 8px down and the bar
+     loses 8px of top padding, so the pills don't move and the top edge is the room's. #headeredge
+     puts it back on the edge, to compare. */
+  html:not([data-headeredge]):has(#room:not([hidden])) .ln-header { top: 8px; }
+  html:not([data-headeredge]):has(#room:not([hidden])) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
   html:has(#room:not([hidden])) body::before { display: none; }
   .ln-stage {
     overflow: visible;

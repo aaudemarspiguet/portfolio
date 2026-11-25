@@ -1668,10 +1668,12 @@ export default function StudioRoom({
     // the viewport's). The phone CSS gives the stage that much page above and below and runs the
     // canvas under both bars; keeping the page scrolled down by it puts the stage exactly in the
     // viewport, with real room above it under the status bar and below it under the toolbar.
-    // #norunway turns this off, and #lockroot locks the root's scrolling again, to compare.
+    // #norunway turns this off, #lockroot locks the root's scrolling again and #headeredge puts the
+    // phone header back on the top edge, to compare.
     const phoneMq = window.matchMedia("(max-width: 640px)");
     const runwayOn = !debugFlag("norunway");
     if (debugFlag("lockroot")) document.documentElement.dataset.lockroot = "1";
+    if (debugFlag("headeredge")) document.documentElement.dataset.headeredge = "1";
     function setBars() {
       const html = document.documentElement;
       if (!runwayOn || !phoneMq.matches) {
@@ -1964,6 +1966,7 @@ export default function StudioRoom({
       cancelAnimationFrame(runwayRaf);
       document.documentElement.style.removeProperty("--bars");
       delete document.documentElement.dataset.lockroot;
+      delete document.documentElement.dataset.headeredge;
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchstart", onTouchStart);

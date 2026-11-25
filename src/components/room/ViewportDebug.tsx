@@ -63,7 +63,7 @@ export function ViewportDebug() {
         `stage ${rect(stage)}`,
         `canvas ${rect(canvas)}`,
         `canvas buffer ${canvas?.width ?? "-"} x ${canvas?.height ?? "-"}`,
-        `--bars ${html.style.getPropertyValue("--bars") || "unset"}  lockroot ${html.dataset.lockroot ? "on" : "off"}`,
+        `--bars ${html.style.getPropertyValue("--bars") || "unset"}  lockroot ${html.dataset.lockroot ? "on" : "off"}  headeredge ${html.dataset.headeredge ? "on" : "off"}`,
         `overflow html ${getComputedStyle(html).overflow} body ${getComputedStyle(document.body).overflow}`,
         `bg html ${getComputedStyle(html).backgroundColor}`,
         `bg body ${getComputedStyle(document.body).backgroundColor}`,
