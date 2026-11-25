@@ -388,6 +388,22 @@ export default function StudioRoom({
     let heroBox: { w: number; h: number; stageH: number } | null = null;
 
     const look = { yaw: 0, pitch: 0, dragYaw: 0, dragPitch: 0, resting: false };
+
+    // Zoom narrows the lens instead of moving the camera, so it can never push through a wall.
+    // It only applies while resting in the room; any fly-in eases it back to 1.
+    let baseFov = 50;
+    const zoom = { cur: 1, want: 1 };
+    const MAX_ZOOM = 1.8;
+    function applyFov() {
+      const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(baseFov / 2)) / zoom.cur);
+      camera.fov = THREE.MathUtils.radToDeg(2 * half);
+      camera.updateProjectionMatrix();
+    }
+    function zoomBy(k: number) {
+      zoom.want = clamp(zoom.want * k, 1, MAX_ZOOM);
+      hideTag();
+      renderOnce();
+    }
     const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
     function layoutHero() {
@@ -414,7 +430,7 @@ export default function StudioRoom({
       const q = new THREE.Vector3();
       mesh.getWorldPosition(p);
       mesh.getWorldDirection(q);
-      const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const t = Math.tan(THREE.MathUtils.degToRad(baseFov / 2));
       const d = heroBox ? (dims.h * heroBox.stageH) / (2 * t * heroBox.h) : (dims.h / 2 / t) * 1.04;
       return { pos: p.clone().add(q.multiplyScalar(d)), look: p };
     }
@@ -1080,9 +1096,12 @@ export default function StudioRoom({
     }
 
     function nudge(dx: number, dy: number) {
-      const yawLimit = isPortrait ? 0.65 : 0.4;
-      look.dragYaw = clamp(look.dragYaw - dx * 0.0022, -yawLimit, yawLimit);
-      look.dragPitch = clamp(look.dragPitch - dy * 0.0016, -0.12, 0.14);
+      // Phones turn the head (see the render loop): 0.58 rad frames the couch, W and coat rack at the ends.
+      const yawLimit = isPortrait ? 0.58 : 0.4;
+      // Zoomed in, the same drag turns less, so the view tracks the finger.
+      const k = 1 / zoom.cur;
+      look.dragYaw = clamp(look.dragYaw - dx * 0.0022 * k, -yawLimit, yawLimit);
+      look.dragPitch = clamp(look.dragPitch - dy * 0.0016 * k, -0.12, 0.14);
       hideTag();
     }
 
@@ -1090,7 +1109,11 @@ export default function StudioRoom({
     function onWheel(e: WheelEvent) {
       if (!entered || busy || peekRef.current) return;
       e.preventDefault();
-      if (e.ctrlKey) return;
+      // Trackpad pinch arrives as a ctrl+wheel event.
+      if (e.ctrlKey) {
+        zoomBy(Math.exp(-e.deltaY * 0.01));
+        return;
+      }
       const k = e.deltaMode === 1 ? 16 : 1;
       nudge(-e.deltaX * k, e.deltaY * k);
     }
@@ -1099,6 +1122,13 @@ export default function StudioRoom({
     let touchLast: { x: number; y: number } | null = null;
     let touchCount = 0;
     let dragged = false;
+    let pinchDist = 0;
+
+    function touchSpread(touches: TouchList) {
+      return touches.length >= 2
+        ? Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
+        : 0;
+    }
 
     function touchMid(touches: TouchList) {
       if (touches.length >= 2) {
@@ -1117,6 +1147,7 @@ export default function StudioRoom({
         touchOrigin = m;
         touchLast = m;
         touchCount = e.touches.length;
+        pinchDist = touchSpread(e.touches);
         dragged = false;
       }
     }
@@ -1126,6 +1157,7 @@ export default function StudioRoom({
       if (e.touches.length !== touchCount) {
         touchLast = touchMid(e.touches);
         touchCount = e.touches.length;
+        pinchDist = touchSpread(e.touches);
         return;
       }
       const m = touchMid(e.touches);
@@ -1133,6 +1165,12 @@ export default function StudioRoom({
       const dy = m.y - touchLast.y;
       if (touchOrigin && Math.hypot(m.x - touchOrigin.x, m.y - touchOrigin.y) > 6) {
         dragged = true;
+      }
+      if (touchCount === 2) {
+        // Two fingers both pan (midpoint) and pinch (spread).
+        const spread = touchSpread(e.touches);
+        if (pinchDist > 0 && spread > 0) zoomBy(spread / pinchDist);
+        pinchDist = spread;
       }
       if (dragged || touchCount === 2) {
         e.preventDefault();
@@ -1151,6 +1189,7 @@ export default function StudioRoom({
       } else {
         touchLast = touchMid(e.touches);
         touchCount = e.touches.length;
+        pinchDist = touchSpread(e.touches);
       }
     }
 
@@ -1235,8 +1274,8 @@ export default function StudioRoom({
       const aspect = r.width / r.height;
       renderer.setSize(r.width, r.height, false);
       camera.aspect = aspect;
-      camera.fov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
-      camera.updateProjectionMatrix();
+      baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
+      applyFov();
       WIDE.pos.z = aspect < 1 ? 4.6 : aspect < 1.4 ? 4.9 : 4.1;
       if (entered && look.resting && !tween) {
         look.yaw += 1e-3;
@@ -1358,6 +1397,14 @@ export default function StudioRoom({
         needsFrame = true;
       }
 
+      if (!entered || !look.resting) zoom.want = 1;
+      if (zoom.cur !== zoom.want) {
+        zoom.cur += (zoom.want - zoom.cur) * (reduced ? 1 : 0.18);
+        if (Math.abs(zoom.want - zoom.cur) < 1e-3) zoom.cur = zoom.want;
+        applyFov();
+        animating = true;
+      }
+
       if (entered && look.resting && !tween) {
         const dyw = look.dragYaw - look.yaw;
         const dpt = look.dragPitch - look.pitch;
@@ -1367,8 +1414,15 @@ export default function StudioRoom({
           const off = new THREE.Vector3().subVectors(WIDE.pos, WIDE.look).applyAxisAngle(Y_AXIS, look.yaw);
           const side = new THREE.Vector3().crossVectors(Y_AXIS, off).normalize();
           off.applyAxisAngle(side, -look.pitch);
-          cam.pos.copy(WIDE.look).add(off);
-          cam.look.copy(WIDE.look);
+          if (isPortrait) {
+            // Phones turn the head instead of orbiting the back wall, so the side walls
+            // (couch, W, coat rack) can come into view in the narrow frame.
+            cam.pos.copy(WIDE.pos);
+            cam.look.copy(WIDE.pos).sub(off);
+          } else {
+            cam.pos.copy(WIDE.look).add(off);
+            cam.look.copy(WIDE.look);
+          }
           camera.position.copy(cam.pos);
           camera.lookAt(cam.look);
           animating = true;
