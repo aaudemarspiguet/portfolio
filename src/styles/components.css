@@ -2219,25 +2219,28 @@ html[data-boot="revealing"] .ln-mbar {
   }
   :root[data-theme] .ln-stage,
   :root .ln-stage { background: var(--paper); }
-  /* Experiment, only with ?runway=1: a runway above the room the height of the status bar, which
-     StudioRoom scrolls the page down by. iOS 26 Safari may only show page content under the status
-     bar once the page has scrolled; at the very top it paints a solid colour there. */
-  html[data-runway] .ln-stage { margin-top: env(safe-area-inset-top, 0px); }
-  /* Edge to edge, the way plain view does it: Safari only draws page content under its bars, so the
-     room has to be real content there. In room view the paper strip over the status bar goes, the
-     canvas runs past the stage so the room carries on under the toolbar, and the page is locked so
-     that extra length never scrolls. 160px is the overflow that worked on an iPhone 17; the
-     measured and screen-relative versions tried after it brought the toolbar band back. The camera
-     stays framed to the stage, so the extra rows only continue the picture. */
-  html:has(#room:not([hidden])),
-  html:has(#room:not([hidden])) body { overflow: hidden; overscroll-behavior: none; }
+  /* Edge to edge, the way plain view does it. iOS 26 Safari keeps the page's viewport between its
+     status bar and toolbar (on an iPhone 17, 714px of an 874px screen) and reports no safe-area
+     insets for either, so the only way to put the room under them is the way a scrolled page gets
+     there: real page content above and below the viewport, and the page scrolled off the top.
+     --bars is the screen's height less the viewport's, measured in StudioRoom. In room view the
+     stage gets that much page above and below it, the canvas runs that far past both its edges,
+     and StudioRoom keeps the page scrolled down by it so the stage fills the viewport exactly.
+     Only the root is locked, so the page can't be dragged; body stays unclipped, because clipping
+     it cut the canvas off at the viewport's bottom. The camera stays framed to the stage, so the
+     extra rows only continue the picture. */
+  html:has(#room:not([hidden])) { overflow: hidden; overscroll-behavior: none; }
   html:has(#room:not([hidden])) body::before { display: none; }
-  .ln-stage { overflow: visible; }
+  .ln-stage {
+    overflow: visible;
+    margin-top: var(--bars, 0px);
+    margin-bottom: var(--bars, 0px);
+  }
   .ln-stage__canvas {
     position: absolute;
-    top: 0;
+    top: calc(-1 * var(--bars, 0px));
     left: 0;
-    height: calc(100% + 160px);
+    height: calc(100% + 2 * var(--bars, 0px));
   }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }

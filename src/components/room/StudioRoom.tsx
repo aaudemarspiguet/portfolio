@@ -1663,12 +1663,28 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
-    // Experiment, only with ?runway=1 or #runway (remembered until ?runway=0): the phone stage gets a runway above it (its top margin, the
-    // status bar's height), and the page is kept scrolled down by it. The non-zero scroll may be what
-    // makes iOS 26 Safari show the room under the status bar instead of a solid colour.
+    // Phones: iOS 26 Safari keeps the viewport between its status bar and toolbar and reports no
+    // safe-area insets, so measure how much screen the bars take (--bars, the screen's height less
+    // the viewport's). The phone CSS gives the stage that much page above and below and runs the
+    // canvas under both bars; keeping the page scrolled down by it puts the stage exactly in the
+    // viewport, with real room above it under the status bar and below it under the toolbar.
+    // #norunway turns this off, to compare on the same build.
     const phoneMq = window.matchMedia("(max-width: 640px)");
-    const runwayOn = debugFlag("runway");
-    if (runwayOn) document.documentElement.dataset.runway = "1";
+    const runwayOn = !debugFlag("norunway");
+    function setBars() {
+      const html = document.documentElement;
+      if (!runwayOn || !phoneMq.matches) {
+        html.style.removeProperty("--bars");
+        return;
+      }
+      // iOS keeps screen.width and height in portrait, so pick the side that matches the window.
+      const portrait = window.innerHeight >= window.innerWidth;
+      const screenH = portrait
+        ? Math.max(window.screen.width, window.screen.height)
+        : Math.min(window.screen.width, window.screen.height);
+      const bars = Math.min(400, Math.max(0, Math.round(screenH - window.innerHeight)));
+      html.style.setProperty("--bars", `${bars}px`);
+    }
     function holdRunway() {
       if (!runwayOn || !stage || !phoneMq.matches) return;
       const r = stage.getBoundingClientRect();
@@ -1679,6 +1695,7 @@ export default function StudioRoom({
 
     function resize() {
       if (!stage || !canvas) return;
+      setBars();
       holdRunway();
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
@@ -1689,7 +1706,9 @@ export default function StudioRoom({
       renderer.setSize(r.width, canvasH, false);
       sizeFocusMask();
       camera.aspect = aspect;
-      if (canvasH > r.height + 1) camera.setViewOffset(r.width, r.height, 0, 0, r.width, canvasH);
+      // The canvas starts above the stage by the same amount it runs past it below.
+      const above = Math.max(0, r.top - canvas.getBoundingClientRect().top);
+      if (canvasH > r.height + 1) camera.setViewOffset(r.width, r.height, 0, -above, r.width, canvasH);
       else camera.clearViewOffset();
       baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
       applyFov();
@@ -1942,7 +1961,7 @@ export default function StudioRoom({
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onRunwayScroll);
       cancelAnimationFrame(runwayRaf);
-      delete document.documentElement.dataset.runway;
+      document.documentElement.style.removeProperty("--bars");
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchstart", onTouchStart);
