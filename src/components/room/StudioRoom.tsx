@@ -1667,8 +1667,17 @@ export default function StudioRoom({
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
-      // On phones the canvas runs past the stage, under Safari's toolbar. Size the buffer to the
-      // canvas and frame the camera to the stage, so the extra rows only continue the picture.
+      // On phones the canvas runs past the stage, under Safari's toolbar, down to the bottom of the
+      // screen. Measure that gap on this phone rather than guess one. (iOS keeps screen.width and
+      // height in portrait, so pick the side that matches the window.)
+      const portrait = window.innerHeight >= window.innerWidth;
+      const screenH = portrait
+        ? Math.max(window.screen.width, window.screen.height)
+        : Math.min(window.screen.width, window.screen.height);
+      const underBar = Math.max(0, Math.round(screenH - r.bottom));
+      document.documentElement.style.setProperty("--under-bar", `${underBar}px`);
+      // Size the buffer to the canvas and frame the camera to the stage, so the extra rows only
+      // continue the picture.
       const canvasH = Math.max(r.height, canvas.getBoundingClientRect().height);
       renderer.setSize(r.width, canvasH, false);
       sizeFocusMask();
