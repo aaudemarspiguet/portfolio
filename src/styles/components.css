@@ -724,6 +724,60 @@ html[data-boot="revealing"] .ln-nav {
   opacity: 0.65;
 }
 
+/* Phone boot: portrait stages swap the console for the desk phone's lock screen. */
+.ln-boot__lock { display: none; }
+@container (max-aspect-ratio: 1/1) {
+  .ln-boot__screen { border-radius: 28px; padding: 0; }
+  .ln-boot__screen .ln-crop,
+  .ln-boot__console { display: none; }
+  .ln-boot__lock {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(48px, 14cqh, 120px) 24px 32px;
+    text-align: center;
+    transition: opacity 0.18s ease, transform 0.24s ease;
+  }
+}
+.ln-boot.is-exiting .ln-boot__lock {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.ln-boot__date {
+  min-height: 1.2em;
+  font: 500 15px/1.2 var(--font-sans);
+  color: var(--ink-muted);
+}
+.ln-boot__clock {
+  margin-top: 6px;
+  font: 500 clamp(76px, 28cqw, 120px)/1 var(--font-sans);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ln-boot__lockfoot {
+  margin-top: auto;
+  width: min(180px, 60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.ln-boot__lockbar {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.ln-boot__lockstep {
+  font: 400 12px/1.35 var(--font-mono);
+  color: var(--ink-muted);
+}
+
 /* Hero screen (iMac display on stage) */
 .ln-room-hero {
   position: absolute;
@@ -1142,6 +1196,7 @@ html[data-boot="revealing"] .ln-nav {
 @media (prefers-reduced-motion: reduce) {
   .ln-boot,
   .ln-boot__console,
+  .ln-boot__lock,
   .ln-boot__steps li,
   html[data-boot="revealing"] .ln-nav,
   html[data-boot="revealing"] .ln-stage,

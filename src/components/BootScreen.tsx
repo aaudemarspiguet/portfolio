@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 let sessionBooted = false;
 const MIN_BOOT_MS = 1250;
+const noopSubscribe = () => () => {};
+const todayLabel = () => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
 /**
- * Full-viewport initial boot screen showing only the iMac monitor frame and
- * boot telemetry while the navbar, 3D room scene, textures, and fonts load
- * invisibly behind it, then cleanly dissolves into the populated workspace.
+ * Full-viewport initial boot screen shown while the navbar, 3D room scene, textures, and fonts
+ * load invisibly behind it, then dissolves into the workspace. Wide stages show the iMac's boot
+ * telemetry; portrait stages (phones) show the desk phone's lock screen instead.
  */
 export function BootScreen({
   targetProgress,
@@ -20,6 +22,8 @@ export function BootScreen({
   const [displayPct, setDisplayPct] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [unmounted, setUnmounted] = useState(() => sessionBooted);
+  // Client-only snapshot so the server render (empty) never disagrees about the date.
+  const today = useSyncExternalStore(noopSubscribe, todayLabel, () => "");
 
   const targetRef = useRef(targetProgress);
   const readyRef = useRef(ready);
@@ -97,6 +101,7 @@ export function BootScreen({
 
   const pctPadded = String(displayPct).padStart(3, "0");
   const step = ready && displayPct >= 100 ? 3 : displayPct >= 66 ? 2 : displayPct >= 34 ? 1 : 0;
+  const stepLabel = ["waking up", "mounting studio loft", "lighting the room", "ready"][step];
 
   return (
     <div
@@ -140,6 +145,18 @@ export function BootScreen({
                   <span>&gt;</span> render lighting &amp; textures
                 </li>
               </ul>
+            </div>
+
+            {/* Portrait stages (phones) wake the desk phone instead: a lock screen, then the hero. */}
+            <div className="ln-boot__lock" aria-hidden="true">
+              <span className="ln-boot__date">{today}</span>
+              <span className="ln-boot__clock">9:41</span>
+              <div className="ln-boot__lockfoot">
+                <span className="ln-boot__lockbar">
+                  <span className="ln-boot__fill" style={{ transform: `scaleX(${displayPct / 100})` }} />
+                </span>
+                <span className="ln-boot__lockstep">{stepLabel}</span>
+              </div>
             </div>
           </div>
         </div>
