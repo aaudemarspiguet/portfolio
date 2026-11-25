@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 function subscribeReducedMotion(onChange: () => void) {
   const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
@@ -30,9 +30,20 @@ export function TypingTagline({
   const [index, setIndex] = useState(0);
   const [chars, setChars] = useState(() => lines[0]?.length ?? 0);
   const [deleting, setDeleting] = useState(false);
+  // The home page keeps both heroes mounted and hides one, so the hidden copy pauses its typing.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [onScreen, setOnScreen] = useState(true);
 
   useEffect(() => {
-    if (reduced || lines.length === 0) return;
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (reduced || !onScreen || lines.length === 0) return;
     const current = lines[index % lines.length];
 
     let delay = deleting ? 22 : 42;
@@ -58,14 +69,14 @@ export function TypingTagline({
     }, delay);
 
     return () => clearTimeout(id);
-  }, [lines, index, chars, deleting, reduced]);
+  }, [lines, index, chars, deleting, reduced, onScreen]);
 
   if (lines.length === 0) return null;
   const full = lines[index % lines.length];
   const visible = reduced ? lines[0] : full.slice(0, chars);
 
   return (
-    <div className={className ? `${className} ln-typing` : "ln-typing"} aria-label={lines[0]}>
+    <div ref={rootRef} className={className ? `${className} ln-typing` : "ln-typing"} aria-label={lines[0]}>
       <span aria-hidden="true" className="ln-typing__line">
         <span className="ln-typing__prompt">{TERMINAL_PROMPT}</span>
         <span className="ln-typing__cmd">{visible}</span>
