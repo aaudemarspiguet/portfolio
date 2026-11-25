@@ -182,7 +182,7 @@ function CasePeek({
               onClick={() => onStepProject(i - 1, -1)}
             >
               ‹ <span className="ln-peek__wide">prev</span>
-              <span className="ln-peek__narrow">Previous</span>
+              <span className="ln-peek__narrow">Prev</span>
             </button>
             <span className="ln-peek__count">
               {i + 1} / {n}
