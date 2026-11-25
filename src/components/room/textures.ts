@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { clockLabel, dateLabel } from "@/lib/clock";
 
 export function canvasTex(
   w: number,
@@ -483,10 +484,10 @@ export function drawIdleScreen(kind: "phone" | "desktop", bg: string, fg: string
       g.textBaseline = "alphabetic";
       g.font = "500 15px Inter, system-ui, sans-serif";
       g.globalAlpha = 0.7;
-      g.fillText(new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), 195, 150);
+      g.fillText(dateLabel(), 195, 150);
       g.globalAlpha = 1;
       g.font = "500 96px Inter, system-ui, sans-serif";
-      g.fillText("9:41", 195, 250);
+      g.fillText(clockLabel(), 195, 250);
       g.font = "500 13px 'Geist Mono', ui-monospace, monospace";
       g.globalAlpha = 0.55;
       g.fillText("amoghmade.dev", 195, 780);
@@ -501,14 +502,19 @@ export function drawIdleScreen(kind: "phone" | "desktop", bg: string, fg: string
     g.scale(2, 2);
     g.fillStyle = bg;
     g.fillRect(0, 0, 1120, 630);
+    // A Mac lock screen: date and clock up top, the site's address at the bottom.
     g.fillStyle = fg;
     g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.font = "500 64px Inter, system-ui, sans-serif";
-    g.fillText("Amogh Paruvelli.", 560, 290);
-    g.font = "500 20px 'Geist Mono', ui-monospace, monospace";
+    g.textBaseline = "alphabetic";
+    g.font = "500 24px Inter, system-ui, sans-serif";
+    g.globalAlpha = 0.7;
+    g.fillText(dateLabel(), 560, 120);
+    g.globalAlpha = 1;
+    g.font = "600 150px Inter, system-ui, sans-serif";
+    g.fillText(clockLabel(), 560, 260);
+    g.font = "500 18px 'Geist Mono', ui-monospace, monospace";
     g.globalAlpha = 0.55;
-    g.fillText("amoghmade.dev", 560, 360);
+    g.fillText("amoghmade.dev", 560, 570);
     g.globalAlpha = 1;
   });
 }

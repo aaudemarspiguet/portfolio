@@ -18,6 +18,7 @@ import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furnitur
 import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
+import { msToNextMinute } from "@/lib/clock";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -267,23 +268,38 @@ export default function StudioRoom({
 
     let heroTex: THREE.CanvasTexture | null = null;
     let idleTex: THREE.CanvasTexture | null = null;
+    function redrawIdle() {
+      if (!heroScreenEl) return;
+      const target = heroTarget();
+      const st = getComputedStyle(heroScreenEl);
+      const nextIdle = drawIdleScreen(target.idleKind, st.backgroundColor, st.color);
+      if (idleTex) idleTex.dispose();
+      idleTex = nextIdle;
+      target.idle.map = idleTex;
+      target.idle.needsUpdate = true;
+      renderOnce();
+    }
     function redrawHero() {
       if (!heroScreenEl || hero?.style.transform) return;
       const nextTex = drawHeroToCanvas(heroScreenEl);
       if (!nextTex) return;
       const target = heroTarget();
-      const st = getComputedStyle(heroScreenEl);
-      const nextIdle = drawIdleScreen(target.idleKind, st.backgroundColor, st.color);
       if (heroTex) heroTex.dispose();
-      if (idleTex) idleTex.dispose();
       heroTex = nextTex;
-      idleTex = nextIdle;
       target.mat.map = heroTex;
       target.mat.needsUpdate = true;
-      target.idle.map = idleTex;
-      target.idle.needsUpdate = true;
-      renderOnce();
+      redrawIdle();
     }
+
+    // The idle screen's lock-screen clock shows the viewer's real time, so redraw it on the minute.
+    let clockTimer: ReturnType<typeof setTimeout> | null = null;
+    function tickClock() {
+      clockTimer = setTimeout(() => {
+        if (!document.hidden) redrawIdle();
+        tickClock();
+      }, msToNextMinute());
+    }
+    tickClock();
 
     function redrawNeon() {
       const neonFamily = getComputedStyle(document.documentElement).getPropertyValue("--font-neon").trim();
@@ -1420,6 +1436,7 @@ export default function StudioRoom({
       if (fontTimer) clearTimeout(fontTimer);
       cancelAnimationFrame(rafId);
       if (hintTimer) clearTimeout(hintTimer);
+      if (clockTimer) clearTimeout(clockTimer);
       registerActions(null);
       io?.disconnect();
       ro?.disconnect();

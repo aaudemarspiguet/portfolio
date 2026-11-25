@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { clockLabel, dateLabel } from "@/lib/clock";
 
 let sessionBooted = false;
 const MIN_BOOT_MS = 1250;
 const noopSubscribe = () => () => {};
-const todayLabel = () => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
 /**
  * Full-viewport initial boot screen shown while the navbar, 3D room scene, textures, and fonts
@@ -22,8 +22,9 @@ export function BootScreen({
   const [displayPct, setDisplayPct] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [unmounted, setUnmounted] = useState(() => sessionBooted);
-  // Client-only snapshot so the server render (empty) never disagrees about the date.
-  const today = useSyncExternalStore(noopSubscribe, todayLabel, () => "");
+  // Client-only snapshots so the server render (empty) never disagrees about the date or time.
+  const today = useSyncExternalStore(noopSubscribe, dateLabel, () => "");
+  const now = useSyncExternalStore(noopSubscribe, clockLabel, () => "");
 
   const targetRef = useRef(targetProgress);
   const readyRef = useRef(ready);
@@ -150,7 +151,7 @@ export function BootScreen({
             {/* Portrait stages (phones) wake the desk phone instead: a lock screen, then the hero. */}
             <div className="ln-boot__lock" aria-hidden="true">
               <span className="ln-boot__date">{today}</span>
-              <span className="ln-boot__clock">9:41</span>
+              <span className="ln-boot__clock">{now}</span>
               <div className="ln-boot__lockfoot">
                 <span className="ln-boot__lockbar">
                   <span className="ln-boot__fill" style={{ transform: `scaleX(${displayPct / 100})` }} />
