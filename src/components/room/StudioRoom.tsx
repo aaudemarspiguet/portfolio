@@ -1660,13 +1660,17 @@ export default function StudioRoom({
 
     function frame(now: number) {
       rafId = requestAnimationFrame(frame);
+      // The room stays loaded behind the plain view; it draws nothing until you switch back.
+      if (document.documentElement.dataset.view === "plain") {
+        lastT = now;
+        return;
+      }
       const dt = Math.min(0.1, (now - (lastT || now)) / 1000);
       lastT = now;
 
       let animating = false;
       let ambient = false;
-      const viewIsRoom = document.documentElement.dataset.view !== "plain";
-      const visibleRoom = entered && !peekRef.current && stageOnScreen && viewIsRoom;
+      const visibleRoom = entered && !peekRef.current && stageOnScreen;
 
       const targetPlatterSpeed = spinning ? 3.49 : 0;
       if (visibleRoom && !reduced) {
@@ -1898,6 +1902,8 @@ export default function StudioRoom({
       dimMat.dispose();
       dimQuad.geometry.dispose();
       renderer.dispose();
+      // Hand the WebGL context back now, not whenever the garbage collector gets to it.
+      renderer.forceContextLoss();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
 

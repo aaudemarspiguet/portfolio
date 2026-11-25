@@ -489,6 +489,14 @@ html[data-view="room"] #plain { display: none; }
   pointer-events: none;
 }
 
+/* Room to plain: the page waits out of sight for a frame or two while the cards get ready to rise
+   (src/lib/slideCards.ts). "in-below" keeps the hero, which already matches the room's screen. */
+html[data-switch="in"] #plain,
+html[data-switch="in-below"] #plain .ln-section,
+html[data-switch="in-below"] #plain .ln-contact {
+  opacity: 0;
+}
+
 /* Coordinated reveal when booting finishes */
 html[data-boot="loading"] .ln-nav,
 html[data-boot="loading"] .ln-mbar {

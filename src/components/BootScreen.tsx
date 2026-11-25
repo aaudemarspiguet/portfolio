@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { clockLabel, dateLabel } from "@/lib/clock";
+import { slideIn } from "@/lib/slideCards";
 
 let sessionBooted = false;
 const MIN_BOOT_MS = 1250;
@@ -76,6 +77,8 @@ export function BootScreen({
         sessionBooted = true;
         exitTimer = setTimeout(() => {
           document.documentElement.dataset.boot = "revealing";
+          // On a first load into the plain view, its cards rise in one after another.
+          if (document.documentElement.dataset.view === "plain") void slideIn(document.getElementById("plain"));
           setExiting(true);
           unmountTimer = setTimeout(() => {
             delete document.documentElement.dataset.boot;

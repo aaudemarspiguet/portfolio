@@ -38,11 +38,12 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
   const current = useCurrentKey(pathname, caseStudySlug, workSlugs);
   const router = useRouter();
-  const { view, webglFailed, setView, navigateInRoom } = useStudioView();
+  const { view, webglFailed, setView, navigateInRoom, switchView } = useStudioView();
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
   const canSwitchView = onHome && !webglFailed;
-  const toggleView = () => setView(view === "room" ? "plain" : "room");
+  // The toggle zooms between the screen and the room and keeps you in the same section.
+  const toggleView = switchView;
 
   // Click sounds and the saved appearance are set up once, here, for every screen size.
   useEffect(() => initGlobalSfx(), []);

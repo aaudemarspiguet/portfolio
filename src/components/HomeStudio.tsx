@@ -59,11 +59,12 @@ export function HomeStudio({
     webglFailed,
     pendingSection,
     clearPendingSection,
-    setView,
     setRoomCurrent,
     setPlainSection,
     markWebglFailed,
     registerRoomHandlers,
+    runPendingRoomAction,
+    switchView,
   } = useStudioView();
 
   const stageRef = useRef<HTMLElement>(null);
@@ -75,6 +76,10 @@ export function HomeStudio({
   const progressRef = useRef(0);
   const [roomReady, setRoomReady] = useState(false);
   const [peek, setPeek] = useState<PeekState>(null);
+  // Once built, the room stays loaded while you read the plain view, so switching back is instant
+  // and the toggle can zoom straight into it. It pauses while hidden.
+  const [roomBuilt, setRoomBuilt] = useState(false);
+  if (hydrated && view === "room" && !webglFailed && !roomBuilt) setRoomBuilt(true);
 
   const handleRegisterActions = useCallback(
     (actions: RoomActions | null) => {
@@ -82,6 +87,7 @@ export function HomeStudio({
       if (actions) {
         registerRoomHandlers({
           nav: actions.nav,
+          enterRoom: actions.enterRoom,
           backToScreen: actions.backToScreen,
         });
       } else {
@@ -120,14 +126,17 @@ export function HomeStudio({
     actionsRef.current?.goToAll();
   }, []);
 
+  // The tour's "plain view" link goes the same way as the toggle: back into the screen, then the page.
   const handleSwitchToPlain = useCallback(() => {
-    setView("plain");
-  }, [setView]);
+    switchView();
+  }, [switchView]);
 
   const handleRoomReady = useCallback(() => {
     progressRef.current = 1;
     setRoomReady(true);
-  }, []);
+    // The toggle was pressed before the room existed: make its move once the room has faded in.
+    setTimeout(runPendingRoomAction, 450);
+  }, [runPendingRoomAction]);
 
   const handleRoomProgress = useCallback((ratio: number) => {
     progressRef.current = Math.max(progressRef.current, ratio);
@@ -180,7 +189,7 @@ export function HomeStudio({
 
       <div className="ln-wrap">
         <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
-          {hydrated && view === "room" && !webglFailed && (
+          {hydrated && roomBuilt && !webglFailed && (
             <RoomErrorBoundary onError={markWebglFailed}>
               <StudioRoom
                 projects={projects}
