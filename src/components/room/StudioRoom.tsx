@@ -691,6 +691,14 @@ export default function StudioRoom({
     function visualOf(o: THREE.Object3D) {
       return isHitBox(o) && o.parent && o.parent !== scene ? o.parent : o;
     }
+    // Some objects read as part of their furniture: the record player lights its whole console
+    // (cabinet, legs and vinyl crate), one group further up.
+    const FOCUS_WHOLE: Record<string, number> = { turntable: 1 };
+    function focusOf(key: string, hit: THREE.Object3D) {
+      let o = visualOf(hit);
+      for (let up = FOCUS_WHOLE[key] ?? 0; up > 0 && o.parent && o.parent !== scene; up--) o = o.parent;
+      return o;
+    }
 
     function setFocusTargets(next: THREE.Object3D[]) {
       focusTargets.forEach((o) => o.traverse((c) => c.layers.disable(TOUR_LAYER)));
@@ -746,7 +754,7 @@ export default function StudioRoom({
       const keys = step.focus(isPortrait);
       const meshes: THREE.Object3D[] = [
         ...(step.canvases ? roomProjects.map(({ project }) => canvasMeshes[project.slug].face) : []),
-        ...keys.flatMap((k) => (objects.find((o) => o.key === k)?.hit ?? []).map(visualOf)),
+        ...keys.flatMap((k) => (objects.find((o) => o.key === k)?.hit ?? []).map((h) => focusOf(k, h))),
       ];
       if (meshes.length) {
         setFocusTargets(meshes);
