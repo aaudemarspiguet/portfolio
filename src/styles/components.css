@@ -2214,6 +2214,10 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-stage {
     height: 100svh;
     margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
+    /* A runway above the room the height of the status bar. StudioRoom scrolls the page down by it,
+       because iOS 26 Safari only shows page content under the status bar once the page has scrolled;
+       at the very top it paints a solid colour there. The room sits at the screen's top either way. */
+    margin-top: env(safe-area-inset-top, 0px);
     border-radius: 0;
     box-shadow: none;
   }
@@ -2222,9 +2226,9 @@ html[data-boot="revealing"] .ln-mbar {
   /* Edge to edge, the way plain view does it: Safari only draws page content under its bars, so the
      room has to be real content there. In room view the paper strip over the status bar goes, the
      canvas runs past the stage so the room carries on under the toolbar, and the page is locked so
-     that extra length never scrolls. Safari only shows the toolbar over content that runs past the
-     viewport, so the overflow is a fifth of the screen (scales with the phone), or the measured gap
-     to the screen's bottom (--under-bar, set in StudioRoom) when that's larger. The camera stays framed to the stage, so the
+     that extra length never scrolls. Safari shows its own colour under the toolbar unless content
+     carries on past the bottom of the screen, so the overflow is the measured gap from the stage
+     to the screen's bottom (--under-bar, set in StudioRoom) plus a tenth of the screen. The camera stays framed to the stage, so the
      extra rows only continue the picture. */
   html:has(#room:not([hidden])),
   html:has(#room:not([hidden])) body { overflow: hidden; overscroll-behavior: none; }
@@ -2234,7 +2238,7 @@ html[data-boot="revealing"] .ln-mbar {
     position: absolute;
     top: 0;
     left: 0;
-    height: calc(100% + max(var(--under-bar, 0px), 20svh));
+    height: calc(100% + var(--under-bar, 20svh) + 10svh);
   }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }

@@ -1662,14 +1662,27 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
+    // On phones the stage has a runway above it (its top margin, the status bar's height). Keeping
+    // the page scrolled down by it puts the room at the top of the screen, and the non-zero scroll
+    // is what makes iOS 26 Safari show the room under the status bar, not a solid colour.
+    const phoneMq = window.matchMedia("(max-width: 640px)");
+    function holdRunway() {
+      if (!stage || !phoneMq.matches) return;
+      const r = stage.getBoundingClientRect();
+      if (!r.height) return;
+      const runway = Math.round(r.top + window.scrollY);
+      if (runway > 0 && Math.abs(window.scrollY - runway) > 0.5) window.scrollTo(0, runway);
+    }
+
     function resize() {
       if (!stage || !canvas) return;
+      holdRunway();
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
-      // On phones the canvas runs past the stage, under Safari's toolbar, down to the bottom of the
-      // screen. Measure that gap on this phone rather than guess one. (iOS keeps screen.width and
-      // height in portrait, so pick the side that matches the window.)
+      // On phones the canvas runs past the stage, under Safari's toolbar, to past the bottom of the
+      // screen. Measure the gap to the bottom on this phone rather than guess one. (iOS keeps
+      // screen.width and height in portrait, so pick the side that matches the window.)
       const portrait = window.innerHeight >= window.innerWidth;
       const screenH = portrait
         ? Math.max(window.screen.width, window.screen.height)
@@ -1712,6 +1725,12 @@ export default function StudioRoom({
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     ro?.observe(stage);
     window.addEventListener("resize", resize);
+    // Anything that scrolls the page to the top (a view switch, Home) puts the runway back on screen.
+    let runwayRaf = 0;
+    const onRunwayScroll = () => {
+      if (!runwayRaf) runwayRaf = requestAnimationFrame(() => { runwayRaf = 0; holdRunway(); });
+    };
+    window.addEventListener("scroll", onRunwayScroll, { passive: true });
 
     /* Render loop */
     let rafId = 0;
@@ -1927,6 +1946,8 @@ export default function StudioRoom({
       io?.disconnect();
       ro?.disconnect();
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onRunwayScroll);
+      cancelAnimationFrame(runwayRaf);
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchstart", onTouchStart);
