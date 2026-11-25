@@ -21,6 +21,23 @@ python -m http.server 4173 -d plans/studio-loft
 
 Then open http://localhost:4173. Keep it open next to your build and compare the two at 1440×900, 1280×720, 1024×768 and 375×812, in light and in dark mode.
 
+### Current state of the mockup (2026-11-24)
+
+[plans/studio-loft/index.html](studio-loft/index.html) is the latest approved mockup. It matches the copy served at localhost:4173 during review. The screenshots below were taken from it at a 1080 × 925 stage (aspect 1.17, the size Amogh reviews at). They are references for the look. The numbers in this document are the spec.
+
+| | Screenshot | What it shows |
+|---|---|---|
+| 1 | ![Hero screen](studio-loft/screens/01-hero-screen.jpg) | First paint: the HTML hero sitting exactly on the iMac screen, with "Enter the room ↓" |
+| 2 | ![Room at night](studio-loft/screens/02-room-night.jpg) | The wide shot at night: the neon, the lamp and canvas glows, the ceiling fan, the record console under the canvases, the blue bean bag in front of the rug, the couch on the right. The coat rack is just out of frame on the left |
+| 3 | ![Room by day](studio-loft/screens/03-room-day.jpg) | An older day shot, kept for the light on the oak floor. **Out of date:** the coat rack is in its old bottom-left spot, and the tip and prints are missing. Shot 8 is current |
+| 4 | ![Looking left at night](studio-loft/screens/04-look-left-night.jpg) | After looking around to the left: the coat rack (headphones, backpack) in front of the end of the L-desk. Taken just before the project prints were added to the desk return |
+| 5 | ![All projects card](studio-loft/screens/05-all-projects-card.jpg) | The All projects card (dark mode), opened over the prints on the desk |
+| 6 | ![Bean bag](studio-loft/screens/06-bean-bag.png) | Close-up of the bean bag: lounger shape, panel seams, fuzzy fabric. Approved as-is ("perfect") |
+| 7 | ![Couch and throw](studio-loft/screens/07-couch-and-throw.png) | Close-up of the couch: plump low-poly cushions and rolled arms, the mustard pillow, the throw as one continuous drape |
+| 8 | ![Room by day with the tip](studio-loft/screens/08-room-day-with-tip.jpg) | **The current day shot**, on a first visit: the explore tip at the top, the ceiling fan, the record console, the bean bag, the couch with its throw. The coat rack sits just out of frame on the left, and the prints on the desk return are at the left edge |
+
+**What changed in the last review round, in order:** the hardwood floor; the stage lined up with the nav pill; the desk chair, the bean bag, the couch with its throw and pillow, and the coat rack; the bean bag reshaped and enlarged; the couch and throw rebuilt as plump, low-poly and not fuzzy; the record player; the ceiling fan as the room's moving element (the record starts still); the cheaper shadow and spin rules; the All projects link and card with the desk prints; the coat rack tucked by the desk; the first-visit explore tip. A hover glow on every object was tried and reverted: only the canvases glow.
+
 ## 2. Ground rules
 
 1. **Stack.** Next.js 16 (App Router, Cache Components on) with plain CSS: tokens in `src/styles/tokens.css` and `.ln-*` classes in `src/styles/components.css`. No Tailwind. Next 16 has breaking changes, so read the guides in `node_modules/next/dist/docs/` before you use any Next API (see `AGENTS.md`).
@@ -104,6 +121,16 @@ Units are meters. The camera faces the back wall (−z). x runs left to right as
 | Floor lamp | At (3.78, 0, −2.78). A pole 1.62 tall, then a gooseneck arc (a Catmull-Rom tube with 15 ribs) reaching toward the room. The shade is aimed at (1.3, 1.85, −2.95), so it lights the canvases at night. A point light (intensity 1.25) and a spot light (intensity 2.6, angle 0.62, penumbra 0.7) at night only, both `#ffb35c`. |
 | Guitar | Hangs from a pivot at (3.2, 2.55, −2.97). Rickenbacker-style body (an extruded bezier shape), black with an orange-to-amber burst face, white binding and pickguard, a wood neck. |
 | Rug | 2.9 × 1.9 × 0.025 at (0.1, y, −0.55). Deep green `#1f6b34` shag (procedural speckle) with “WET GRASS” in off-white. |
+| Desk chair | Group at (−2.35, 0, −1.72), rotated y 0.5: pulled out from the desk and turned a little toward the room. A low-poly office chair: five-star steel base with casters, gas lift, a dark `#232326` seat and backrest (the back leans 0.12 rad), armrests. The back stays below the iMac screen in the wide shot. |
+| Bean bag | Group at (−1.15, 0, 0.85), rotated y 0.75: in front of the rug, left of center, near the camera. It must never cover the “WET GRASS” lettering. Built from one sphere (radius 0.5, 64 × 40 segments, smooth shading) reshaped into a lounger: wider at the base, a flat bottom, a tall back hump and a low front seat with a dent, plus small wrinkles. Strong blue fabric texture (`#1c3cc8` with light and dark fuzz speckle) with six dark panel seams and a seam ring near the base, plus a fuzz bump map (scale 0.3). |
+| Couch | Group at (3.5, 0, −1.15), rotated y −π/2, so it sits along the right wall facing into the room. 1.8 long × 0.92 deep. **Low poly and plump, not fuzzy:** flat shading, no bump or speckle texture, plain dark brown. Every part is a rounded, puffed box built with `soft()` (a subdivided box whose corners are rounded and whose faces bulge outward), using a coarse 0.11 m segment size so the facets show. Corner radius / puff: base 0.08 / 0.04, rolled arms 0.13 / 0.14, back 0.11 / 0.08, two seat cushions 0.08 / 0.22, two back cushions 0.1 / 0.35, leaning back 0.15 rad. Short dark wood legs. A mustard pillow (puff 0.4) leans on the left end. r128 treats plain material colors as linear, so the hex values in code are darker than what shows: `0x140804` shows as about `#4a3022` dark brown, and `0x944a0a` shows as about `#c8923a` mustard. On a newer three.js with color management, use the sRGB values directly. |
+| Throw | On the couch's right end: **one continuous low-poly mesh**, not separate slabs. A plump strip 0.6 wide and 0.055 thick (thickest down its middle, thinning to 35% at the edges), 5 columns across, follows a 13-point profile in the couch's frame: behind the back cushion, over its top, down its front, across the seat, over the front edge, hanging down. A small wobble along its length keeps it cloth-like, and its hanging end is cut on a slight diagonal. Flat shading. Texture: cream `#e9dec8` with faint knit rows and rust `#b5562b` / mustard `#d9a441` end stripes. |
+| Coat rack | At (−3.3, 0, −0.35), rotated y 0.35: just in front of the end of the L-desk's return, at the left edge of the wide shot. By default only the backpack peeks into the frame; looking around to the left shows the whole rack. Black round base, a 1.72 dark wood pole with a knob, and four upturned steel hooks at 1.6. Black over-ear headphones hang from the camera-facing hook (the band straddles it, the cups hang below). An olive `#55613f` backpack with a darker front pocket and lid hangs by its straps from the right-facing hook. |
+| Project prints | Four small prints of the project screenshots (0.24 × 0.17 on white mats), fanned out on the empty return of the L-desk at (−3.42, desk top, −1.35). They are the in-room way into "All projects". |
+| Record player | A low walnut console (1.7 × 0.42 × 0.42 body on short black legs, two door seams) against the back wall at (0.9, 0, −2.76), under the canvases. On it: a turntable (dark walnut plinth 0.46 × 0.07 × 0.36, silver platter, a black record with faint groove rings and a scarlet label carrying a cream wedge so the spin reads, a silver tonearm with a black headshell) and a crate of five record sleeves. The record is still by default; clicking spins it at 33⅓ rpm (3.49 rad/s). From the wide shot its spin can't be seen, so it is not the room's motion cue. |
+| Ceiling fan | Hangs from the ceiling over the rug at (0.1, 3.3, −0.6): black canopy, a 0.32 downrod, a motor housing, a frosted bowl light underneath (glows `#8a6a3a` emissive at night), and five walnut blades (0.6 × 0.14, pitched 0.16 rad) on black irons. **It is the room's ambient motion:** the rotor turns slowly at 0.85 rad/s (about 8 rpm). No fan part casts a shadow, so spinning it never forces a shadow redraw. It projects against the ceiling and the top of the wall, never over the canvases or the neon, and stays clear of every camera path. |
+
+All of these are decorative: they have no hover label or action, and they stay out of every camera path (screen ↔ wide shot, nav flights, prev/next). Positions were tuned for the stage at about 1080 × 925 (aspect 1.17), which is what Amogh views at. At wider aspects the coat rack's base and the bean bag's bottom edge can drop below the frame. That's acceptable.
 
 **Lights**
 
@@ -143,9 +170,11 @@ For reference, the timings measured in the prototype were: screen → About 1.35
 
 **Look around (wide shot only).** A two-finger trackpad swipe (wheel events; ignore ctrl+wheel pinch) or a two-finger touch drag nudges the yaw and pitch around `WIDE.look`. Yaw is clamped to ±0.4 and pitch to −0.12…0.14. Ease toward the target at 0.08 per frame. A one-finger drag or a mouse move only points.
 
-**Render on demand.** Run the rAF loop always, but render only when something animates or `renderOnce()` was called.
+**Render on demand.** Run the rAF loop always, but render only when something animates or `renderOnce()` was called. Two rules keep the constant spin cheap. (1) Shadow maps are redrawn only when they can change: set `renderer.shadowMap.autoUpdate = false` and request one shadow update at load, on theme change, and on frames where the guitar swings or the poster turns. The camera moving never needs one. (2) The fan (and the record, when switched on) spins only while the room is entered, no card is open, the stage is on screen and room view is showing. Frames that only spin something are capped near 30 fps. Under reduced motion nothing spins.
 
 ## 9. Interactions
+
+**First-visit tip.** The first time someone enters the room, a pill fades in 0.9 s later at the top center of the stage (14px from the top, `role="status"`). It reads, verbatim: "Feel free to hover around and explore. You can also view a plain version of the site." The words "plain version" are a link-styled button that switches to plain view, and a `×` button dismisses the tip. It uses the pill look: `--card` at 92%, `--ink` text, a `--rule` ring plus a soft shadow, Inter 14px, and it follows the theme. It goes away for good (`localStorage` key `roomHint`) once the visitor dismisses it, uses the plain-version link, or clicks or activates anything in the room. It also hides when the camera goes back to the hero screen. Open cards cover it.
 
 **Hover and focus labels.** A dark mono tag (`#1d1d1f` on `#f4f3ef`, 12px) sits above the pointer. Labels, verbatim:
 
@@ -157,6 +186,8 @@ For reference, the timings measured in the prototype were: screen → About 1.35
 | Synth rack | `synth rack · ▶ jam` | Toggle: keys pulse scarlet emissive. This version plays no audio at all |
 | Guitar | `guitar · strum it` | Damped swing on the hook: `0.09·e^(−2.2t)·sin(9t)` for 2.4 s |
 | Poster | `favorite album · young thug – jeffery · straighten it` | Toggle between a 0.06 rad tilt and straight, easing at 0.12 per frame |
+| Project prints | `all projects →` | Fly to the prints (direct from the hero screen too) and open the All projects card |
+| Record player | `record player · spin / stop` | Toggle the spin (off by default). The tonearm eases onto the record (−0.5 rad) while it plays, and back to rest (0.05 rad) when stopped |
 | Each canvas | the project title before any colon, lowercased, plus ` →` (for example `find the outfit →`, `saw →`) | Fly to the canvas and open its card |
 
 **Cursor.** On fine pointers only, over the canvas, hide the system cursor and show a 10px scarlet dot with a soft glow. It grows to 16px over anything clickable. Everywhere else, the normal cursor shows.
@@ -195,10 +226,12 @@ A card opens over the stage on a `rgba(13,13,16,.55)` scrim. It is a `role="dial
 **Project card** (`width: min(980px, 100%)`, two columns, 36px padding, radius 16, `--paper` background):
 
 - Top row, full width, `space-between`: on the left the `← back to the room` pill; on the right `‹ prev`, a mono count `1 / 4`, and `next ›`. The prev and next buttons carry aria-labels naming the target project ("Previous project: SAW: Shared Agent Workspace").
-- Left column: a mono blue eyebrow with the meta only (`university capstone · 2026`, **no project code**); the title (26–40px, weight 500); the lede; the mono tags above a dashed rule; a primary button `Read the case study ↗` linking to `/work/[slug]`.
+- Left column: a mono blue eyebrow with the meta only (`university capstone · 2026`, **no project code**); the title (26–40px, weight 500); the lede; the mono tags above a dashed rule; a row with a primary button `Read the case study ↗` linking to `/work/[slug]`, then a text button `All projects →` that flies to the prints on the desk and opens the All projects card.
 - Right column: the screenshot (SAW uses its dark image in dark mode), contained, max-height 420px.
 - **prev / next:** wraps around (4 → 1, 1 → 4). It swaps the card contents in place without closing it, glides the camera to the new canvas behind the card (750 ms), and keeps focus on the same step button. The ← and → arrow keys do the same while a card is open.
 - At 720px or less: one column, 24px padding.
+
+**All projects card:** opened over the prints on the desk (the camera looks down at them from the room side, distance 1.25). A `peek__card--all`, `width: min(920px, 100%)`, with only the back pill in the top row, the heading "All projects", and a four-column grid of tiles (two columns at 720px or less). Each tile is a button: the screenshot (4:3, cropped from the top; SAW's dark one in dark mode), the title and the mono meta. Clicking a tile flies to that project's canvas and opens its card. Under the grid, a text link `Full project list ↗` goes to `/projects`. It highlights Projects in the nav.
 
 **About card:** a one-column `peek__card--one`, `width: min(760px, 100%)`. It has only the back pill in the top row, the heading "A little about me" with no eyebrow, and the about paragraphs (the first at 19px).
 
@@ -239,6 +272,7 @@ Check each item side by side with the reference.
 - [ ] In dark mode, the back, prev, next and exit pills are themed. None of them stays white.
 - [ ] Night mode turns on the neon, the lamp, the canvas halos and the LED strips, the moon, the dark sky and SAW's dark screenshot. Day mode turns them all off.
 - [ ] Every object has its exact hover label and its action, and is reachable by keyboard.
+- [ ] On a first visit, the explore tip appears after entering the room. Its "plain version" link and its `×` both work, and it never shows again after one of them or after the first use of a room object.
 - [ ] Reduced motion, phone layout and the no-WebGL fallback all behave as described in section 13.
 - [ ] All copy comes from `src/content/`. No console errors.
 
