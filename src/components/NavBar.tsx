@@ -254,38 +254,31 @@ function MobileMenu({
             </a>
           ))}
         </nav>
-        <div className="ln-sheet__controls">
-          {viewLabel && (
-            <button
-              type="button"
-              className="ln-btn ln-btn--sm"
-              onClick={() => {
-                hide();
-                onToggleView();
-              }}
-            >
-              {viewLabel}
-            </button>
-          )}
-          <SfxToggle className="ln-btn ln-btn--sm ln-sheet__sfx" labeled />
-        </div>
-        <div className="ln-sheet__social">
-          <a
-            className="ln-btn ln-btn--sm"
-            href={site.links.github}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub ↗
-          </a>
-          <a
-            className="ln-btn ln-btn--sm"
-            href={site.links.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn ↗
-          </a>
+        {/* Everything that isn't navigation sits at the bottom, in reach of a thumb. */}
+        <div className="ln-sheet__foot">
+          <div className="ln-sheet__row">
+            {viewLabel && (
+              <button
+                type="button"
+                className="ln-btn"
+                onClick={() => {
+                  hide();
+                  onToggleView();
+                }}
+              >
+                {viewLabel}
+              </button>
+            )}
+            <SfxToggle className="ln-btn ln-sheet__sfx" labeled />
+          </div>
+          <div className="ln-sheet__row">
+            <a className="ln-btn" href={site.links.github} target="_blank" rel="noopener noreferrer">
+              GitHub ↗
+            </a>
+            <a className="ln-btn" href={site.links.linkedin} target="_blank" rel="noopener noreferrer">
+              LinkedIn ↗
+            </a>
+          </div>
         </div>
       </dialog>
     </>
