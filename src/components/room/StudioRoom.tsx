@@ -334,9 +334,9 @@ export default function StudioRoom({
     }
     function redrawHero() {
       if (!heroScreenEl || hero?.style.transform) return;
-      const nextTex = drawHeroToCanvas(heroScreenEl);
-      if (!nextTex) return;
       const target = heroTarget();
+      const nextTex = drawHeroToCanvas(heroScreenEl, target.dims.w / target.dims.h);
+      if (!nextTex) return;
       if (heroTex) heroTex.dispose();
       heroTex = nextTex;
       target.mat.map = heroTex;
@@ -560,16 +560,14 @@ export default function StudioRoom({
       const eh = heroScreenEl!.offsetHeight || 1;
       const sx = (maxX - minX) / ew;
       const sy = (maxY - minY) / eh;
-      if (isPortrait) {
-        // Uniform scale keeps portrait hero text crisp without horizontal squashing.
-        const s = Math.min(sx, sy);
-        const hcx = ex + ew / 2;
-        const hcy = ey + eh / 2;
-        const scx = (minX + maxX) / 2;
-        const scy = (minY + maxY) / 2;
-        return { sx: s, sy: s, tx: scx - hcx * s, ty: scy - hcy * s };
-      }
-      return { sx, sy, tx: minX - ex * sx, ty: minY - ey * sy };
+      // Uniform scale, centered: the hero fills the stage, so it keeps its shape on the way into the
+      // screen, the same way the texture centers it there instead of stretching it.
+      const s = Math.min(sx, sy);
+      const hcx = ex + ew / 2;
+      const hcy = ey + eh / 2;
+      const scx = (minX + maxX) / 2;
+      const scy = (minY + maxY) / 2;
+      return { sx: s, sy: s, tx: scx - hcx * s, ty: scy - hcy * s };
     }
 
     function placeHero(m: { sx: number; sy: number; tx: number; ty: number }, amount: number, opacity: number) {
@@ -917,7 +915,7 @@ export default function StudioRoom({
         hero?.removeAttribute("data-gone");
         hero?.removeAttribute("data-riding");
         clearHeroStyle();
-        document.getElementById("enterRoomBtn")?.focus({ preventScroll: true });
+        heroScreenEl?.focus({ preventScroll: true });
         if (typeof after === "function") after();
       };
       if (reduced) {
@@ -1588,6 +1586,19 @@ export default function StudioRoom({
       }
     }
 
+    // With no button on the hero, the keys that would scroll a page zoom out to the room instead.
+    function onHeroKey(e: KeyboardEvent) {
+      if (entered || busy || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key !== "ArrowDown" && e.key !== "PageDown" && e.key !== " ") return;
+      const root = document.documentElement.dataset;
+      if (root.view === "plain" || root.boot === "loading") return;
+      const t = e.target as HTMLElement | null;
+      const onPage = !t || t === document.body || t === heroScreenEl;
+      if (!onPage) return;
+      e.preventDefault();
+      enterRoom();
+    }
+
     canvas.addEventListener("wheel", onWheel, { passive: false });
     canvas.addEventListener("touchstart", onTouchStart, { passive: true });
     canvas.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -1599,6 +1610,7 @@ export default function StudioRoom({
     hero.addEventListener("wheel", onHeroWheel, { passive: false });
     hero.addEventListener("touchstart", onHeroTouchStart, { passive: true });
     hero.addEventListener("touchmove", onHeroTouchMove, { passive: true });
+    document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
     function resize() {
@@ -1859,6 +1871,7 @@ export default function StudioRoom({
       hero.removeEventListener("wheel", onHeroWheel);
       hero.removeEventListener("touchstart", onHeroTouchStart);
       hero.removeEventListener("touchmove", onHeroTouchMove);
+      document.removeEventListener("keydown", onHeroKey);
       audio.removeEventListener("ended", onAudioEnded);
       activeDeckToken++;
       cancelAudioRamp();

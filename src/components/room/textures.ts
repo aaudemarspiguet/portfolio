@@ -359,15 +359,29 @@ function isPaint(c: string) {
   return Boolean(c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c));
 }
 
-export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture | null {
+/**
+ * Draws the hero into a texture for the iMac or phone screen. `aspect` is the screen's width over
+ * height: when the hero is a different shape (it fills the whole stage now), it is centered on
+ * paper at that shape rather than stretched, matching the uniform scale of the zoom-out.
+ */
+export function drawHeroToCanvas(heroScreenEl: HTMLElement, aspect?: number): THREE.CanvasTexture | null {
   const box = heroScreenEl.getBoundingClientRect();
   if (!box.width || !box.height) return null;
-  const S = Math.min(2, 2048 / box.width);
-  return canvasTex(Math.round(box.width * S), Math.round(box.height * S), (g) => {
+  let W = box.width;
+  let H = box.height;
+  if (aspect) {
+    if (W / H < aspect) W = H * aspect;
+    else H = W / aspect;
+  }
+  const ox = (W - box.width) / 2;
+  const oy = (H - box.height) / 2;
+  const S = Math.min(2, 2048 / W);
+  return canvasTex(Math.round(W * S), Math.round(H * S), (g) => {
     g.scale(S, S);
     const screenStyle = getComputedStyle(heroScreenEl);
     g.fillStyle = screenStyle.backgroundColor;
-    g.fillRect(0, 0, box.width, box.height);
+    g.fillRect(0, 0, W, H);
+    g.translate(ox, oy);
 
     heroScreenEl.querySelectorAll<HTMLElement>("*").forEach((el) => {
       if (el.closest(".ln-say__tip")) return;

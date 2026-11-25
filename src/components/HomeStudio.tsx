@@ -192,25 +192,9 @@ export function HomeStudio({
           )}
 
           <div ref={heroRef} className="ln-room-hero" id="hero">
-            <div ref={heroScreenRef} className="ln-room-hero__screen">
-
-              <HeroIntro hero={hero} taglineClass="ln-room-hero__lede">
-                <button
-                  type="button"
-                  id="enterRoomBtn"
-                  className="ln-btn ln-btn--ink"
-                  onClick={() => actionsRef.current?.enterRoom()}
-                >
-                  Enter the room ↓
-                </button>
-                <button
-                  type="button"
-                  className="ln-btn ln-btn--text"
-                  onClick={() => actionsRef.current?.openTerminal()}
-                >
-                  Experience
-                </button>
-              </HeroIntro>
+            {/* The same hero as plain view. Scrolling or swiping up zooms out into the room. */}
+            <div ref={heroScreenRef} className="ln-room-hero__screen" tabIndex={-1}>
+              <HeroIntro hero={hero} taglineClass="ln-room-hero__lede" />
             </div>
           </div>
 
