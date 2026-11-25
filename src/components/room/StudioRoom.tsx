@@ -628,13 +628,17 @@ export default function StudioRoom({
       tourStep = i;
       clearRings();
       const keys = step.rings(isPortrait);
-      const meshes: THREE.Object3D[] = [
-        ...(step.canvases ? roomProjects.map(({ project }) => canvasMeshes[project.slug].face) : []),
-        ...keys.flatMap((k) => objects.find((o) => o.key === k)?.hit ?? []),
-      ];
+      // The project canvases share one ring (their halos light up too); every other object gets its own.
+      const boxes: THREE.Box3[] = keys.flatMap((k) =>
+        (objects.find((o) => o.key === k)?.hit ?? []).map((m) => new THREE.Box3().setFromObject(m)),
+      );
+      if (step.canvases) {
+        const wall = new THREE.Box3();
+        roomProjects.forEach(({ project }) => wall.expandByObject(canvasMeshes[project.slug].face));
+        boxes.unshift(wall);
+      }
       const centre = new THREE.Vector3();
-      meshes.forEach((m) => {
-        const box = new THREE.Box3().setFromObject(m);
+      boxes.forEach((box) => {
         const el = document.createElement("div");
         el.className = "ln-tour-ring";
         ringsRef.current?.appendChild(el);
@@ -642,8 +646,8 @@ export default function StudioRoom({
         centre.add(box.getCenter(new THREE.Vector3()));
       });
       // Turn the view toward what this step circles, so it's in frame on a narrow stage.
-      if (meshes.length && look.resting) {
-        centre.divideScalar(meshes.length);
+      if (boxes.length && look.resting) {
+        centre.divideScalar(boxes.length);
         const base = new THREE.Vector3().subVectors(WIDE.look, WIDE.pos);
         const to = new THREE.Vector3().subVectors(centre, WIDE.pos);
         // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
