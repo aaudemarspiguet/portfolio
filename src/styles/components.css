@@ -2149,6 +2149,19 @@ html[data-boot="revealing"] .ln-mbar {
   }
   :root[data-theme] .ln-stage,
   :root .ln-stage { background: var(--paper); }
+  /* In room view the room shows under the status bar, so the paper strip there is dropped. */
+  html:has(#room:not([hidden])) body::before { display: none; }
+  /* iOS 26 Safari ends the viewport at the top of its floating toolbar, so 100lvh stops there and
+     the toolbar sits on page paper. The canvas is fixed and runs 140px past the bottom so the room
+     carries on under the toolbar. Fixed boxes add no scroll, and the camera keeps the room framed
+     to the stage (see resize in StudioRoom). */
+  .ln-stage__canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100lvh + 140px);
+  }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }
   /* The boot lock screen fills the phone too, so it hands straight over to the room. */
