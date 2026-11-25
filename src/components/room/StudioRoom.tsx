@@ -1083,7 +1083,9 @@ export default function StudioRoom({
       }
       if (dragged || touchCount === 2) {
         e.preventDefault();
-        nudge(dx, dy);
+        // nudge() takes wheel-style deltas, and a finger's vertical motion is the reverse of a
+        // trackpad's deltaY, so flip dy: dragging up or down now matches the trackpad.
+        nudge(dx, -dy);
       }
       touchLast = m;
     }
