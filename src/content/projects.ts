@@ -640,8 +640,8 @@ export const hasFlag = (p: Project, flag: ProjectFlag) => p.flags?.includes(flag
 /** The home page's highlighted project grid. */
 export const highlightedProjects = projects.filter((p) => hasFlag(p, "highlighted"));
 
-/** Minimal, flag-stripped home project DTOs safe to serialize across the RSC boundary. */
-export const highlightedProjectDTOs: HomeProject[] = highlightedProjects.map((p) => ({
+/** Minimal, flag-stripped project DTO, safe to serialize across the RSC boundary. */
+const toHomeProject = (p: Project): HomeProject => ({
   slug: p.slug,
   area: p.area,
   year: p.year,
@@ -652,7 +652,13 @@ export const highlightedProjectDTOs: HomeProject[] = highlightedProjects.map((p)
   orgs: p.orgs,
   tags: p.tags,
   lede: p.caseStudy.lede,
-}));
+});
+
+/** The home page's highlighted projects. */
+export const highlightedProjectDTOs: HomeProject[] = highlightedProjects.map(toHomeProject);
+
+/** Every project, for /projects. */
+export const projectDTOs: HomeProject[] = projects.map(toHomeProject);
 
 export function getProject(slug: string) {
   return caseStudies.find((p) => p.slug === slug);
