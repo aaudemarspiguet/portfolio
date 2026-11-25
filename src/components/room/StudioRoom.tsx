@@ -300,6 +300,11 @@ export default function StudioRoom({
       }, msToNextMinute());
     }
     tickClock();
+    // Hidden tabs skip the minute redraw, so catch the clock up as soon as the tab is shown again.
+    function onVisibility() {
+      if (!document.hidden) redrawIdle();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
 
     function redrawNeon() {
       const neonFamily = getComputedStyle(document.documentElement).getPropertyValue("--font-neon").trim();
@@ -1504,6 +1509,7 @@ export default function StudioRoom({
       cancelAnimationFrame(rafId);
       if (hintTimer) clearTimeout(hintTimer);
       if (clockTimer) clearTimeout(clockTimer);
+      document.removeEventListener("visibilitychange", onVisibility);
       registerActions(null);
       io?.disconnect();
       ro?.disconnect();
