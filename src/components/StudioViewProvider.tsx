@@ -18,26 +18,10 @@ export type StudioView = "room" | "plain";
 export type RoomNavKey = "work" | "experience" | "about";
 export type PlainSectionKey = "work" | "experience" | "about";
 
-const VIEW_STORAGE_KEY = "view";
-
-export function readSavedView(): "room" | "plain" | null {
-  try {
-    const v = localStorage.getItem(VIEW_STORAGE_KEY);
-    return v === "room" || v === "plain" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveView(v: "room" | "plain") {
-  try {
-    localStorage.setItem(VIEW_STORAGE_KEY, v);
-  } catch {}
-}
-
 let currentView: StudioView | null = null;
 const viewListeners = new Set<() => void>();
 
+// The site always opens in the room; plain view is one tap away on the toggle.
 function readViewSnapshot(): StudioView {
   if (currentView) return currentView;
   if (typeof document !== "undefined") {
@@ -45,12 +29,6 @@ function readViewSnapshot(): StudioView {
     if (attr === "plain" || attr === "room") {
       currentView = attr;
       return attr;
-    }
-    const saved = readSavedView();
-    if (saved) {
-      currentView = saved;
-      document.documentElement.dataset.view = saved;
-      return saved;
     }
     document.documentElement.dataset.view = "room";
   }
@@ -64,13 +42,10 @@ function subscribeView(cb: () => void) {
   };
 }
 
-function writeViewStore(next: StudioView, noSave?: boolean) {
+function writeViewStore(next: StudioView) {
   currentView = next;
   if (typeof document !== "undefined") {
     document.documentElement.dataset.view = next;
-  }
-  if (!noSave) {
-    saveView(next);
   }
   viewListeners.forEach((fn) => fn());
 }
@@ -95,7 +70,7 @@ type StudioViewContextValue = {
   hydrated: boolean;
   webglFailed: boolean;
   pendingSection: string | null;
-  setView: (v: StudioView, section?: string | null, noSave?: boolean) => void;
+  setView: (v: StudioView, section?: string | null) => void;
   setRoomCurrent: (key: RoomNavKey | null) => void;
   setPlainSection: (key: PlainSectionKey | null) => void;
   markWebglFailed: () => void;
@@ -144,9 +119,9 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setView = useCallback(
-    (next: StudioView, section?: string | null, noSave?: boolean) => {
+    (next: StudioView, section?: string | null) => {
       const targetView = webglFailed && next === "room" ? "plain" : next;
-      writeViewStore(targetView, noSave);
+      writeViewStore(targetView);
 
       if (targetView === "plain") {
         if (section) {
@@ -176,14 +151,14 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
     if (!hash) return;
     const id = requestAnimationFrame(() => {
       if (hash === "background") {
-        setView("plain", "background", true);
+        setView("plain", "background");
         return;
       }
       if (hash === "about") {
         if (view === "room" && !webglFailed && roomHandlersRef.current) {
           roomHandlersRef.current.nav("about");
         } else {
-          setView("plain", "about", true);
+          setView("plain", "about");
         }
         return;
       }
@@ -201,7 +176,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
 
   const markWebglFailed = useCallback(() => {
     setWebglFailed(true);
-    writeViewStore("plain", true);
+    writeViewStore("plain");
   }, []);
 
   const clearPendingSection = useCallback(() => setPendingSection(null), []);
@@ -224,8 +199,8 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
         if (section) h.nav(section);
         else h.enterRoom();
       };
-      // The hero is the same in both views, so it swaps in place; a section's cards lift away first.
-      const out = section ? slideOut(plainEl) : Promise.resolve();
+      // The cards lift away first. From the top, the hero stays put: the room's screen matches it.
+      const out = slideOut(plainEl, { skipHero: !section });
       void out.then(() => {
         setView("room");
         afterPaint(() => {

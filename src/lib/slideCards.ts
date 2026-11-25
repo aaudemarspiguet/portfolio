@@ -72,10 +72,10 @@ export function slideIn(root: HTMLElement | null, opts?: { skipHero?: boolean })
  * Cards lift away, last one first. Resolves when they're gone; they stay hidden until `slideIn`
  * or `resetSlide` runs, so the swap to the room never flashes them back.
  */
-export function slideOut(root: HTMLElement | null): Promise<void> {
+export function slideOut(root: HTMLElement | null, opts?: { skipHero?: boolean }): Promise<void> {
   clearRunning();
   if (!root || prefersReducedMotion() || typeof root.animate !== "function") return Promise.resolve();
-  const blocks = onScreenBlocks(root).reverse();
+  const blocks = onScreenBlocks(root, opts?.skipHero).reverse();
   const done = blocks.map((el, i) => {
     const a = el.animate(
       [

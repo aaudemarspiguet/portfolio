@@ -7,7 +7,7 @@ export type Theme = "light" | "dark";
 const STORAGE_KEY = "theme";
 
 // Follows system prefers-color-scheme by default unless the visitor explicitly saved a choice.
-const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);try{var v=localStorage.getItem("view");if(v==="plain"||v==="room")document.documentElement.dataset.view=v}catch(e){}})()`;
+const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);})()`;
 
 // Runs in <head> before first paint: saved choice, otherwise system preference.
 // On client renders the script is inert (text/plain), so React doesn't warn.
