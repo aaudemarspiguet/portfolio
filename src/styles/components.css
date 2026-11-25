@@ -163,7 +163,8 @@ html[data-view="room"] #plain { display: none; }
   align-items: center;
   gap: 12px;
   height: var(--layout-nav);
-  padding: 0 8px 0 18px;
+  /* 6px on the right as above and below, so the 36px capsules nest in the 48px bar (24 - 6 = 18). */
+  padding: 0 6px 0 18px;
   border-radius: var(--radius-pill);
   background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
   -webkit-backdrop-filter: saturate(190%) blur(26px);
@@ -270,9 +271,9 @@ html[data-view="room"] #plain { display: none; }
 }
 .ln-stage__bar {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
-  right: 14px;
+  bottom: var(--stage-inset);
+  left: var(--stage-inset);
+  right: var(--stage-inset);
   z-index: 4;
   display: flex;
   flex-wrap: wrap;
@@ -282,12 +283,14 @@ html[data-view="room"] #plain { display: none; }
   pointer-events: none;
 }
 .ln-stage__bar > * { pointer-events: auto; }
+/* The bar's buttons sit in the stage's bottom corner: 24 - 14 = 10. */
+.ln-stage__bar > .ln-btn { border-radius: var(--radius-screen); }
 .ln-deck {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 36px;
-  padding: 0 8px 0 12px;
+  padding: 0 6px 0 12px; /* 6px on the right as above and below: 18 - 6 = 12, the buttons' own radius */
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--card) 90%, transparent);
   color: var(--ink);
@@ -565,10 +568,10 @@ html[data-boot="revealing"] .ln-mbar {
 }
 .ln-boot__screen {
   position: absolute;
-  left: 14px;
-  top: 14px;
-  right: 14px;
-  bottom: 14px;
+  left: var(--stage-inset);
+  top: var(--stage-inset);
+  right: var(--stage-inset);
+  bottom: var(--stage-inset);
   border-radius: var(--radius-screen);
   background: var(--paper);
   color: var(--ink);
@@ -846,7 +849,8 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  /* The sheets' radius, so the 40px X nests in the corner at the same 14px inset. */
+  border-radius: var(--radius-sheet);
   background: linear-gradient(180deg, var(--glass-edge), transparent 24px), var(--glass-sheet);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   backdrop-filter: blur(24px) saturate(190%);
@@ -860,7 +864,7 @@ html[data-boot="revealing"] .ln-mbar {
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 8px;
-  padding: 12px 12px 4px;
+  padding: var(--sheet-inset) var(--sheet-inset) 4px;
 }
 .ln-peek__body {
   min-height: 0;
@@ -950,7 +954,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px 8px 12px;
+  padding: var(--tile-inset) var(--tile-inset) 12px;
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--card);
@@ -973,7 +977,7 @@ html[data-boot="revealing"] .ln-mbar {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   object-position: center top;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-tile-img); /* 16 - 8 = 8 */
   background: var(--paper-sunk);
 }
 .ln-alltile b {
@@ -1023,8 +1027,9 @@ html[data-boot="revealing"] .ln-mbar {
   width: min(980px, 100%);
   max-height: 100%;
   overflow: auto;
-  padding: 14px;
-  border-radius: var(--radius-lg);
+  /* A small monitor, like the stage: 24px outside, and the screen 10px at the 14px inset. */
+  padding: var(--stage-inset);
+  border-radius: var(--radius-xl);
   background: #2a2a2d;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
@@ -1036,7 +1041,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-term .ln-btn:not(.ln-btn--primary):not(.ln-btn--ink):hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .ln-term__screen {
   padding: 22px 24px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-screen);
   background: #0d1117;
   color: #e6edf3;
   font: 400 14px/1.7 var(--font-mono);
@@ -1205,9 +1210,11 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-iphone {
   position: relative;
   display: block;
+  --iphone-radius: 38px;
+  --iphone-bezel: 9px;
   width: min(232px, 100%);
-  padding: 9px;
-  border-radius: 38px;
+  padding: var(--iphone-bezel);
+  border-radius: var(--iphone-radius);
   background: #141416;
   box-shadow:
     0 0 0 2px #4e4e54,
@@ -1230,7 +1237,7 @@ html[data-boot="revealing"] .ln-mbar {
   flex-direction: column;
   overflow: hidden;
   aspect-ratio: 390 / 844;
-  border-radius: 30px;
+  border-radius: calc(var(--iphone-radius) - var(--iphone-bezel)); /* 38 - 9 = 29 */
   background: #fcfbf9;
 }
 .ln-iphone__status {
@@ -1853,8 +1860,8 @@ html[data-boot="revealing"] .ln-mbar {
   z-index: 45;
   min-width: 230px;
   max-width: calc(100vw - 16px);
-  padding: 8px;
-  border-radius: 26px;
+  padding: var(--menu-inset);
+  border-radius: var(--radius-menu);
   /* Liquid Glass: a mostly solid lens, a bright rim on top, and a soft light falling inside. */
   background:
     radial-gradient(120% 60% at 50% 0%, var(--glass-edge), transparent 60%),
@@ -1884,7 +1891,7 @@ html[data-boot="revealing"] .ln-mbar {
   min-height: 44px;
   padding: 8px 12px;
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-menu-item); /* 26 - 8 = 18, so a highlighted row nests in the menu */
   background: transparent;
   color: var(--ink);
   font: 400 17px/1.25 var(--font-sans);
@@ -1925,7 +1932,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 34px;
+  border-radius: var(--radius-sheet);
   isolation: isolate;
   /* Its own layer from the first frame, so Safari blurs it while it rises. */
   will-change: transform;
@@ -1960,7 +1967,8 @@ html[data-boot="revealing"] .ln-mbar {
   grid-template-columns: 44px minmax(0, 1fr) minmax(44px, auto);
   align-items: center;
   gap: 8px;
-  padding: 16px 12px 8px;
+  /* The X and the stepper sit 14px from the top and sides: 34 - 14 = 20, half their 40px height. */
+  padding: var(--sheet-inset) var(--sheet-inset) 8px;
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -2030,9 +2038,11 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 16px 16px;
+  padding: 12px var(--sheet-foot-inset) var(--sheet-foot-inset);
   border-top: 1px solid var(--rule);
 }
+/* Footer buttons sit in the sheet's bottom corners: 34 - 16 = 18. */
+.ln-gsheet__foot .ln-btn { border-radius: var(--radius-sheet-btn); }
 /* The room's peeks inside a sheet keep their production type. */
 .ln-gsheet__body h2 {
   margin: 0;
@@ -2052,7 +2062,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-gsheet--term .ln-gsheet__x { color: #e6edf3; background: rgba(255, 255, 255, 0.1); }
 .ln-gsheet--term .ln-gsheet__title { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; }
 .ln-gsheet--term .ln-gsheet__body { padding: 0; }
-.ln-gsheet--term .ln-term__screen { padding: 8px 20px 28px; font-size: 13px; }
+.ln-gsheet--term .ln-term__screen { padding: 8px 20px 28px; font-size: 13px; border-radius: 0; } /* fills the sheet, which rounds and clips it */
 
 /* About: Me and Background as two pages under one segmented control. */
 .ln-aboutpages { display: flex; flex-direction: column; gap: 20px; }

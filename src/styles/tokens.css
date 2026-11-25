@@ -85,8 +85,22 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 999px;
-  --radius-screen: calc(var(--radius-xl) - 14px); /* hero/boot screen: concentric with the 24px stage at its 14px inset */
   --radius-btn: 12px; /* every button; pills are only for chips, tags, toggles and status */
+
+  /* Concentric corners: a rounded thing inside a rounded thing takes the outer radius minus the gap
+     between them, so both curves share one center. Where that would come out at zero or less (a
+     big gap), the inner piece keeps its own radius, as Apple does. */
+  --stage-inset: 14px; /* boot screen, the stage's bottom bar, the terminal's screen */
+  --radius-screen: calc(var(--radius-xl) - var(--stage-inset)); /* 10px, inside the 24px stage or terminal */
+  --radius-sheet: 34px; /* phone sheets, the desktop sheet and the desktop peek cards */
+  --sheet-inset: 14px; /* the X and stepper capsules: 34 - 14 = 20, half of their 40px */
+  --sheet-foot-inset: 16px;
+  --radius-sheet-btn: calc(var(--radius-sheet) - var(--sheet-foot-inset)); /* 18px, buttons in a sheet's footer */
+  --radius-menu: 26px;
+  --menu-inset: 8px;
+  --radius-menu-item: calc(var(--radius-menu) - var(--menu-inset)); /* 18px */
+  --tile-inset: 8px;
+  --radius-tile-img: calc(var(--radius-lg) - var(--tile-inset)); /* 8px, the image in an All projects tile */
 
   /* Layout: 1120px column with 16px gutters so nav pill and stage edges align exactly. */
   --layout-max: 1120px;
