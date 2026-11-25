@@ -138,14 +138,22 @@ export function buildRoomScene(
     canvasEdge: mat(0xfbfbf9),
   };
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), M.floor);
+  // The room is a cutaway with no front wall, and the camera stands just outside it (z 4.1 to
+  // 4.9). Floor, ceiling and side walls run on to z = 6, behind the camera, so turning on a phone
+  // never looks past their edges into the void. The floor repeat grows with it to keep plank size.
+  const SHELL_FRONT = 6;
+  const shellDepth = SHELL_FRONT + 3;
+  const shellMidZ = (SHELL_FRONT - 3) / 2;
+  floorTex.repeat.set(3, (3 * shellDepth) / 6);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, shellDepth), M.floor);
+  floor.position.z = shellMidZ;
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), M.ceiling);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(8, shellDepth), M.ceiling);
   ceil.rotation.x = Math.PI / 2;
-  ceil.position.y = 3.3;
+  ceil.position.set(0, 3.3, shellMidZ);
   scene.add(ceil);
 
   const back = new THREE.Mesh(new THREE.PlaneGeometry(8, 3.3), M.brick);
@@ -153,9 +161,9 @@ export function buildRoomScene(
   back.receiveShadow = true;
   scene.add(back);
 
-  const right = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.3), M.plaster);
+  const right = new THREE.Mesh(new THREE.PlaneGeometry(shellDepth, 3.3), M.plaster);
   right.rotation.y = -Math.PI / 2;
-  right.position.set(4, 1.65, 0);
+  right.position.set(4, 1.65, shellMidZ);
   right.receiveShadow = true;
   scene.add(right);
 
@@ -170,7 +178,7 @@ export function buildRoomScene(
     scene.add(p);
   }
   leftPanel(-3, WIN.z0, 0, 3.3);
-  leftPanel(WIN.z1, 3, 0, 3.3);
+  leftPanel(WIN.z1, SHELL_FRONT, 0, 3.3);
   leftPanel(WIN.z0, WIN.z1, 0, WIN.y0);
   leftPanel(WIN.z0, WIN.z1, WIN.y1, 3.3);
   box(8, 0.12, 0.03, M.white, 0, 0.06, -2.985);
