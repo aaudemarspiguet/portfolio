@@ -7,8 +7,9 @@ import type { ReactNode } from "react";
 import type { Media, Project } from "@/content/projects";
 import { site } from "@/content/site";
 
-// Link-preview cards (opengraph-image.tsx). Satori renders these, so every element with more
-// than one child needs display: flex, and colors are hex values copied from styles/tokens.css.
+// Case-study link-preview cards (work/[slug]/opengraph-image.tsx). The home preview is a room
+// render, app/opengraph-image.jpg. Satori renders these cards, so every element with more than one
+// child needs display: flex, and colors are hex values copied from styles/tokens.css.
 
 export const ogSize = { width: 1200, height: 630 };
 
@@ -17,7 +18,6 @@ const c = {
   card: "#ffffff",
   ink: "#1d1d1f",
   muted: "#5f5f66",
-  rule: "rgba(29, 29, 31, 0.12)",
   scarlet: "#ff3b1f",
 };
 
@@ -91,27 +91,6 @@ async function render(children: ReactNode) {
 
 function Label({ children, color = c.muted }: { children: ReactNode; color?: string }) {
   return <div style={{ display: "flex", fontFamily: mono, fontWeight: 500, fontSize: 26, color, letterSpacing: -0.3 }}>{children}</div>;
-}
-
-/** Home card: the hero's name, meta line and lede. */
-export async function siteCard() {
-  const meta = [site.role, site.city, site.availability].join(" · ").toLowerCase();
-  return render(
-    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
-      <Label>{site.brand}</Label>
-      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-        <div style={{ display: "flex", fontSize: 120, fontWeight: 600, letterSpacing: -5, lineHeight: 1 }}>
-          {site.name}
-          <span style={{ color: c.scarlet }}>.</span>
-        </div>
-        <Label>{meta}</Label>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, borderTop: `2px solid ${c.rule}`, paddingTop: 32 }}>
-        <div style={{ display: "flex", fontSize: 42, fontWeight: 400, letterSpacing: -1 }}>{site.lede.highlight}</div>
-        <div style={{ display: "flex", width: 4, height: 46, background: c.scarlet }} />
-      </div>
-    </div>,
-  );
 }
 
 /** Case study card: area, headline and project name, with the cover on the right when there is one. */
