@@ -104,7 +104,7 @@ export const WISCONSIN_W_LAYERS: readonly { points: Poly2; color: number; depth:
     ],
   },
   {
-    color: 0xc8102e,
+    color: 0xc5050c, // UW-Madison Badger Red (#C5050C, the screen spec)
     depth: 0.01,
     z: 0.018,
     points: [
