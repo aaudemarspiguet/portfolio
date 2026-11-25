@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type CSSProperties,
   type ReactNode,
   type UIEvent,
 } from "react";
@@ -35,6 +36,7 @@ export function Sheet({
   detents = MEDIUM_LARGE,
   initial = 0,
   snap,
+  eyebrow,
   headerEnd,
   footer,
   className = "",
@@ -49,6 +51,8 @@ export function Sheet({
   initial?: number;
   /** Move the sheet to `index`; a new `id` asks again even for the same detent. */
   snap?: { index: number; id: number };
+  /** A small line above the title, like "1 of 4". */
+  eyebrow?: ReactNode;
   headerEnd?: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -201,6 +205,10 @@ export function Sheet({
   const smallest = rests[0] ?? 0;
   const height = Math.max(visible, smallest);
   const shift = Math.max(0, smallest - visible);
+  // The sheet floats above the bottom edge, so closing also carries it down past that gap.
+  const gapShare = smallest ? shift / smallest : 0;
+  // Clear glass at the smaller detents, solid once pulled to the top.
+  const solid = max > smallest ? Math.min(1, Math.max(0, (visible - smallest) / (max - smallest))) : 0;
   const scrim = max ? Math.min(1, visible / max) : 0;
 
   return (
@@ -214,7 +222,13 @@ export function Sheet({
         aria-labelledby={titleId}
         aria-label={titleId ? undefined : title}
         data-dragging={dragging ? "" : undefined}
-        style={{ height: rests.length ? height : undefined, transform: `translateY(${shift}px)` }}
+        style={
+          {
+            height: rests.length ? height : undefined,
+            "--gsheet-solid": solid,
+            transform: `translateY(calc(${shift}px + ${gapShare} * var(--gsheet-gap, 0px)))`,
+          } as CSSProperties
+        }
       >
         <div
           className="ln-gsheet__head"
@@ -229,9 +243,12 @@ export function Sheet({
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
-          <h2 id={titleId} className="ln-gsheet__title">
-            {title}
-          </h2>
+          <div className="ln-gsheet__titles">
+            {eyebrow && <span className="ln-gsheet__eyebrow">{eyebrow}</span>}
+            <h2 id={titleId} className="ln-gsheet__title">
+              {title}
+            </h2>
+          </div>
           <div className="ln-gsheet__end">{headerEnd}</div>
         </div>
         <div className="ln-gsheet__body" onScroll={onBodyScroll}>

@@ -190,11 +190,14 @@ function CaseActions({
   projects,
   onStepProject,
   onAllProjects,
+  steps = true,
 }: {
   project: HomeProject;
   projects: HomeProject[];
   onStepProject: (index: number, dir: 1 | -1) => void;
   onAllProjects: () => void;
+  /** Prev and Next under the buttons. Phones step from the sheet's header instead. */
+  steps?: boolean;
 }) {
   const { i, n, prev, next } = caseIndex(project, projects);
   return (
@@ -208,6 +211,7 @@ function CaseActions({
           <span className="ln-peek__wide">All projects</span>
         </button>
       </div>
+      {steps && (
       <span className="ln-peek__steps">
         <button
           type="button"
@@ -231,6 +235,7 @@ function CaseActions({
           Next ›
         </button>
       </span>
+      )}
     </>
   );
 }
@@ -298,13 +303,41 @@ function CaseSheet({
   onStepProject: (index: number, dir: 1 | -1) => void;
   onAllProjects: () => void;
 }) {
+  const { i, n, prev, next } = caseIndex(project, projects);
   return (
     <Sheet
       key="case"
-      title="Projects"
+      title={project.title}
+      eyebrow={`${i + 1} of ${n}`}
       onClose={onClose}
       className="ln-gsheet--case"
-      footer={<CaseActions project={project} projects={projects} onStepProject={onStepProject} onAllProjects={onAllProjects} />}
+      headerEnd={
+        <span className="ln-gsheet__stepper" role="group" aria-label="Step through projects">
+          <button
+            type="button"
+            className="ln-gbtn"
+            data-step="-1"
+            aria-label={`Previous project: ${prev.title}`}
+            onClick={() => onStepProject(i - 1, -1)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="ln-gbtn"
+            data-step="1"
+            aria-label={`Next project: ${next.title}`}
+            onClick={() => onStepProject(i + 1, 1)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        </span>
+      }
+      footer={<CaseActions project={project} projects={projects} onStepProject={onStepProject} onAllProjects={onAllProjects} steps={false} />}
     >
       <CaseBody project={project} isDark={isDark} />
     </Sheet>

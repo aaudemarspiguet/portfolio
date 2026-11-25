@@ -835,7 +835,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(13, 13, 16, 0.55);
+  background: rgba(0, 0, 0, 0.28);
 }
 /* Modal card: close pinned in the corner, a scrolling body, and one footer of actions. */
 .ln-peek__card {
@@ -847,11 +847,11 @@ html[data-boot="revealing"] .ln-mbar {
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), color-mix(in srgb, var(--paper) 90%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(30px);
-  backdrop-filter: saturate(180%) blur(30px);
+  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), var(--glass-sheet);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
   color: var(--ink);
-  box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--glass-ring), 0 30px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 0.5px var(--glass-ring), 0 30px 60px rgba(0, 0, 0, 0.3);
 }
 /* The same header as the phone sheets: close on the left, the peek's name in the middle. */
 .ln-peek__head {
@@ -1908,26 +1908,40 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-gsheet__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.28);
   transition: opacity .32s cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* Sheets float: a gap on the sides and below, and every corner rounded, as in iOS 26. */
 .ln-gsheet {
+  --gsheet-gap: max(10px, env(safe-area-inset-bottom, 0px));
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: calc(100dvh - 62px - env(safe-area-inset-top, 0px));
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  bottom: var(--gsheet-gap);
+  max-height: calc(100dvh - 62px - env(safe-area-inset-top, 0px) - var(--gsheet-gap));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 28px 28px 0 0;
-  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), color-mix(in srgb, var(--paper) 88%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(30px);
-  backdrop-filter: saturate(180%) blur(30px);
-  box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--glass-ring), 0 -10px 40px rgba(0, 0, 0, 0.18);
+  border-radius: 34px;
+  isolation: isolate;
+  background: linear-gradient(180deg, var(--glass-edge), transparent 24px), var(--glass-sheet);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  backdrop-filter: blur(16px) saturate(190%);
+  box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 0.5px var(--glass-ring), 0 10px 40px rgba(0, 0, 0, 0.18);
   color: var(--ink);
   transition: height .34s cubic-bezier(0.32, 0.72, 0, 1), transform .34s cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* Pulled to full height it turns solid, as iOS does, so long reading stays easy on the eye. */
+.ln-gsheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  opacity: var(--gsheet-solid, 0);
+  pointer-events: none;
+}
+.ln-gsheet--term::after { display: none; }
 .ln-gsheet[data-dragging] { transition: none; }
 .ln-gsheet-layer:has(.ln-gsheet[data-dragging]) .ln-gsheet__scrim { transition: none; }
 @media (prefers-reduced-motion: reduce) {
@@ -1958,9 +1972,17 @@ html[data-boot="revealing"] .ln-mbar {
   background: color-mix(in srgb, var(--ink) 24%, transparent);
 }
 @media (min-width: 641px) {
-  .ln-gsheet { width: min(480px, calc(100% - 32px)); margin-inline: auto; max-height: calc(100dvh - 96px); }
+  .ln-gsheet { --gsheet-gap: 16px; width: min(480px, calc(100% - 32px)); margin-inline: auto; max-height: calc(100dvh - 96px - var(--gsheet-gap)); }
 }
-.ln-gsheet__x { width: 36px; height: 36px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+/* Header controls are small lenses of their own, like the mockup's. */
+.ln-gsheet__x,
+.ln-gsheet__stepper {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  backdrop-filter: blur(16px) saturate(190%);
+  box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 0.5px var(--glass-ring), inset 0 -1px 1px rgba(255, 255, 255, 0.08), 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.ln-gsheet__x { width: 40px; height: 40px; }
 .ln-gsheet__x svg { width: 16px; height: 16px; stroke-width: 2.2; }
 .ln-gsheet__title {
   margin: 0;
@@ -1971,7 +1993,22 @@ html[data-boot="revealing"] .ln-mbar {
   font: 600 17px/1.2 var(--font-sans);
   letter-spacing: -0.02em;
 }
+.ln-gsheet__titles { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+.ln-gsheet__eyebrow {
+  text-align: center;
+  font: 500 11px/1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
 .ln-gsheet__end { display: flex; justify-content: flex-end; }
+/* Up and down through the projects, a glass pair beside the title. */
+.ln-gsheet--case .ln-gsheet__head { grid-template-columns: 84px minmax(0, 1fr) 84px; }
+.ln-gsheet__stepper {
+  display: inline-flex;
+  border-radius: var(--radius-pill);
+}
+.ln-gsheet__stepper .ln-gbtn { width: 40px; height: 40px; }
+.ln-gsheet__stepper .ln-gbtn svg { width: 18px; height: 18px; stroke-width: 2.2; }
 .ln-gsheet__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -1982,13 +2019,13 @@ html[data-boot="revealing"] .ln-mbar {
   gap: 16px;
   padding: 4px 20px 20px;
 }
-.ln-gsheet__body:last-child { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+.ln-gsheet__body:last-child { padding-bottom: 24px; }
 .ln-gsheet__foot {
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 16px 16px;
   border-top: 1px solid var(--rule);
 }
 /* The room's peeks inside a sheet keep their production type. */
@@ -2005,7 +2042,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-gsheet .ln-about-copy p:first-child { font-size: 19px; color: var(--ink); }
 .ln-gsheet .ln-peek__fig img { max-height: 300px; }
 .ln-gsheet .ln-allgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.ln-gsheet--term { background: #0d1117; color: #e6edf3; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 -10px 40px rgba(0, 0, 0, 0.3); }
+.ln-gsheet--term { background: #0d1117; color: #e6edf3; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 40px rgba(0, 0, 0, 0.3); }
 .ln-gsheet--term .ln-gsheet__grab { background: rgba(255, 255, 255, 0.3); }
 .ln-gsheet--term .ln-gsheet__x { color: #e6edf3; background: rgba(255, 255, 255, 0.1); }
 .ln-gsheet--term .ln-gsheet__title { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; }

@@ -18,6 +18,8 @@
   --glass: rgba(255, 255, 255, 0.52);
   --glass-edge: rgba(255, 255, 255, 0.7);
   --glass-ring: rgba(0, 0, 0, 0.08);
+  /* Sheets and modals: a clearer lens than a solid card, so the room shows through, blurred. */
+  --glass-sheet: rgba(255, 255, 255, 0.66);
 
   --rule: rgba(29, 29, 31, 0.12);
   --rule-strong: #86868b;
@@ -138,6 +140,7 @@
     --glass: rgba(30, 30, 34, 0.5);
     --glass-edge: rgba(255, 255, 255, 0.14);
     --glass-ring: rgba(255, 255, 255, 0.08);
+    --glass-sheet: rgba(38, 38, 42, 0.56);
     --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
     --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
     --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
@@ -175,6 +178,7 @@
   --glass: rgba(30, 30, 34, 0.5);
   --glass-edge: rgba(255, 255, 255, 0.14);
   --glass-ring: rgba(255, 255, 255, 0.08);
+  --glass-sheet: rgba(38, 38, 42, 0.56);
   --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
   --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
   --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
