@@ -2162,7 +2162,8 @@ html[data-boot="revealing"] .ln-mbar {
     box-shadow: none;
   }
   .ln-boot__lock {
-    padding-top: calc(clamp(48px, 14cqh, 120px) + env(safe-area-inset-top, 0px));
+    /* Date and clock high on the screen, as on an iPhone lock screen. */
+    padding-top: calc(clamp(24px, 6cqh, 56px) + env(safe-area-inset-top, 0px));
     padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
 
