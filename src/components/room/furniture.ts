@@ -29,6 +29,9 @@ export type RoomSceneRefs = {
   SCR: { w: number; h: number };
   screen: THREE.Mesh;
   screenMat: THREE.MeshBasicMaterial;
+  PHONE_SCR: { w: number; h: number };
+  phoneScreen: THREE.Mesh;
+  phoneScreenMat: THREE.MeshBasicMaterial;
   windowHit: THREE.Mesh;
   skyMat: THREE.MeshBasicMaterial;
   moon: THREE.Mesh;
@@ -245,6 +248,28 @@ export function buildRoomScene(
   standArm.rotation.x = -0.25;
   box(0.24, 0.012, 0.2, M.silver, 0, 0.006, -0.06, imac);
   box(0.42, 0.012, 0.13, M.white, 0, 0.006, 0.28, imac);
+
+  /* Phone on a desk stand, right of the iMac. On phones it is the hero screen (the mobile hero
+     rides onto it), so its screen keeps the 390:844 shape of a real phone. About twice real
+     size, like the iMac, so it still reads from the wide shot. */
+  const PHONE_SCR = { w: 0.3 * (390 / 844), h: 0.3 };
+  const phoneScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const phoneStand = new THREE.Group();
+  phoneStand.position.set(-1.8, topY + 0.02, -2.42);
+  phoneStand.rotation.y = 0.28;
+  desk.add(phoneStand);
+  box(0.13, 0.012, 0.11, M.silver, 0, 0.006, 0, phoneStand);
+  const brace = box(0.08, 0.2, 0.012, M.silver, 0, 0.1, -0.03, phoneStand);
+  brace.rotation.x = -0.32;
+  box(0.17, 0.02, 0.03, M.silver, 0, 0.022, 0.03, phoneStand);
+  const phone = new THREE.Group();
+  phone.position.set(0, 0.03 + (PHONE_SCR.h + 0.02) / 2, 0.022);
+  phone.rotation.x = -0.18;
+  phoneStand.add(phone);
+  box(PHONE_SCR.w + 0.016, PHONE_SCR.h + 0.02, 0.012, M.frame, 0, 0, 0, phone);
+  const phoneScreen = new THREE.Mesh(new THREE.PlaneGeometry(PHONE_SCR.w, PHONE_SCR.h), phoneScreenMat);
+  phoneScreen.position.set(0, 0, 0.0065);
+  phone.add(phoneScreen);
 
   /* Nearfield studio monitors */
   function nearfield(x: number, z: number, rot: number) {
@@ -1138,6 +1163,9 @@ export function buildRoomScene(
     SCR,
     screen,
     screenMat,
+    PHONE_SCR,
+    phoneScreen,
+    phoneScreenMat,
     windowHit,
     skyMat,
     moon,

@@ -464,3 +464,51 @@ export function drawHeroToCanvas(heroScreenEl: HTMLElement): THREE.CanvasTexture
     }
   });
 }
+
+/**
+ * Face for whichever screen is not showing the hero: a lock screen on the desk phone (wide
+ * screens), or a quiet wordmark on the iMac (phones, where the hero lives on the desk phone).
+ * Colors come from the live hero so both faces follow the theme.
+ */
+export function drawIdleScreen(kind: "phone" | "desktop", bg: string, fg: string): THREE.CanvasTexture {
+  if (kind === "phone") {
+    const W = 390 * 2;
+    const H = 844 * 2;
+    return canvasTex(W, H, (g) => {
+      g.scale(2, 2);
+      g.fillStyle = bg;
+      g.fillRect(0, 0, 390, 844);
+      g.fillStyle = fg;
+      g.textAlign = "center";
+      g.textBaseline = "alphabetic";
+      g.font = "500 15px Inter, system-ui, sans-serif";
+      g.globalAlpha = 0.7;
+      g.fillText(new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), 195, 150);
+      g.globalAlpha = 1;
+      g.font = "500 96px Inter, system-ui, sans-serif";
+      g.fillText("9:41", 195, 250);
+      g.font = "500 13px 'Geist Mono', ui-monospace, monospace";
+      g.globalAlpha = 0.55;
+      g.fillText("amoghmade.dev", 195, 780);
+      g.globalAlpha = 0.35;
+      g.fillRect(130, 812, 130, 5);
+      g.globalAlpha = 1;
+    });
+  }
+  const W = 1120 * 2;
+  const H = 630 * 2;
+  return canvasTex(W, H, (g) => {
+    g.scale(2, 2);
+    g.fillStyle = bg;
+    g.fillRect(0, 0, 1120, 630);
+    g.fillStyle = fg;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.font = "500 64px Inter, system-ui, sans-serif";
+    g.fillText("Amogh Paruvelli.", 560, 290);
+    g.font = "500 20px 'Geist Mono', ui-monospace, monospace";
+    g.globalAlpha = 0.55;
+    g.fillText("amoghmade.dev", 560, 360);
+    g.globalAlpha = 1;
+  });
+}

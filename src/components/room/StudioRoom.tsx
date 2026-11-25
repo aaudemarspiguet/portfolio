@@ -17,7 +17,7 @@ import { useStudioView, type RoomNavKey } from "../StudioViewProvider";
 import { buildRoomScene, disposeRoomScene, type RoomSceneRefs } from "./furniture";
 import { clamp, easeInOutCubic, linearColor, mapRoomProjects, RECORD_TRACKS, smoothstep } from "./roomData";
 import type { PeekState } from "./RoomPeeks";
-import { drawHeroToCanvas } from "./textures";
+import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -249,19 +249,39 @@ export default function StudioRoom({
         }
       },
     );
-    const { SCR, screen, screenMat, canvasMeshes } = refs;
+    const { SCR, screen, screenMat, PHONE_SCR, phoneScreen, phoneScreenMat, canvasMeshes } = refs;
+
+    // Portrait stages (phones) put the hero on the desk phone; wide stages keep it on the iMac.
+    function stageIsPortrait() {
+      const r = stage?.getBoundingClientRect();
+      return !!r && r.width > 0 && r.height > 0 && r.width / r.height < 1;
+    }
+    let isPortrait = stageIsPortrait();
+    function heroTarget() {
+      return isPortrait
+        ? { mesh: phoneScreen, dims: PHONE_SCR, mat: phoneScreenMat, idle: screenMat, idleKind: "desktop" as const }
+        : { mesh: screen, dims: SCR, mat: screenMat, idle: phoneScreenMat, idleKind: "phone" as const };
+    }
 
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
     let heroTex: THREE.CanvasTexture | null = null;
+    let idleTex: THREE.CanvasTexture | null = null;
     function redrawHero() {
       if (!heroScreenEl || hero?.style.transform) return;
       const nextTex = drawHeroToCanvas(heroScreenEl);
       if (!nextTex) return;
+      const target = heroTarget();
+      const st = getComputedStyle(heroScreenEl);
+      const nextIdle = drawIdleScreen(target.idleKind, st.backgroundColor, st.color);
       if (heroTex) heroTex.dispose();
+      if (idleTex) idleTex.dispose();
       heroTex = nextTex;
-      screenMat.map = heroTex;
-      screenMat.needsUpdate = true;
+      idleTex = nextIdle;
+      target.mat.map = heroTex;
+      target.mat.needsUpdate = true;
+      target.idle.map = idleTex;
+      target.idle.needsUpdate = true;
       renderOnce();
     }
 
@@ -350,7 +370,6 @@ export default function StudioRoom({
     let busy = false;
     let entered = false;
     let heroBox: { w: number; h: number; stageH: number } | null = null;
-    let isPortrait = false;
 
     const look = { yaw: 0, pitch: 0, dragYaw: 0, dragPitch: 0, resting: false };
     const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -374,12 +393,13 @@ export default function StudioRoom({
     }
 
     function closeUp() {
+      const { mesh, dims } = heroTarget();
       const p = new THREE.Vector3();
       const q = new THREE.Vector3();
-      screen.getWorldPosition(p);
-      screen.getWorldDirection(q);
+      mesh.getWorldPosition(p);
+      mesh.getWorldDirection(q);
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const d = heroBox ? (SCR.h * heroBox.stageH) / (2 * t * heroBox.h) : (SCR.h / 2 / t) * 1.04;
+      const d = heroBox ? (dims.h * heroBox.stageH) / (2 * t * heroBox.h) : (dims.h / 2 / t) * 1.04;
       return { pos: p.clone().add(q.multiplyScalar(d)), look: p };
     }
 
@@ -417,8 +437,9 @@ export default function StudioRoom({
     }
 
     function screenMapping() {
+      const { mesh, dims } = heroTarget();
       camera.updateMatrixWorld();
-      screen.updateMatrixWorld();
+      mesh.updateMatrixWorld();
       const r = canvas!.getBoundingClientRect();
       const xs: number[] = [];
       const ys: number[] = [];
@@ -428,8 +449,8 @@ export default function StudioRoom({
         [1, 1],
         [-1, 1],
       ].forEach(([cx, cy]) => {
-        const v = new THREE.Vector3((cx * SCR.w) / 2, (cy * SCR.h) / 2, 0);
-        screen.localToWorld(v);
+        const v = new THREE.Vector3((cx * dims.w) / 2, (cy * dims.h) / 2, 0);
+        mesh.localToWorld(v);
         v.project(camera);
         xs.push(((v.x + 1) / 2) * r.width);
         ys.push(((1 - v.y) / 2) * r.height);
@@ -873,6 +894,20 @@ export default function StudioRoom({
 
     const objects: InteractiveObj[] = [
       { key: "imac", label: "desktop · back to the screen", hit: [screen], anchor: () => screen, act: () => { playClick(); backToScreen(); } },
+      {
+        key: "phone",
+        // On phones the desk phone is the hero screen; on wide screens it is only a prop.
+        get label() {
+          return isPortrait ? "phone · back to the screen" : "phone · on do not disturb";
+        },
+        hit: [phoneScreen],
+        anchor: () => phoneScreen,
+        act: () => {
+          if (!isPortrait) return;
+          playClick();
+          backToScreen();
+        },
+      },
       { key: "window", label: "window · night mode", hit: [refs.windowHit], anchor: () => refs.windowHit, act: () => { playSwitch(); toggleTheme(); } },
       {
         key: "neon",
@@ -977,7 +1012,9 @@ export default function StudioRoom({
         hitList.push(m);
       });
     });
-    setKeyObjects(objects);
+    // The desk phone stays out of the keyboard list: the iMac entry already returns to the hero on
+    // phones, and on wide screens the phone is only a prop.
+    setKeyObjects(objects.filter((o) => o.key !== "phone"));
 
     const ray = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
