@@ -2231,18 +2231,16 @@ html[data-boot="revealing"] .ln-mbar {
      Dragging the room or the hero doesn't move the page (touch-action below), and StudioRoom
      scrolls back if anything else does. Body stays unclipped, because clipping it cut the canvas
      off at the viewport's bottom. The camera stays framed to the stage, so the extra rows only
-     continue the picture. #lockroot puts the old lock back, to compare. */
+     continue the picture. */
   html:has(#room:not([hidden])) { overscroll-behavior: none; }
-  html[data-lockroot]:has(#room:not([hidden])) { overflow: hidden; }
   .ln-room-hero,
   .ln-stage__canvas { touch-action: none; }
   /* Safari tints the status bar with whatever fixed element touches the viewport's top edge, and
      the phone bar's full-width header did, transparent, so Safari filled in the page's background
      colour there instead of showing the room. In room view the header starts 8px down and the bar
-     loses 8px of top padding, so the pills don't move and the top edge is the room's. #headeredge
-     puts it back on the edge, to compare. */
-  html:not([data-headeredge]):has(#room:not([hidden])) .ln-header { top: 8px; }
-  html:not([data-headeredge]):has(#room:not([hidden])) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
+     loses 8px of top padding, so the pills don't move and the top edge is the room's. */
+  html:has(#room:not([hidden])) .ln-header { top: 8px; }
+  html:has(#room:not([hidden])) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
   html:has(#room:not([hidden])) body::before { display: none; }
   .ln-stage {
     overflow: visible;

@@ -14,7 +14,6 @@ import type { Role } from "@/content/site";
 import { HeroIntro, type HeroData } from "./HeroIntro";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
-import { ViewportDebug } from "./room/ViewportDebug";
 import type { RoomActions } from "./room/StudioRoom";
 import { RoomPeeks, type PeekState } from "./room/RoomPeeks";
 
@@ -187,7 +186,6 @@ export function HomeStudio({
   return (
     <>
       <BootScreen progress={progressRef} ready={bootReady} />
-      <ViewportDebug />
 
       <div className="ln-wrap">
         <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
