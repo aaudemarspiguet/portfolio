@@ -472,26 +472,36 @@ html.ln-locked { overflow: hidden; }
   color: #1d1d1f;
   font: 500 12px var(--font-mono);
 }
-.ln-hint {
+/* First-visit room tour: a note pinned to the top of the stage, and scarlet rings that circle
+   what each step points at (placed by the render loop in StudioRoom). */
+.ln-tour {
   position: absolute;
   top: 14px;
   left: 50%;
   z-index: 6;
   transform: translateX(-50%);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 6px 14px;
   width: max-content;
-  max-width: calc(100% - 28px);
-  padding: 6px 6px 6px 16px;
-  border-radius: var(--radius-pill);
+  max-width: min(640px, calc(100% - 28px));
+  padding: 6px;
+  border-radius: calc(var(--radius-btn) + 6px);
   background: color-mix(in srgb, var(--card) 92%, transparent);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(0, 0, 0, 0.18);
-  font: 500 14px/1.35 var(--font-sans);
-  letter-spacing: -0.01em;
 }
-.ln-hint__link {
+.ln-tour__text {
+  flex: 1 1 260px;
+  margin: 0;
+  padding: 4px 0 4px 10px;
+  font: 500 14px/1.4 var(--font-sans);
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+.ln-tour__link {
   padding: 0;
   border: 0;
   background: none;
@@ -501,26 +511,55 @@ html.ln-locked { overflow: hidden; }
   text-underline-offset: 3px;
   cursor: pointer;
 }
-.ln-hint__link:hover { color: var(--link-hover); }
-.ln-hint__close {
+.ln-tour__link:hover { color: var(--link-hover); }
+.ln-tour__actions {
+  display: flex;
   flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
+  align-items: center;
+  gap: 4px;
+}
+.ln-tour__count {
+  padding: 0 6px;
   color: var(--ink-muted);
-  font: 400 18px/1 var(--font-sans);
-  cursor: pointer;
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
 }
-.ln-hint__close:hover { background: var(--paper-sunk); color: var(--ink); }
+.ln-tour-rings {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ln-tour-ring {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  border: 2px solid var(--scarlet);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(255, 59, 31, 0.45), inset 0 0 10px rgba(255, 59, 31, 0.25);
+}
 @media (prefers-reduced-motion: no-preference) {
-  .ln-hint:not([hidden]) { animation: ln-hint-in .4s ease-out both; }
+  .ln-tour { animation: ln-tour-in .4s ease-out both; }
+  .ln-tour-ring { animation: ln-ring-in .45s cubic-bezier(.2, .9, .3, 1.2) both; }
+  .ln-tour-ring::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--scarlet);
+    border-radius: inherit;
+    animation: ln-ring-pulse 1.8s ease-out .45s infinite;
+  }
 }
-@keyframes ln-hint-in {
+@keyframes ln-tour-in {
   from { opacity: 0; transform: translate(-50%, -6px); }
+}
+@keyframes ln-ring-in {
+  from { opacity: 0; scale: 1.25; }
+}
+@keyframes ln-ring-pulse {
+  from { opacity: 0.7; scale: 1; }
+  to { opacity: 0; scale: 1.18; }
 }
 /* Initial full-viewport boot screen: hides navbar and surrounding stage until room finishes loading */
 .ln-boot {
