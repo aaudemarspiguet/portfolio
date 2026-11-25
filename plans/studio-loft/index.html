@@ -596,8 +596,30 @@ a.iconbtn:hover { color: var(--ink); }
       }
     }
   }, [5, 4]);
-  var floorTex = canvasTex(512, 512, function (g, w, h) {
-    for (var i = 0; i < 8; i++) { var v = 178 + Math.floor(Math.random() * 18); g.fillStyle = "rgb(" + v + "," + (v - 10) + "," + (v - 24) + ")"; g.fillRect(0, i * 64, w, 62); g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(0, i * 64 + 62, w, 2); g.fillRect((i * 173) % w, i * 64, 2, 62); }
+  /* Hardwood: warm oak planks with grain, staggered end joints and dark seams. */
+  var floorTex = canvasTex(1024, 1024, function (g, w, h) {
+    var tones = [[150, 98, 56], [138, 88, 49], [162, 108, 63], [128, 81, 45], [145, 94, 52], [156, 103, 60]];
+    var ph = 64;
+    for (var i = 0; i * ph < h; i++) {
+      var y = i * ph, joints = [], x0 = -((i * 397) % 380);
+      for (var x = x0; x < w; x += 300 + ((i * 131 + x) % 160)) joints.push(x);
+      joints.push(w + 400);
+      for (var j = 0; j < joints.length - 1; j++) {
+        var a = joints[j], b = joints[j + 1], t = tones[(i * 3 + j * 5) % tones.length], k = 0.92 + Math.random() * 0.16;
+        g.fillStyle = "rgb(" + Math.round(t[0] * k) + "," + Math.round(t[1] * k) + "," + Math.round(t[2] * k) + ")";
+        g.fillRect(a, y, b - a, ph);
+        for (var s = 0; s < 14; s++) {
+          var gy = y + 3 + Math.random() * (ph - 6);
+          g.strokeStyle = Math.random() > 0.5 ? "rgba(70,40,18,.22)" : "rgba(210,160,110,.16)";
+          g.lineWidth = 0.6 + Math.random() * 1.4;
+          g.beginPath(); g.moveTo(a, gy);
+          for (var gx = a; gx < b; gx += 40) g.lineTo(gx, gy + Math.sin(gx / (60 + s * 7) + s) * 1.6);
+          g.stroke();
+        }
+        g.fillStyle = "rgba(40,22,10,.55)"; g.fillRect(a, y, 2, ph);
+      }
+      g.fillStyle = "rgba(40,22,10,.6)"; g.fillRect(0, y + ph - 2, w, 2);
+    }
   }, [3, 3]);
   var M = {
     brick: mat(0xffffff, { map: brickTex, flatShading: false }),

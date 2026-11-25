@@ -91,7 +91,7 @@ Units are meters. The camera faces the back wall (−z). x runs left to right as
 
 | Object | Placement and build |
 |---|---|
-| Shell | Floor plane 8×6 at y 0 (procedural wood planks, repeat 3×3). Ceiling at y 3.3. Back wall at z −3 (procedural off-white brick, repeat 5×4). Plaster right wall at x 4. White baseboard 0.12 tall. |
+| Shell | Floor plane 8×6 at y 0: **warm oak hardwood** (decided 2026-11-24, replacing a pale grey plank floor). The texture is procedural, 1024 px square with repeat 3×3. Planks are 64 px tall in six oak tones (RGB 128–162, 81–108, 45–63, each ±8%), with fine wavy grain, end seams staggered every 300–460 px, and dark seams `rgba(40,22,10,.55–.6)`. Ceiling at y 3.3. Back wall at z −3 (procedural off-white brick, repeat 5×4). Plaster right wall at x 4. White baseboard 0.12 tall. |
 | Window | Left wall, x −4. The opening runs z −2.45 to −0.75 and y 0.95 to 2.45. Build the wall from four panels around the opening, so sunlight really comes through. Steel frame, 2×3 panes (one vertical and two horizontal mullions), a sill. Sky plane behind it: `#9fd0ff` by day, `#0d1733` at night, with a moon (radius 0.07) at night only. |
 | L-desk | Back-left corner. White top at y 0.74: one run 2.75 × 0.72 along the back wall, one run 0.72 × 1.5 along the left wall. Thin black legs, a back stretcher. |
 | iMac | Group at (−2.5, 0.76, −2.7), rotated y 0.1. Screen 1.12 × 0.63, with a black bezel, a silver chin 0.11 tall, an angled silver stand and a white keyboard. No logo. |
