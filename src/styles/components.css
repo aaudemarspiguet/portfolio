@@ -46,7 +46,7 @@ body::before {
   top: -60px;
   z-index: 50;
   padding: 8px 14px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--fill-link);
   color: var(--on-link);
   font-size: 14px;
@@ -163,8 +163,9 @@ html[data-view="room"] #plain { display: none; }
   align-items: center;
   gap: 12px;
   height: var(--layout-nav);
-  padding: 0 8px 0 18px;
-  border-radius: var(--radius-pill);
+  /* 6px on the right as above and below, so the 36px capsules nest in the 48px bar (24 - 6 = 18). */
+  padding: 0 6px 0 18px;
+  border-radius: var(--radius-control);
   background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
   -webkit-backdrop-filter: saturate(190%) blur(26px);
   backdrop-filter: saturate(190%) blur(26px);
@@ -187,7 +188,7 @@ html[data-view="room"] #plain { display: none; }
   color: var(--ink-muted);
   text-decoration: none;
   padding: 7px 12px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   transition: color .15s, background-color .15s;
 }
 .ln-nav__item:hover { color: var(--ink); background: var(--paper-sunk); }
@@ -213,7 +214,7 @@ html[data-view="room"] #plain { display: none; }
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -248,7 +249,7 @@ html[data-view="room"] #plain { display: none; }
   margin-top: 72px;
   margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   overflow: hidden;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-panel);
   background: #141519;
   box-shadow: 0 0 0 1px var(--rule);
 }
@@ -270,9 +271,9 @@ html[data-view="room"] #plain { display: none; }
 }
 .ln-stage__bar {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
-  right: 14px;
+  bottom: var(--stage-inset);
+  left: var(--stage-inset);
+  right: var(--stage-inset);
   z-index: 4;
   display: flex;
   flex-wrap: wrap;
@@ -282,13 +283,15 @@ html[data-view="room"] #plain { display: none; }
   pointer-events: none;
 }
 .ln-stage__bar > * { pointer-events: auto; }
+/* The bar's buttons sit in the stage's bottom corner: 24 - 14 = 10. */
+.ln-stage__bar > .ln-btn { border-radius: var(--radius-panel-btn); }
 .ln-deck {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 36px;
-  padding: 0 8px 0 12px;
-  border-radius: var(--radius-pill);
+  padding: 0 6px 0 12px; /* 6px on the right as above and below: 18 - 6 = 12, the buttons' own radius */
+  border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--card) 90%, transparent);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule);
@@ -321,7 +324,7 @@ html[data-view="room"] #plain { display: none; }
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   font: 500 12px/1 var(--font-mono);
@@ -336,7 +339,7 @@ html[data-view="room"] #plain { display: none; }
 .ln-bench {
   margin-left: auto;
   padding: 4px 9px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: rgba(13, 13, 16, 0.78);
   color: #e6edf3;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
@@ -351,7 +354,7 @@ html[data-view="room"] #plain { display: none; }
   transform: translate(-50%, -140%);
   white-space: nowrap;
   padding: 5px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   background: #1d1d1f;
   color: #f4f3ef;
   font: 500 12px/16px var(--font-mono);
@@ -382,7 +385,7 @@ html[data-view="room"] #plain { display: none; }
   clip: auto;
   padding: 0 12px;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: #fff;
   color: #1d1d1f;
   font: 500 12px var(--font-mono);
@@ -402,8 +405,8 @@ html[data-view="room"] #plain { display: none; }
   gap: 6px 14px;
   width: max-content;
   max-width: min(640px, calc(100% - 28px));
-  padding: 6px;
-  border-radius: calc(var(--radius-btn) + 6px);
+  padding: var(--tour-inset);
+  border-radius: var(--radius-tour);
   background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
   -webkit-backdrop-filter: saturate(190%) blur(26px);
   backdrop-filter: saturate(190%) blur(26px);
@@ -565,10 +568,10 @@ html[data-boot="revealing"] .ln-mbar {
 }
 .ln-boot__screen {
   position: absolute;
-  left: 14px;
-  top: 14px;
-  right: 14px;
-  bottom: 14px;
+  left: var(--stage-inset);
+  top: var(--stage-inset);
+  right: var(--stage-inset);
+  bottom: var(--stage-inset);
   border-radius: var(--radius-screen);
   background: var(--paper);
   color: var(--ink);
@@ -623,7 +626,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-boot__dot {
   width: 6px;
   height: 6px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--scarlet);
 }
 .ln-boot__pct {
@@ -721,7 +724,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: block;
   width: 100%;
   height: 4px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--rule);
   overflow: hidden;
 }
@@ -793,7 +796,7 @@ html[data-boot="revealing"] .ln-mbar {
 }
 .ln-typing {
   padding: 10px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-block);
   background: #0d1117;
   color: #e6edf3;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.14);
@@ -846,7 +849,8 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  /* The sheets' radius, so the 40px X nests in the corner at the same 14px inset. */
+  border-radius: var(--radius-sheet);
   background: linear-gradient(180deg, var(--glass-edge), transparent 24px), var(--glass-sheet);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   backdrop-filter: blur(24px) saturate(190%);
@@ -860,7 +864,7 @@ html[data-boot="revealing"] .ln-mbar {
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 8px;
-  padding: 12px 12px 4px;
+  padding: var(--sheet-inset) var(--sheet-inset) 4px;
 }
 .ln-peek__body {
   min-height: 0;
@@ -895,7 +899,7 @@ html[data-boot="revealing"] .ln-mbar {
   max-height: 420px;
   object-fit: contain;
   background: var(--paper-sunk);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-block);
   box-shadow: 0 0 0 1px var(--rule);
 }
 .ln-peek__code {
@@ -922,6 +926,8 @@ html[data-boot="revealing"] .ln-mbar {
   border-top: 1px solid var(--rule);
 }
 .ln-peek__go { display: flex; align-items: center; gap: 12px; }
+/* Footer buttons in a peek card take the same shape as in a sheet's footer. */
+.ln-peek__actions .ln-btn { border-radius: var(--radius-sheet-btn); }
 .ln-peek__icon {
   width: 16px;
   height: 16px;
@@ -950,9 +956,9 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px 8px 12px;
+  padding: var(--tile-inset) var(--tile-inset) 12px;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--card);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--rule);
@@ -973,7 +979,7 @@ html[data-boot="revealing"] .ln-mbar {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   object-position: center top;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-tile-img); /* 16 - 8 = 8 */
   background: var(--paper-sunk);
 }
 .ln-alltile b {
@@ -1023,8 +1029,9 @@ html[data-boot="revealing"] .ln-mbar {
   width: min(980px, 100%);
   max-height: 100%;
   overflow: auto;
-  padding: 14px;
-  border-radius: var(--radius-lg);
+  /* A small monitor, like the stage: 24px outside, and the screen 10px at the 14px inset. */
+  padding: var(--stage-inset);
+  border-radius: var(--radius-panel);
   background: #2a2a2d;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
@@ -1036,7 +1043,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-term .ln-btn:not(.ln-btn--primary):not(.ln-btn--ink):hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .ln-term__screen {
   padding: 22px 24px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-screen);
   background: #0d1117;
   color: #e6edf3;
   font: 400 14px/1.7 var(--font-mono);
@@ -1179,7 +1186,7 @@ html[data-boot="revealing"] .ln-mbar {
   align-items: center;
   justify-content: center;
   padding: clamp(18px, 2.4vw, 28px);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--paper-sunk);
   box-shadow: 0 0 0 1px var(--rule);
   overflow: hidden;
@@ -1198,16 +1205,18 @@ html[data-boot="revealing"] .ln-mbar {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-block);
   box-shadow: 0 0 0 1px var(--rule), 0 12px 28px rgba(0, 0, 0, 0.1);
 }
 .ln-piece--find-the-outfit .ln-piece__frame { flex: 1; }
 .ln-iphone {
   position: relative;
   display: block;
+  --iphone-radius: 38px;
+  --iphone-bezel: 9px;
   width: min(232px, 100%);
-  padding: 9px;
-  border-radius: 38px;
+  padding: var(--iphone-bezel);
+  border-radius: var(--iphone-radius);
   background: #141416;
   box-shadow:
     0 0 0 2px #4e4e54,
@@ -1230,7 +1239,7 @@ html[data-boot="revealing"] .ln-mbar {
   flex-direction: column;
   overflow: hidden;
   aspect-ratio: 390 / 844;
-  border-radius: 30px;
+  border-radius: calc(var(--iphone-radius) - var(--iphone-bezel)); /* 38 - 9 = 29 */
   background: #fcfbf9;
 }
 .ln-iphone__status {
@@ -1395,14 +1404,14 @@ html[data-boot="revealing"] .ln-mbar {
   align-items: start;
   padding: 18px 20px;
   margin-bottom: 28px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
 .ln-school img {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-logo);
   object-fit: cover;
   background: #fff;
 }
@@ -1435,7 +1444,7 @@ html[data-boot="revealing"] .ln-mbar {
   position: relative;
   display: inline-block;
   cursor: help;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   outline-offset: 6px;
 }
 .ln-say__tip {
@@ -1444,7 +1453,7 @@ html[data-boot="revealing"] .ln-mbar {
   bottom: calc(100% + 8px);
   z-index: 4;
   padding: 6px 12px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--ink);
   color: var(--paper);
   font: 500 13px/18px var(--font-sans);
@@ -1470,7 +1479,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-org {
   width: var(--mark, 20px);
   height: var(--mark, 20px);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-logo);
   outline-offset: 3px;
   cursor: default;
 }
@@ -1479,7 +1488,7 @@ html[data-boot="revealing"] .ln-mbar {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-logo);
   background: var(--logo-tile);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
@@ -1521,7 +1530,7 @@ html[data-boot="revealing"] .ln-mbar {
   align-items: center;
   height: 24px;
   padding: 0 10px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--ink);
   color: var(--paper);
   font: 500 12px var(--font-sans);
@@ -1534,7 +1543,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-chip {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--paper-sunk);
   font: 500 13px/20px var(--font-mono);
   letter-spacing: 0;
@@ -1558,8 +1567,8 @@ html[data-boot="revealing"] .ln-mbar {
 }
 
 /* Case-study surfaces and the collage caption type */
-.ln-surface { background: var(--card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--rule); }
-.ln-card__org { flex: none; width: 18px; height: 18px; border-radius: var(--radius-xs); object-fit: cover; }
+.ln-surface { background: var(--card); border-radius: var(--radius-card); box-shadow: 0 0 0 1px var(--rule); }
+.ln-card__org { flex: none; width: 18px; height: 18px; border-radius: var(--radius-logo); object-fit: cover; }
 .ln-card__title {
   margin: 0;
   font-size: 19px;
@@ -1586,7 +1595,7 @@ html[data-boot="revealing"] .ln-mbar {
   margin: 0;
   padding: 0 24px;
   list-style: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
   --mark: 20px;
@@ -1650,7 +1659,7 @@ html[data-boot="revealing"] .ln-mbar {
   flex-direction: column;
   gap: 24px;
   padding: var(--panel-pad);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-panel);
   background: var(--panel);
   color: var(--on-panel);
 }
@@ -1729,7 +1738,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-meta__wide { grid-column: 1 / -1; }
 .ln-diagram { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-6); box-sizing: border-box; font-size: 14px; line-height: 20px; font-weight: 500; }
 @media (max-width: 640px) { .ln-diagram { flex-direction: column; } .ln-diagram__arrow { transform: rotate(90deg); } }
-.ln-diagram__node { padding: 12px 16px; border-radius: var(--radius-md); background: var(--paper-sunk); }
+.ln-diagram__node { padding: 12px 16px; border-radius: var(--radius-block); background: var(--paper-sunk); }
 .ln-diagram__node--model { background: var(--fill-primary); color: var(--on-primary); font-weight: 600; box-shadow: 0 0 0 2px var(--paper-raised), 0 0 0 4px var(--accent), var(--shadow-glow); }
 .ln-diagram__arrow { color: var(--ink-muted); }
 .ln-case__body { padding-top: var(--space-16); display: flex; flex-direction: column; gap: var(--space-16); }
@@ -1801,7 +1810,7 @@ html[data-boot="revealing"] .ln-mbar {
   height: 40px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -1838,7 +1847,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-toast span {
   display: block;
   padding: 8px 14px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
   -webkit-backdrop-filter: saturate(190%) blur(26px);
   backdrop-filter: saturate(190%) blur(26px);
@@ -1853,8 +1862,8 @@ html[data-boot="revealing"] .ln-mbar {
   z-index: 45;
   min-width: 230px;
   max-width: calc(100vw - 16px);
-  padding: 8px;
-  border-radius: 26px;
+  padding: var(--menu-inset);
+  border-radius: var(--radius-menu);
   /* Liquid Glass: a mostly solid lens, a bright rim on top, and a soft light falling inside. */
   background:
     radial-gradient(120% 60% at 50% 0%, var(--glass-edge), transparent 60%),
@@ -1884,7 +1893,7 @@ html[data-boot="revealing"] .ln-mbar {
   min-height: 44px;
   padding: 8px 12px;
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-menu-item); /* 26 - 8 = 18, so a highlighted row nests in the menu */
   background: transparent;
   color: var(--ink);
   font: 400 17px/1.25 var(--font-sans);
@@ -1925,7 +1934,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 34px;
+  border-radius: var(--radius-sheet);
   isolation: isolate;
   /* Its own layer from the first frame, so Safari blurs it while it rises. */
   will-change: transform;
@@ -1960,7 +1969,8 @@ html[data-boot="revealing"] .ln-mbar {
   grid-template-columns: 44px minmax(0, 1fr) minmax(44px, auto);
   align-items: center;
   gap: 8px;
-  padding: 16px 12px 8px;
+  /* The X and the stepper sit 14px from the top and sides: 34 - 14 = 20, half their 40px height. */
+  padding: var(--sheet-inset) var(--sheet-inset) 8px;
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -1973,7 +1983,7 @@ html[data-boot="revealing"] .ln-mbar {
   width: 36px;
   height: 5px;
   margin-left: -18px;
-  border-radius: 3px;
+  border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--ink) 24%, transparent);
 }
 @media (min-width: 641px) {
@@ -2010,7 +2020,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-gsheet--case .ln-gsheet__head { grid-template-columns: 84px minmax(0, 1fr) 84px; }
 .ln-gsheet__stepper {
   display: inline-flex;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
 }
 .ln-gsheet__stepper .ln-gbtn { width: 40px; height: 40px; }
 .ln-gsheet__stepper .ln-gbtn svg { width: 18px; height: 18px; stroke-width: 2.2; }
@@ -2030,9 +2040,11 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 16px 16px;
+  padding: 12px var(--sheet-foot-inset) var(--sheet-foot-inset);
   border-top: 1px solid var(--rule);
 }
+/* Footer buttons sit in the sheet's bottom corners: 34 - 16 = 18. */
+.ln-gsheet__foot .ln-btn { border-radius: var(--radius-sheet-btn); }
 /* The room's peeks inside a sheet keep their production type. */
 .ln-gsheet__body h2 {
   margin: 0;
@@ -2052,7 +2064,7 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-gsheet--term .ln-gsheet__x { color: #e6edf3; background: rgba(255, 255, 255, 0.1); }
 .ln-gsheet--term .ln-gsheet__title { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; }
 .ln-gsheet--term .ln-gsheet__body { padding: 0; }
-.ln-gsheet--term .ln-term__screen { padding: 8px 20px 28px; font-size: 13px; }
+.ln-gsheet--term .ln-term__screen { padding: 8px 20px 28px; font-size: 13px; border-radius: 0; } /* fills the sheet, which rounds and clips it */
 
 /* About: Me and Background as two pages under one segmented control. */
 .ln-aboutpages { display: flex; flex-direction: column; gap: 20px; }
@@ -2066,13 +2078,13 @@ html[data-boot="revealing"] .ln-mbar {
   gap: 2px;
   width: min(320px, 100%);
   padding: 2px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--paper-sunk);
 }
 .ln-seg button {
   height: 32px;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   font: 500 14px var(--font-sans);
@@ -2120,7 +2132,7 @@ html[data-boot="revealing"] .ln-mbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
@@ -2161,7 +2173,7 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-mbar__title,
   .ln-mbar__end {
     height: 44px;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-control);
     background: linear-gradient(180deg, var(--glass-edge), transparent 55%), var(--glass);
     -webkit-backdrop-filter: saturate(190%) blur(26px);
     backdrop-filter: saturate(190%) blur(26px);
