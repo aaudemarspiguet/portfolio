@@ -1457,6 +1457,31 @@ export default function StudioRoom({
     let dragged = false;
     let pinchDist = 0;
 
+    // Phones have no hover, so pressing and holding an object shows its label instead. A plain tap
+    // still acts straight away; a hold shows the label and the lift that ends it doesn't act.
+    const HOLD_MS = 450;
+    let holdTimer: ReturnType<typeof setTimeout> | null = null;
+    let holdTagTimer: ReturnType<typeof setTimeout> | null = null;
+    let held = false;
+    function cancelHold() {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    function startHold(x: number, y: number) {
+      cancelHold();
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        if (dragged || touchCount !== 1 || !entered || busy || peekRef.current) return;
+        const o = raycastAt(x, y);
+        if (!o) return;
+        held = true;
+        if (holdTagTimer) clearTimeout(holdTagTimer);
+        const r = canvas!.getBoundingClientRect();
+        // Lifted clear of the fingertip, which would cover a label placed right at the touch.
+        showTag(o, x - r.left, y - r.top - 36);
+      }, HOLD_MS);
+    }
+
     function touchSpread(touches: TouchList) {
       return touches.length >= 2
         ? Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
@@ -1482,12 +1507,16 @@ export default function StudioRoom({
         touchCount = e.touches.length;
         pinchDist = touchSpread(e.touches);
         dragged = false;
+        held = false;
+        if (e.touches.length === 1) startHold(m.x, m.y);
+        else cancelHold();
       }
     }
 
     function onTouchMove(e: TouchEvent) {
       if (!entered || busy || peekRef.current || !touchLast) return;
       if (e.touches.length !== touchCount) {
+        cancelHold();
         touchLast = touchMid(e.touches);
         touchCount = e.touches.length;
         pinchDist = touchSpread(e.touches);
@@ -1498,6 +1527,7 @@ export default function StudioRoom({
       const dy = m.y - touchLast.y;
       if (touchOrigin && Math.hypot(m.x - touchOrigin.x, m.y - touchOrigin.y) > 6) {
         dragged = true;
+        cancelHold();
       }
       if (touchCount === 2) {
         // Two fingers both pan (midpoint) and pinch (spread).
@@ -1507,14 +1537,23 @@ export default function StudioRoom({
       }
       if (dragged || touchCount === 2) {
         e.preventDefault();
-        // nudge() takes wheel-style deltas, and a finger's vertical motion is the reverse of a
-        // trackpad's deltaY, so flip dy: dragging up or down now matches the trackpad.
-        nudge(dx, -dy);
+        // Inverted on touch, both ways: the view follows the finger, as if dragging the room
+        // itself, rather than steering the camera like a trackpad.
+        nudge(-dx, dy);
       }
       touchLast = m;
     }
 
     function onTouchEnd(e: TouchEvent) {
+      cancelHold();
+      if (held && e.touches.length === 0) {
+        // Leave the label up a moment after the finger lifts, so it can be read.
+        if (holdTagTimer) clearTimeout(holdTagTimer);
+        holdTagTimer = setTimeout(() => {
+          holdTagTimer = null;
+          if (!hovered) hideTag();
+        }, 1600);
+      }
       if (e.touches.length === 0) {
         touchOrigin = null;
         touchLast = null;
@@ -1560,12 +1599,21 @@ export default function StudioRoom({
         dragged = false;
         return;
       }
+      if (held) {
+        held = false;
+        return;
+      }
       if (!entered || busy || peekRef.current) return;
       const targetObj = hovered ?? raycastAt(e.clientX, e.clientY);
       if (targetObj) {
         hideTag();
         targetObj.act();
       }
+    }
+
+    // A long press would otherwise open the browser's own menu over the canvas.
+    function onCanvasContextMenu(e: Event) {
+      e.preventDefault();
     }
 
     /* Hero wheel & swipe to enter */
@@ -1606,6 +1654,7 @@ export default function StudioRoom({
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerleave", onPointerLeave);
     canvas.addEventListener("click", onCanvasClick);
+    canvas.addEventListener("contextmenu", onCanvasContextMenu);
     window.addEventListener("blur", onWindowBlur);
     hero.addEventListener("wheel", onHeroWheel, { passive: false });
     hero.addEventListener("touchstart", onHeroTouchStart, { passive: true });
@@ -1872,6 +1921,9 @@ export default function StudioRoom({
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.removeEventListener("click", onCanvasClick);
+      canvas.removeEventListener("contextmenu", onCanvasContextMenu);
+      cancelHold();
+      if (holdTagTimer) clearTimeout(holdTagTimer);
       hero.removeEventListener("wheel", onHeroWheel);
       hero.removeEventListener("touchstart", onHeroTouchStart);
       hero.removeEventListener("touchmove", onHeroTouchMove);
