@@ -47,11 +47,12 @@ function resolveObjLabel(o: InteractiveObj, isDark: boolean): string {
 }
 
 /**
- * The first-visit tour: a few steps, each circling objects in the room (by their registry key)
- * while a note at the top of the stage says what they do. `canvases` circles every project canvas.
+ * The first-visit tour: a few steps, each spotlighting objects in the room (by their registry key)
+ * while the rest dims and a note at the top of the stage says what they do. `canvases` lights every
+ * project canvas.
  */
 type TourStep = {
-  rings: (portrait: boolean) => string[];
+  focus: (portrait: boolean) => string[];
   canvases?: boolean;
   text: (portrait: boolean) => string;
   /** Ends the text with a link to the plain view. */
@@ -61,28 +62,28 @@ type TourStep = {
 const TOUR_STEPS: TourStep[] = [
   {
     canvases: true,
-    rings: () => [],
+    focus: () => [],
     text: () => "My projects hang on the wall. Click a canvas to open it.",
   },
   {
     // On phones the desk phone is the way back to the hero; on wide screens it's the iMac.
-    rings: (portrait) => [portrait ? "phone" : "imac"],
+    focus: (portrait) => [portrait ? "phone" : "imac"],
     text: (portrait) => `The ${portrait ? "phone" : "desktop"} takes you back to the start screen.`,
   },
   {
-    // A phone's narrow frame can't hold the whole room, so it circles the two toys that sit together.
-    rings: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
+    // A phone's narrow frame can't hold the whole room, so it lights the two toys that sit together.
+    focus: (portrait) => (portrait ? ["turntable", "rack"] : ["neon", "guitar", "rack", "turntable"]),
     text: (portrait) =>
       portrait
         ? "Most things do something. Spin a record, jam on the synths, then look around for more."
         : "Most things do something. Flick the neon, strum the guitar, jam on the synths or spin a record.",
   },
   {
-    rings: () => ["window"],
+    focus: () => ["window"],
     text: () => "The window switches the room between day and night.",
   },
   {
-    rings: () => [],
+    focus: () => [],
     text: () => "That's the tour. Hover around for the rest, or read the",
     plainLink: true,
   },
@@ -148,7 +149,6 @@ export default function StudioRoom({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLDivElement>(null);
-  const ringsRef = useRef<HTMLDivElement>(null);
 
   const [enteredState, setEnteredState] = useState(false);
   const [tour, setTour] = useState<{ step: number; portrait: boolean } | null>(null);
@@ -613,45 +613,153 @@ export default function StudioRoom({
     }
 
     /* First-visit tour */
-    // Each ring circles one object: its world-space box is fixed for the step, and the render
-    // loop projects it to the stage every time the camera moves.
+    // Each step spotlights its objects: the room dims except for a soft glow that follows each
+    // object's outline. A half-size pass draws the targets white over a black copy of the room (so
+    // anything standing in front of them still blocks the light), and a full-screen quad dims every
+    // pixel that the blurred mask doesn't cover.
+    const TOUR_LAYER = 7;
+    const FOCUS_DIM = 0.62;
     let tourStep = -1;
     let tourTimer: ReturnType<typeof setTimeout> | null = null;
-    let tourRings: { el: HTMLDivElement; box: THREE.Box3; css: string }[] = [];
-    let ringsDirty = false;
-    const ringCorner = new THREE.Vector3();
+    let focusTargets: THREE.Object3D[] = [];
+    const focus = { cur: 0, want: 0 };
 
-    function clearRings() {
-      tourRings.forEach((r) => r.el.remove());
-      tourRings = [];
+    const maskRT = new THREE.WebGLRenderTarget(1, 1);
+    const maskBlack = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const maskWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const dimMat = new THREE.ShaderMaterial({
+      uniforms: {
+        tMask: { value: maskRT.texture },
+        uTexel: { value: new THREE.Vector2(1, 1) },
+        uRadius: { value: 8 },
+        uAlpha: { value: 0 },
+      },
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+      fragmentShader: `
+        uniform sampler2D tMask;
+        uniform vec2 uTexel;
+        uniform float uRadius;
+        uniform float uAlpha;
+        varying vec2 vUv;
+        void main() {
+          float c = texture2D(tMask, vUv).r;
+          // Three staggered rings of taps, weighted toward the centre: a cheap soft blur that spreads
+          // the silhouette into a glow past its edge.
+          float sum = 0.0;
+          float total = 0.0;
+          for (int ring = 1; ring <= 3; ring++) {
+            float r = float(ring) / 3.0;
+            float w = 1.25 - r;
+            for (int i = 0; i < 16; i++) {
+              float a = (float(i) + 0.5 * float(ring)) * 0.3926991;
+              vec2 d = vec2(cos(a), sin(a)) * uTexel * uRadius * r;
+              sum += texture2D(tMask, vUv + d).r * w;
+              total += w;
+            }
+          }
+          float lit = max(c, smoothstep(0.0, 0.5, sum / total));
+          gl_FragColor = vec4(0.03, 0.03, 0.045, uAlpha * (1.0 - lit));
+        }
+      `,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const dimQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), dimMat);
+    dimQuad.frustumCulled = false;
+    const dimScene = new THREE.Scene();
+    dimScene.add(dimQuad);
+    const dimCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const clearColor = new THREE.Color();
+
+    function sizeFocusMask() {
+      const db = renderer.getDrawingBufferSize(new THREE.Vector2());
+      const w = Math.max(1, db.x >> 1);
+      const h = Math.max(1, db.y >> 1);
+      maskRT.setSize(w, h);
+      dimMat.uniforms.uTexel.value.set(1 / w, 1 / h);
+      // About 16 CSS pixels of glow, in half-size mask pixels.
+      dimMat.uniforms.uRadius.value = (16 * dpr) / 2;
+    }
+
+    // Click targets are invisible boxes; the mask passes swap every material, so they'd be drawn.
+    // Skip them, and light a hit box's parent (the guitar, the record player) instead of the box.
+    function isHitBox(o: THREE.Object3D) {
+      const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
+      return Boolean((o as THREE.Mesh).isMesh && mat && !Array.isArray(mat) && !mat.visible);
+    }
+    let hitBoxes: THREE.Object3D[] | null = null;
+    function visualOf(o: THREE.Object3D) {
+      return isHitBox(o) && o.parent && o.parent !== scene ? o.parent : o;
+    }
+
+    function setFocusTargets(next: THREE.Object3D[]) {
+      focusTargets.forEach((o) => o.traverse((c) => c.layers.disable(TOUR_LAYER)));
+      focusTargets = next;
+      focusTargets.forEach((o) => o.traverse((c) => c.layers.enable(TOUR_LAYER)));
+    }
+
+    function drawFocus() {
+      if (focus.cur <= 0.001) return;
+      const bg = scene.background;
+      const autoClear = renderer.autoClear;
+      renderer.getClearColor(clearColor);
+      const clearAlpha = renderer.getClearAlpha();
+      if (!hitBoxes) {
+        const found: THREE.Object3D[] = [];
+        scene.traverse((o) => {
+          if (isHitBox(o) && o.visible) found.push(o);
+        });
+        hitBoxes = found;
+      }
+      hitBoxes.forEach((o) => (o.visible = false));
+      scene.background = null;
+      renderer.setRenderTarget(maskRT);
+      renderer.setClearColor(0x000000, 1);
+      renderer.clear();
+      renderer.autoClear = false;
+      scene.overrideMaterial = maskBlack;
+      renderer.render(scene, camera);
+      scene.overrideMaterial = maskWhite;
+      camera.layers.set(TOUR_LAYER);
+      renderer.render(scene, camera);
+      camera.layers.set(0);
+      scene.overrideMaterial = null;
+      hitBoxes.forEach((o) => (o.visible = true));
+      scene.background = bg;
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(clearColor, clearAlpha);
+      dimMat.uniforms.uAlpha.value = focus.cur;
+      renderer.render(dimScene, dimCam);
+      renderer.autoClear = autoClear;
+    }
+
+    function clearFocus() {
+      // The targets stay lit while the dim fades out; the render loop drops them once it's gone.
+      focus.want = 0;
+      needsFrame = true;
     }
 
     function showTourStep(i: number) {
       const step = TOUR_STEPS[i];
       if (!step) return;
       tourStep = i;
-      clearRings();
-      const keys = step.rings(isPortrait);
-      // The project canvases share one ring (their halos light up too); every other object gets its own.
-      const boxes: THREE.Box3[] = keys.flatMap((k) =>
-        (objects.find((o) => o.key === k)?.hit ?? []).map((m) => new THREE.Box3().setFromObject(m)),
-      );
-      if (step.canvases) {
-        const wall = new THREE.Box3();
-        roomProjects.forEach(({ project }) => wall.expandByObject(canvasMeshes[project.slug].face));
-        boxes.unshift(wall);
+      const keys = step.focus(isPortrait);
+      const meshes: THREE.Object3D[] = [
+        ...(step.canvases ? roomProjects.map(({ project }) => canvasMeshes[project.slug].face) : []),
+        ...keys.flatMap((k) => (objects.find((o) => o.key === k)?.hit ?? []).map(visualOf)),
+      ];
+      if (meshes.length) {
+        setFocusTargets(meshes);
+        focus.want = FOCUS_DIM;
+      } else {
+        clearFocus();
       }
       const centre = new THREE.Vector3();
-      boxes.forEach((box) => {
-        const el = document.createElement("div");
-        el.className = "ln-tour-ring";
-        ringsRef.current?.appendChild(el);
-        tourRings.push({ el, box, css: "" });
-        centre.add(box.getCenter(new THREE.Vector3()));
-      });
-      // Turn the view toward what this step circles, so it's in frame on a narrow stage.
-      if (boxes.length && look.resting) {
-        centre.divideScalar(boxes.length);
+      meshes.forEach((m) => centre.add(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())));
+      // Turn the view toward what this step lights, so it's in frame on a narrow stage.
+      if (meshes.length && look.resting) {
+        centre.divideScalar(meshes.length);
         const base = new THREE.Vector3().subVectors(WIDE.look, WIDE.pos);
         const to = new THREE.Vector3().subVectors(centre, WIDE.pos);
         // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
@@ -664,46 +772,8 @@ export default function StudioRoom({
         look.dragYaw = 0;
         look.dragPitch = 0;
       }
-      ringsDirty = true;
       needsFrame = true;
       setTour({ step: i, portrait: isPortrait });
-    }
-
-    function placeRings() {
-      const w = canvas!.clientWidth;
-      const h = canvas!.clientHeight;
-      tourRings.forEach((r) => {
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-        let behind = false;
-        for (let c = 0; c < 8; c++) {
-          ringCorner.set(
-            c & 1 ? r.box.max.x : r.box.min.x,
-            c & 2 ? r.box.max.y : r.box.min.y,
-            c & 4 ? r.box.max.z : r.box.min.z,
-          );
-          ringCorner.project(camera);
-          if (ringCorner.z > 1) behind = true;
-          const x = ((ringCorner.x + 1) / 2) * w;
-          const y = ((1 - ringCorner.y) / 2) * h;
-          minX = Math.min(minX, x);
-          maxX = Math.max(maxX, x);
-          minY = Math.min(minY, y);
-          maxY = Math.max(maxY, y);
-        }
-        // An ellipse through a box's corners is √2 times the box, so the circle clears the object.
-        const rw = (maxX - minX) * 1.32 + 16;
-        const rh = (maxY - minY) * 1.32 + 16;
-        const css = behind
-          ? "display:none"
-          : `left:${((minX + maxX) / 2).toFixed(1)}px;top:${((minY + maxY) / 2).toFixed(1)}px;width:${rw.toFixed(1)}px;height:${rh.toFixed(1)}px`;
-        if (css !== r.css) {
-          r.el.style.cssText = css;
-          r.css = css;
-        }
-      });
     }
 
     function queueTour() {
@@ -727,7 +797,7 @@ export default function StudioRoom({
       }
       tourStep = -1;
       pausedStep = -1;
-      clearRings();
+      clearFocus();
       setTour(null);
     }
 
@@ -742,7 +812,7 @@ export default function StudioRoom({
       if (tourStep < 0) return;
       pausedStep = tourStep;
       tourStep = -1;
-      clearRings();
+      clearFocus();
       setTour(null);
     }
 
@@ -1476,6 +1546,7 @@ export default function StudioRoom({
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
       renderer.setSize(r.width, r.height, false);
+      sizeFocusMask();
       camera.aspect = aspect;
       baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
       applyFov();
@@ -1649,6 +1720,13 @@ export default function StudioRoom({
         }
       });
 
+      if (focus.cur !== focus.want) {
+        focus.cur += (focus.want - focus.cur) * (reduced ? 1 : 0.14);
+        if (Math.abs(focus.want - focus.cur) < 0.004) focus.cur = focus.want;
+        if (focus.cur === 0) setFocusTargets([]);
+        animating = true;
+      }
+
       if (animating || needsFrame || (ambient && now - lastDraw > 32)) {
         const tRender0 = benchMode ? performance.now() : 0;
         if (shadowDirty) {
@@ -1659,8 +1737,7 @@ export default function StudioRoom({
         renderer.render(scene, camera);
         needsFrame = false;
         lastDraw = now;
-        // Rendering refreshed the camera matrices, so the tour rings can follow it.
-        ringsDirty = tourRings.length > 0;
+        drawFocus();
 
         if (benchMode) {
           benchFrames++;
@@ -1676,10 +1753,6 @@ export default function StudioRoom({
         }
       }
 
-      if (ringsDirty) {
-        ringsDirty = false;
-        placeRings();
-      }
     }
 
     resize();
@@ -1706,7 +1779,7 @@ export default function StudioRoom({
       if (fontTimer) clearTimeout(fontTimer);
       cancelAnimationFrame(rafId);
       if (tourTimer) clearTimeout(tourTimer);
-      clearRings();
+      clearFocus();
       if (clockTimer) clearTimeout(clockTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       registerActions(null);
@@ -1743,6 +1816,12 @@ export default function StudioRoom({
       hero.removeAttribute("data-gone");
       clearHeroStyle();
       disposeRoomScene(scene);
+      setFocusTargets([]);
+      maskRT.dispose();
+      maskBlack.dispose();
+      maskWhite.dispose();
+      dimMat.dispose();
+      dimQuad.geometry.dispose();
       renderer.dispose();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
@@ -1823,8 +1902,6 @@ export default function StudioRoom({
       </div>
 
       <div ref={tagRef} className="ln-tag" hidden />
-
-      <div ref={ringsRef} className="ln-tour-rings" aria-hidden="true" />
 
       {tour && (
         <div className="ln-tour" role="region" aria-label="Room tour">

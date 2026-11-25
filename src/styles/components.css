@@ -472,8 +472,8 @@ html.ln-locked { overflow: hidden; }
   color: #1d1d1f;
   font: 500 12px var(--font-mono);
 }
-/* First-visit room tour: a note pinned to the top of the stage, and scarlet rings that circle
-   what each step points at (placed by the render loop in StudioRoom). */
+/* First-visit room tour: a note pinned to the top of the stage. The spotlight on what each step
+   points at is drawn in the 3D scene (StudioRoom). */
 .ln-tour {
   position: absolute;
   top: 14px;
@@ -525,41 +525,11 @@ html.ln-locked { overflow: hidden; }
   letter-spacing: 0;
   white-space: nowrap;
 }
-.ln-tour-rings {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  overflow: hidden;
-  pointer-events: none;
-}
-.ln-tour-ring {
-  position: absolute;
-  transform: translate(-50%, -50%) rotate(-3deg);
-  border: 2px solid var(--scarlet);
-  border-radius: 50%;
-  box-shadow: 0 0 14px rgba(255, 59, 31, 0.45), inset 0 0 10px rgba(255, 59, 31, 0.25);
-}
 @media (prefers-reduced-motion: no-preference) {
   .ln-tour { animation: ln-tour-in .4s ease-out both; }
-  .ln-tour-ring { animation: ln-ring-in .45s cubic-bezier(.2, .9, .3, 1.2) both; }
-  .ln-tour-ring::after {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    border: 2px solid var(--scarlet);
-    border-radius: inherit;
-    animation: ln-ring-pulse 1.8s ease-out .45s infinite;
-  }
 }
 @keyframes ln-tour-in {
   from { opacity: 0; transform: translate(-50%, -6px); }
-}
-@keyframes ln-ring-in {
-  from { opacity: 0; scale: 1.25; }
-}
-@keyframes ln-ring-pulse {
-  from { opacity: 0.7; scale: 1; }
-  to { opacity: 0; scale: 1.18; }
 }
 /* Initial full-viewport boot screen: hides navbar and surrounding stage until room finishes loading */
 .ln-boot {
