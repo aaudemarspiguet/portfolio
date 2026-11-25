@@ -27,8 +27,12 @@ const neonderthaw = Neonderthaw({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: { default: `${site.name} – Portfolio`, template: `%s · ${site.name}` },
   description: site.description,
+  // Link previews (iMessage, LinkedIn, Slack). The image comes from opengraph-image.tsx beside this file.
+  openGraph: { type: "website", siteName: site.name, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
   // Production is indexed. Dev and preview builds are not.
   robots: { index: !isPreviewEnv, follow: !isPreviewEnv },
 };

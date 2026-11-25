@@ -41,6 +41,8 @@ export const site = {
   name: "Amogh Paruvelli",
   /** Nav wordmark (#5). */
   brand: "amoghmade.dev",
+  /** Canonical origin. The apex redirects here, so link previews point at it directly. */
+  url: "https://www.amoghmade.dev",
   role: "Software Engineer",
   city: "Madison, WI",
   availability: "Graduating December 2026",
