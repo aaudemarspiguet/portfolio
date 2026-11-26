@@ -1935,17 +1935,26 @@ html[data-boot="revealing"] .ln-mbar {
 
 /* Swipe-up sheets: X in the top-left corner, dragged by the header, resting at detents. */
 .ln-peek--sheet { display: contents; }
-.ln-gsheet-layer { position: fixed; inset: 0; z-index: 40; }
+/* The scrim is part of the page (Sheet renders it into body, as tall as the page) and the sheet is
+   fixed but floats clear of the screen's edges, so nothing fixed touches the top or bottom edge
+   while a sheet is open. Safari colours its status bar and toolbar strips from a fixed element on
+   those edges, and a full-screen fixed layer turned both strips the page colour over the room. */
 .ln-gsheet__scrim {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 39;
+  touch-action: none;
   background: rgba(0, 0, 0, 0.28);
   transition: opacity .32s cubic-bezier(0.32, 0.72, 0, 1);
 }
 /* Sheets float: a gap on the sides and below, and every corner rounded, as in iOS 26. */
 .ln-gsheet {
   --gsheet-gap: max(10px, env(safe-area-inset-bottom, 0px));
-  position: absolute;
+  position: fixed;
+  z-index: 40;
   left: max(10px, env(safe-area-inset-left, 0px));
   right: max(10px, env(safe-area-inset-right, 0px));
   bottom: var(--gsheet-gap);
@@ -1976,7 +1985,7 @@ html[data-boot="revealing"] .ln-mbar {
 }
 .ln-gsheet--term::after { display: none; }
 .ln-gsheet[data-dragging] { transition: none; }
-.ln-gsheet-layer:has(.ln-gsheet[data-dragging]) .ln-gsheet__scrim { transition: none; }
+.ln-gsheet__scrim[data-dragging] { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .ln-gsheet,
   .ln-gsheet__scrim { transition: none; }

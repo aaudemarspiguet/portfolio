@@ -11,6 +11,7 @@ import {
   type ReactNode,
   type UIEvent,
 } from "react";
+import { createPortal } from "react-dom";
 
 /** Visible heights (px) the sheet rests at, smallest first. `max` is the tallest it can be. */
 export type DetentFn = (viewportHeight: number, max: number) => number[];
@@ -63,6 +64,7 @@ export function Sheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const [rests, setRests] = useState<number[]>([]);
   const [max, setMax] = useState(0);
+  const [docH, setDocH] = useState(0);
   const [visible, setVisible] = useState(0);
   const [index, setIndex] = useState(initial);
   const [dragging, setDragging] = useState(false);
@@ -82,6 +84,7 @@ export function Sheet({
     const list = detents(window.innerHeight, cap).map((h) => Math.min(cap, Math.max(0, h)));
     setMax(cap);
     setRests(list);
+    setDocH(document.documentElement.scrollHeight);
     return list;
   }, [detents]);
 
@@ -211,9 +214,21 @@ export function Sheet({
   const solid = max > smallest ? Math.min(1, Math.max(0, (visible - smallest) / (max - smallest))) : 0;
   const scrim = max ? Math.min(1, visible / max) : 0;
 
-  return (
-    <div className="ln-gsheet-layer">
-      <div className="ln-gsheet__scrim" style={{ opacity: scrim }} onClick={close} aria-hidden="true" />
+  // Rendered into body, so the sheet stacks above everything whoever opens it (the ⋯ menu's
+  // record player lives inside the fixed header). The dimming lies on the page as tall as the page,
+  // not fixed to the screen: Safari colours the strips under its status bar and toolbar from a
+  // fixed element that touches the screen's edge, so a fixed full-screen scrim turned both strips
+  // the page colour while a sheet was open. As part of the page it dims the room under both bars
+  // too, the way scrolled content shows there.
+  const ui = (
+    <>
+      <div
+        className="ln-gsheet__scrim"
+        style={{ opacity: scrim, height: docH || undefined }}
+        data-dragging={dragging ? "" : undefined}
+        onClick={close}
+        aria-hidden="true"
+      />
       <div
         ref={sheetRef}
         className={`ln-gsheet ${className}`.trim()}
@@ -256,6 +271,8 @@ export function Sheet({
         </div>
         {footer && <div className="ln-gsheet__foot">{footer}</div>}
       </div>
-    </div>
+    </>
   );
+
+  return typeof document === "undefined" ? ui : createPortal(ui, document.body);
 }
