@@ -22,6 +22,7 @@ import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
+import { isParked, parkContext, restoreParked } from "@/lib/glContext";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -163,6 +164,8 @@ export default function StudioRoom({
   const [benchText, setBenchText] = useState<string | null>(null);
   const [trackIndex, setTrackIndex] = useState(0);
   const [deckPlaying, setDeckPlaying] = useState(false);
+  // Bumped when a parked WebGL context comes back, so the room's setup runs again on it.
+  const [glGen, setGlGen] = useState(0);
   const isFinePointer = useSyncExternalStore(subscribeFinePointer, getFinePointerSnapshot, () => false);
 
   const peekRef = useRef<PeekState>(peek);
@@ -219,6 +222,15 @@ export default function StudioRoom({
     const hero = heroRef.current;
     const heroScreenEl = heroScreenRef.current;
     if (!canvas || !stage || !hero || !heroScreenEl) return;
+    // Back on the home page after another route: the canvas is the same one, and its context was
+    // handed back when the room stopped. Bring it back first; three.js can't start on a lost one.
+    if (isParked(canvas)) {
+      return restoreParked(
+        canvas,
+        () => setGlGen((g) => g + 1),
+        () => callbacksRef.current.onWebglFailed(),
+      );
+    }
     // The hero is shared with plain view, where it's the page's first block and the room is asleep.
     const inPlain = () => document.documentElement.dataset.view === "plain";
 
@@ -2007,10 +2019,18 @@ export default function StudioRoom({
       dimMat.dispose();
       dimQuad.geometry.dispose();
       renderer.dispose();
-      // Hand the WebGL context back now, not whenever the garbage collector gets to it.
-      renderer.forceContextLoss();
+      // Hand the WebGL context back now, not whenever the garbage collector gets to it. It's parked
+      // rather than thrown away: when Next only hides the home page (Activity), the canvas stays
+      // and the next setup asks for this context back (lib/glContext).
+      parkContext(canvas, renderer.getContext());
+      // The room starts over at the screen next time, so nothing here may say it's still inside,
+      // touring, playing or showing a peek.
+      setEnteredState(false);
+      setTour(null);
+      setDeckPlaying(false);
+      callbacksRef.current.onClosePeekState();
     };
-  }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
+  }, [projects, stageRef, heroRef, heroScreenRef, registerActions, glGen]);
 
   // Tell the phone bar what the room is doing.
   useEffect(() => {
