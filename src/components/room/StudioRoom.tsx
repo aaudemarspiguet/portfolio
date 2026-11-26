@@ -521,12 +521,17 @@ export default function StudioRoom({
       camera.lookAt(cam.look);
     }
 
+    let returning: (() => void)[] | null = null;
     function moveTo(
       t: { pos: THREE.Vector3; look: THREE.Vector3 },
       ms: number,
       done?: () => void,
       step?: (e: number, k: number) => void,
     ) {
+      // The ride back to the start screen ends by handing over to whatever asked for it (plain
+      // view, the terminal). A new move would drop that hand-over and strand the start screen half
+      // way, so nothing replaces it.
+      if (returning) return;
       if (reduced || !ms) {
         setCam(t);
         renderOnce();
@@ -925,6 +930,11 @@ export default function StudioRoom({
     }
 
     function backToScreen(after?: () => void) {
+      // Already on the way back: run this one's hand-over too when the ride ends.
+      if (returning) {
+        if (typeof after === "function") returning.push(after);
+        return;
+      }
       callbacksRef.current.onClosePeekState();
       hideTag();
       if (!entered) {
@@ -938,6 +948,8 @@ export default function StudioRoom({
       // tucks the tour away; entering the room again picks it up at the next step.
       pauseTour();
       const finish = () => {
+        const queued = returning ?? [];
+        returning = null;
         entered = false;
         setEnteredState(false);
         hero?.removeAttribute("data-gone");
@@ -945,6 +957,7 @@ export default function StudioRoom({
         clearHeroStyle();
         heroScreenEl?.focus({ preventScroll: true });
         if (typeof after === "function") after();
+        queued.forEach((fn) => fn());
       };
       if (reduced) {
         moveTo(closeUp(), 0, finish);
@@ -960,6 +973,7 @@ export default function StudioRoom({
       moveTo(closeUp(), 1400, finish, (_e, k) => {
         placeHero(screenMapping(), 1 - smoothstep(0.65, 1, k), smoothstep(0.2, 0.6, k));
       });
+      returning = [];
     }
 
     function openCase(project: HomeProject, swapDir?: 1 | -1) {

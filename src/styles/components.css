@@ -179,9 +179,11 @@ html[data-view="plain"] #hero .ln-room-hero__screen {
 }
 
 /* Top bar (matches plans/studio-loft-handoff.md Section 5) */
+/* Above the sheet layer (40): the bar stays live while a sheet is open, so the toggle and the
+   section menu work there too. Sheets stop short of the bar, so nothing is hidden behind it. */
 .ln-header {
   position: fixed;
-  z-index: 30;
+  z-index: 41;
   top: env(safe-area-inset-top, 0px);
   left: 50%;
   transform: translateX(-50%);
