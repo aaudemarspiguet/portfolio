@@ -1667,10 +1667,15 @@ export default function StudioRoom({
     // the viewport's). The phone CSS gives the stage that much page above and below and runs the
     // canvas under both bars; keeping the page scrolled down by it puts the stage exactly in the
     // viewport, with real room above it under the status bar and below it under the toolbar.
-    const phoneMq = window.matchMedia("(max-width: 640px)");
+    // Only where the browser draws the page under its own bars once it's scrolled: iOS WebKit (every
+    // iPhone browser uses it) on a phone-width touch screen. Android Chrome and desktop have solid
+    // bars, so there --bars stays unset and the stage is a plain 100svh, exactly as on main.
+    const phoneMq = window.matchMedia("(max-width: 640px) and (pointer: coarse)");
+    const underBars = typeof CSS !== "undefined" && CSS.supports("-webkit-touch-callout", "none");
+    const barsOn = () => underBars && phoneMq.matches;
     function setBars() {
       const html = document.documentElement;
-      if (!phoneMq.matches) {
+      if (!barsOn()) {
         html.style.removeProperty("--bars");
         return;
       }
@@ -1679,11 +1684,12 @@ export default function StudioRoom({
       const screenH = portrait
         ? Math.max(window.screen.width, window.screen.height)
         : Math.min(window.screen.width, window.screen.height);
-      const bars = Math.min(400, Math.max(0, Math.round(screenH - window.innerHeight)));
+      // A sanity cap, as a share of the screen, so a stale reading mid-rotation can't add a huge gap.
+      const bars = Math.min(screenH * 0.35, Math.max(0, Math.round(screenH - window.innerHeight)));
       html.style.setProperty("--bars", `${bars}px`);
     }
     function holdRunway() {
-      if (!stage || !phoneMq.matches) return;
+      if (!stage || !barsOn()) return;
       const r = stage.getBoundingClientRect();
       if (!r.height) return;
       const runway = Math.round(r.top + window.scrollY);
@@ -1741,6 +1747,15 @@ export default function StudioRoom({
       if (!runwayRaf) runwayRaf = requestAnimationFrame(() => { runwayRaf = 0; holdRunway(); });
     };
     window.addEventListener("scroll", onRunwayScroll, { passive: true });
+    // iOS can report the old window height in the first resize after a rotation, so measure again
+    // once the rotation has settled.
+    let orientTimer = 0;
+    const onOrientation = () => {
+      requestAnimationFrame(resize);
+      clearTimeout(orientTimer);
+      orientTimer = window.setTimeout(resize, 300);
+    };
+    window.screen.orientation?.addEventListener("change", onOrientation);
 
     /* Render loop */
     let rafId = 0;
@@ -1958,6 +1973,8 @@ export default function StudioRoom({
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onRunwayScroll);
       cancelAnimationFrame(runwayRaf);
+      window.screen.orientation?.removeEventListener("change", onOrientation);
+      clearTimeout(orientTimer);
       document.documentElement.style.removeProperty("--bars");
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);

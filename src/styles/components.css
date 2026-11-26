@@ -2166,7 +2166,7 @@ html[data-boot="revealing"] .ln-mbar {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: calc(8px + env(safe-area-inset-top, 0px)) var(--gut-r) 0 var(--gut-l);
+    padding: calc(var(--mbar-top) + env(safe-area-inset-top, 0px)) var(--gut-r) 0 var(--gut-l);
     pointer-events: none;
   }
   .ln-mbar > * { pointer-events: auto; }
@@ -2237,9 +2237,10 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-stage__canvas { touch-action: none; }
   /* Safari tints the status bar with whatever fixed element touches the viewport's top edge, and
      the phone bar's full-width header did, transparent, so Safari filled in the page's background
-     colour there instead of showing the room. In room view the header starts 8px down and the bar
-     loses 8px of top padding, so the pills don't move and the top edge is the room's. */
-  html:has(#room:not([hidden])) .ln-header { top: 8px; }
+     colour there instead of showing the room. In room view the bar's own top spacing (--mbar-top)
+     moves from padding inside the header to the header's offset, so the pills don't move and the
+     top edge is the room's. It's the bar's spacing, the same on every phone, not a measurement. */
+  html:has(#room:not([hidden])) .ln-header { top: var(--mbar-top); }
   html:has(#room:not([hidden])) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
   html:has(#room:not([hidden])) body::before { display: none; }
   .ln-stage {
