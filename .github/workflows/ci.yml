@@ -28,6 +28,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm check:first-load
 
   e2e:
     # Regression tests in a real browser: Chromium with a software GPU (SwiftShader), so the 3D room

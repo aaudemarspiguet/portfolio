@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { bootDone, switchView } from "./helpers";
+import { bootDone, settled, switchView } from "./helpers";
 
 // axe-core on every page, both themes. Fails on serious and critical problems.
 const pages = ["/", "/projects", "/work/find-the-outfit", "/work/saw"];
@@ -14,15 +14,7 @@ for (const scheme of ["light", "dark"] as const) {
         await bootDone(page);
         if (path === "/") await switchView(page); // plain view: the page people read
         // Contrast is checked on the page at rest: cards still fading in read as faint grey.
-        await page.waitForFunction(
-          () =>
-            document
-              .getAnimations()
-              .every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
-          null,
-          { timeout: 15_000 },
-        );
-        await page.waitForTimeout(300);
+        await settled(page);
         const axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
         const { violations } = await axe.analyze();
         const bad = violations
