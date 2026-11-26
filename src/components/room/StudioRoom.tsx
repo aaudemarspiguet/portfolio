@@ -166,6 +166,8 @@ export default function StudioRoom({
   const [deckPlaying, setDeckPlaying] = useState(false);
   // Bumped when a parked WebGL context comes back, so the room's setup runs again on it.
   const [glGen, setGlGen] = useState(0);
+  // A new canvas gets a new context. Used when the old one won't come back (below).
+  const [canvasKey, setCanvasKey] = useState(0);
   const isFinePointer = useSyncExternalStore(subscribeFinePointer, getFinePointerSnapshot, () => false);
 
   const peekRef = useRef<PeekState>(peek);
@@ -228,7 +230,12 @@ export default function StudioRoom({
       return restoreParked(
         canvas,
         () => setGlGen((g) => g + 1),
-        () => callbacksRef.current.onWebglFailed(),
+        // A slow or busy GPU may not hand it back in time, or at all. That isn't a broken room:
+        // start again on a fresh canvas. Only a fresh canvas that can't start marks it broken.
+        () => {
+          setCanvasKey((k) => k + 1);
+          setGlGen((g) => g + 1);
+        },
       );
     }
     // The hero is shared with plain view, where it's the page's first block and the room is asleep.
@@ -2072,6 +2079,7 @@ export default function StudioRoom({
   return (
     <>
       <canvas
+        key={canvasKey}
         ref={canvasRef}
         id="scene"
         className={enteredState ? "ln-stage__canvas is-entered" : "ln-stage__canvas"}
