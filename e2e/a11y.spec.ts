@@ -13,12 +13,9 @@ for (const scheme of ["light", "dark"] as const) {
         await page.goto(path);
         await bootDone(page);
         if (path === "/") await switchView(page); // plain view: the page people read
-        // Checked once everything has faded in; mid-fade text reads as low contrast.
+        // Contrast is checked on the page at rest: cards still fading in read as faint grey.
         await settled(page);
-        let axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
-        // Known and waiting on a design call: in dark mode the blue buttons are white on #0a84ff,
-        // 3.6:1 where small text needs 4.5:1. Remove this once the colour is settled.
-        if (scheme === "dark") axe = axe.exclude(".ln-btn--primary");
+        const axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
         const { violations } = await axe.analyze();
         const bad = violations
           .filter((v) => v.impact === "serious" || v.impact === "critical")

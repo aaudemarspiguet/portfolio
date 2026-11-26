@@ -167,8 +167,8 @@
     --link: #4da3ff;
     --link-hover: #7dbbff;
     --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
-    --fill-link: #0a84ff; /* white text needs a deeper blue than the link colour */
-    --fill-link-hover: #0077ed;
+    --fill-link: #0071e3; /* white text needs a deeper blue than the link colour: 4.7:1 */
+    --fill-link-hover: #0066cc; /* 5.6:1; the lighter #0077ed would drop to 4.3:1 */
     --accent-tint: #3d120b;
     --panel: #0b0b0d;
     --fill-primary: #ececef;
@@ -209,8 +209,8 @@
   --link: #4da3ff;
   --link-hover: #7dbbff;
   --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
-  --fill-link: #0a84ff; /* white text needs a deeper blue than the link colour */
-  --fill-link-hover: #0077ed;
+  --fill-link: #0071e3; /* white text needs a deeper blue than the link colour: 4.7:1 */
+  --fill-link-hover: #0066cc; /* 5.6:1; the lighter #0077ed would drop to 4.3:1 */
   --accent-tint: #3d120b;
   --panel: #0b0b0d;
   --fill-primary: #ececef;

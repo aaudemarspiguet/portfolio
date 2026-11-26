@@ -81,6 +81,11 @@ type StudioViewContextValue = {
   switchView: () => void;
   /** Runs a room move the toggle asked for before the room had finished building. */
   runPendingRoomAction: () => void;
+  /**
+   * The toggle pressed on another page lands you home in the other view, at `section` (Projects for
+   * All projects, the case study's section for a case study). Called as home shows again.
+   */
+  arriveInView: (next: StudioView, section: RoomNavKey | null) => void;
   navigateInRoom: (key: RoomNavKey) => boolean;
   goBackToScreen: () => void;
 };
@@ -267,6 +272,21 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
     act(h);
   }, []);
 
+  const arriveInView = useCallback(
+    (next: StudioView, section: RoomNavKey | null) => {
+      const target = webglFailed && next === "room" ? "plain" : next;
+      setView(target, target === "plain" ? section : null);
+      if (target !== "room" || !section) return;
+      const act = (h: RoomHandlers) => h.nav(section);
+      const h = roomHandlersRef.current;
+      // The room usually rebuilds after another page (its context comes back), so the move waits
+      // for it to be ready, like a toggle pressed before the room was built.
+      if (h) afterPaint(() => act(h));
+      else pendingRoomActionRef.current = act;
+    },
+    [setView, webglFailed],
+  );
+
   // A section or Home picked while the toggle flies the room back to plain view: plain view
   // lands there instead of flying the camera somewhere else mid-ride.
   const navigateInRoom = useCallback((key: RoomNavKey) => {
@@ -300,6 +320,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
       registerRoomHandlers,
       switchView,
       runPendingRoomAction,
+      arriveInView,
       navigateInRoom,
       goBackToScreen,
     }),
@@ -316,6 +337,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
       registerRoomHandlers,
       switchView,
       runPendingRoomAction,
+      arriveInView,
       navigateInRoom,
       goBackToScreen,
     ],
