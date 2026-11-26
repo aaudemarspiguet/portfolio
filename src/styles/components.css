@@ -2256,11 +2256,14 @@ html[data-boot="revealing"] .ln-mbar {
   .ln-stage__canvas { touch-action: none; }
   /* Safari tints the status bar with whatever fixed element touches the viewport's top edge, and
      the phone bar's full-width header did, transparent, so Safari filled in the page's background
-     colour there instead of showing the room. In room view the bar's own top spacing (--mbar-top)
-     moves from padding inside the header to the header's offset, so the pills don't move and the
-     top edge is the room's. It's the bar's spacing, the same on every phone, not a measurement. */
-  html[data-view="room"]:has(#room) .ln-header { top: var(--mbar-top); }
-  html[data-view="room"]:has(#room) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
+     colour there instead of showing the room. So on the home page the bar's own top spacing
+     (--mbar-top) moves from padding inside the header to the header's offset, and the pills don't
+     move while the top edge stays the page's. That holds in plain view too, not just the room:
+     Safari picks that colour up when a top-edge element appears and doesn't let go when it moves
+     away, so a header on the edge in plain view left the bar painted after switching back to the
+     room. It's the bar's spacing, the same on every phone, not a measurement. */
+  html:has(#room) .ln-header { top: var(--mbar-top); }
+  html:has(#room) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
   html[data-view="room"]:has(#room) body::before { display: none; }
   .ln-stage {
     overflow: visible;
