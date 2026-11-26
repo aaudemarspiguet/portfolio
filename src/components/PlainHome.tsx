@@ -4,7 +4,6 @@ import { site, type Role } from "@/content/site";
 import { BackgroundBlock } from "./Background";
 import { ContactPanel } from "./ContactPanel";
 import { ExperienceRow } from "./ExperienceRow";
-import { HeroIntro } from "./HeroIntro";
 import { SectionHeader } from "./marks";
 import { ProjectCollage } from "./ProjectCollage";
 
@@ -26,10 +25,7 @@ export function PlainView({ projects, roles }: { projects: HomeProject[]; roles:
   return (
     <>
       <div className="ln-wrap">
-        <section className="ln-plainhero" aria-label="Intro">
-          <HeroIntro hero={site} taglineClass="ln-plainhero__lede" />
-        </section>
-
+        {/* The hero comes first, but it lives in HomeStudio's stage: one hero for both views. */}
         <section className="ln-section" id="work">
           <SectionHeader
             heading={site.projects.heading}

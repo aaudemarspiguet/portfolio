@@ -219,6 +219,8 @@ export default function StudioRoom({
     const hero = heroRef.current;
     const heroScreenEl = heroScreenRef.current;
     if (!canvas || !stage || !hero || !heroScreenEl) return;
+    // The hero is shared with plain view, where it's the page's first block and the room is asleep.
+    const inPlain = () => document.documentElement.dataset.view === "plain";
 
     hero.removeAttribute("data-gone");
     hero.style.transform = "";
@@ -334,7 +336,8 @@ export default function StudioRoom({
       renderOnce();
     }
     function redrawHero() {
-      if (!heroScreenEl || hero?.style.transform) return;
+      // In plain view the hero is laid out as the page's first block, not the screen, so wait.
+      if (!heroScreenEl || hero?.style.transform || inPlain()) return;
       const target = heroTarget();
       const nextTex = drawHeroToCanvas(heroScreenEl, target.dims.w / target.dims.h);
       if (!nextTex) return;
@@ -1632,6 +1635,7 @@ export default function StudioRoom({
 
     /* Hero wheel & swipe to enter */
     function onHeroWheel(e: WheelEvent) {
+      if (inPlain()) return;
       if (!entered && e.deltaY > 0 && heroScreenEl!.scrollTop === 0) {
         e.preventDefault();
         enterRoom();
@@ -1642,6 +1646,7 @@ export default function StudioRoom({
       heroTouchY = e.touches[0].clientY;
     }
     function onHeroTouchMove(e: TouchEvent) {
+      if (inPlain()) return;
       if (!entered && heroTouchY !== null && heroTouchY - e.touches[0].clientY > 40) {
         heroTouchY = null;
         enterRoom();
@@ -1681,7 +1686,8 @@ export default function StudioRoom({
     const holdRunway = () => holdStageRunway(stage);
 
     function resize() {
-      if (!stage || !canvas) return;
+      // The stage folds down to the hero in plain view; switching back resizes it again.
+      if (!stage || !canvas || inPlain()) return;
       setBars();
       holdRunway();
       const r = stage.getBoundingClientRect();

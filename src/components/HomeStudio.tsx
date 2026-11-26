@@ -15,7 +15,7 @@ import type { Role } from "@/content/site";
 import { HeroIntro, type HeroData } from "./HeroIntro";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
-import { holdRunway, setBars } from "@/lib/phoneBars";
+import { barsOn, runwayTop, scrollToTop, setBars } from "@/lib/phoneBars";
 import type { RoomActions } from "./room/StudioRoom";
 import { RoomPeeks, type PeekState } from "./room/RoomPeeks";
 
@@ -183,16 +183,45 @@ export function HomeStudio({
     };
   }, [view, setPlainSection]);
 
-  // There are two heroes: plain view's, and the room's start screen, which lines up with it exactly so
-  // the switch reads as one page. On iPhones the room's stage sits a runway (--bars) down the page,
-  // so the page has to be scrolled to it in the same frame the room shows, or the start screen paints
-  // a bar's height lower. The room itself may not exist yet (it's built on the first switch), so
-  // this lives here, beside the stage, and runs before the first paint.
+  // One hero for both views: it lives in the stage, which in plain view folds down to just the hero
+  // as the page's first block. Switching views only changes what's around it, so it never moves.
+  // On iPhones the page rests a runway (--bars) down in both views, so switching never scrolls
+  // either (lib/phoneBars). This keeps --bars measured, puts a fresh page at its runway before the
+  // first paint, and keeps it there when the screen turns.
   useLayoutEffect(() => {
-    if (view !== "room") return;
     setBars();
-    holdRunway(stageRef.current);
-  }, [view]);
+    if (barsOn() && window.scrollY < 1 && !window.location.hash) scrollToTop();
+    let atTop = window.scrollY <= runwayTop(stageRef.current) + 1;
+    let settleTimer = 0;
+    const onResize = () => {
+      setBars();
+      if (atTop) scrollToTop();
+    };
+    // In plain view you can still scroll up into the runway's paper; once you let go, the page
+    // eases back to rest at the hero, the way it rests on every other phone at 0.
+    const onScroll = () => {
+      const top = runwayTop(stageRef.current);
+      atTop = window.scrollY <= top + 1;
+      if (!barsOn() || document.documentElement.dataset.view !== "plain") return;
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        if (window.scrollY < top - 0.5) window.scrollTo({ top, behavior: "smooth" });
+      }, 160);
+    };
+    const onOrientation = () => {
+      requestAnimationFrame(onResize);
+      window.setTimeout(onResize, 300);
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.screen.orientation?.addEventListener("change", onOrientation);
+    return () => {
+      window.clearTimeout(settleTimer);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll);
+      window.screen.orientation?.removeEventListener("change", onOrientation);
+    };
+  }, []);
 
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
 
@@ -201,7 +230,7 @@ export function HomeStudio({
       <BootScreen progress={progressRef} ready={bootReady} />
 
       <div className="ln-wrap">
-        <section ref={stageRef} className="ln-stage" id="room" aria-label="The room" hidden={view !== "room"}>
+        <section ref={stageRef} className="ln-stage" id="room" aria-label={view === "room" ? "The room" : "Intro"}>
           {hydrated && roomBuilt && !webglFailed && (
             <RoomErrorBoundary onError={markWebglFailed}>
               <StudioRoom
@@ -222,7 +251,8 @@ export function HomeStudio({
           )}
 
           <div ref={heroRef} className="ln-room-hero" id="hero">
-            {/* The same hero as plain view. Scrolling or swiping up zooms out into the room. */}
+            {/* The one hero both views share. In plain view it's the page's first block; in the room
+                it's the start screen, and scrolling or swiping up zooms out of it into the room. */}
             <div ref={heroScreenRef} className="ln-room-hero__screen" tabIndex={-1}>
               <HeroIntro hero={hero} taglineClass="ln-room-hero__lede" />
             </div>

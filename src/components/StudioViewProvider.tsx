@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { resetSlide, slideIn, slideOut } from "@/lib/slideCards";
+import { scrollToTop } from "@/lib/phoneBars";
 
 export type StudioView = "room" | "plain";
 export type RoomNavKey = "work" | "experience" | "about";
@@ -133,11 +134,12 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
           }
         } else {
           setPendingSection(null);
-          window.scrollTo(0, 0);
+          scrollToTop();
         }
       } else {
         setPendingSection(null);
-        window.scrollTo(0, 0);
+        // From the hero this changes nothing: both views rest at the same scroll (lib/phoneBars).
+        scrollToTop();
         window.dispatchEvent(new Event("resize"));
       }
     },
@@ -187,7 +189,8 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
 
   const switchView = useCallback(() => {
     if (switchingRef.current) return;
-    const plainEl = document.getElementById("plain");
+    // The hero sits outside #plain (it's shared with the room), so the cards are found page-wide.
+    const plainEl = document.body;
 
     if (readViewSnapshot() === "plain") {
       if (webglFailed) return;
