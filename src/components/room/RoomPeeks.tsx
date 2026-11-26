@@ -50,10 +50,15 @@ export function RoomPeeks({
     if (isOpen && !wasOpenRef.current) {
       lastFocusRef.current = document.activeElement as HTMLElement | null;
       wasOpenRef.current = true;
-      const closeBtn = containerRef.current?.querySelector<HTMLElement>("[data-close]");
+      // Phone sheets render into body, outside the container, so look there too.
+      const closeBtn =
+        containerRef.current?.querySelector<HTMLElement>("[data-close]") ??
+        document.querySelector<HTMLElement>(".ln-gsheet [data-close]");
       closeBtn?.focus({ preventScroll: true });
     } else if (isOpen && peek?.kind === "case" && peek.swapDir) {
-      const stepBtn = containerRef.current?.querySelector<HTMLElement>(`[data-step="${peek.swapDir}"]`);
+      const stepBtn =
+        containerRef.current?.querySelector<HTMLElement>(`[data-step="${peek.swapDir}"]`) ??
+        document.querySelector<HTMLElement>(`.ln-gsheet [data-step="${peek.swapDir}"]`);
       stepBtn?.focus({ preventScroll: true });
     } else if (!isOpen && wasOpenRef.current) {
       wasOpenRef.current = false;
