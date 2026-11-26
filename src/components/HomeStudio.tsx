@@ -223,6 +223,28 @@ export function HomeStudio({
     };
   }, []);
 
+  // iOS Safari decides how to paint under its status bar (the page itself, or a solid tint taken
+  // from a fixed bar touching the top) when the page scrolls. Switching views doesn't scroll, and
+  // plain view's header touches the top while the room's sits below it, so coming back to the room
+  // Safari kept plain view's tint as a solid bar over the room. A 1px scroll there and back, while
+  // the start screen still covers everything, makes it look again.
+  const lastView = useRef(view);
+  useEffect(() => {
+    const was = lastView.current;
+    lastView.current = view;
+    if (was === view || view !== "room" || !barsOn()) return;
+    let back = 0;
+    const there = requestAnimationFrame(() => {
+      const top = runwayTop(stageRef.current);
+      window.scrollTo(0, top + 1);
+      back = requestAnimationFrame(() => window.scrollTo(0, top));
+    });
+    return () => {
+      cancelAnimationFrame(there);
+      cancelAnimationFrame(back);
+    };
+  }, [view]);
+
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
 
   return (
