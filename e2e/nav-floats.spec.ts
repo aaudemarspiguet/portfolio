@@ -9,20 +9,24 @@ async function expectBarLive(page: Page) {
   await expect(page.locator(".ln-header")).toHaveCSS("position", "fixed");
   const controls = page.locator(".ln-header :is(a, button):visible");
   await expect.poll(() => controls.count()).toBeGreaterThan(1);
-  const bad = await controls.evaluateAll((els) =>
-    els
-      .map((el) => {
-        let op = 1;
-        for (let n: Element | null = el; n; n = n.parentElement) op *= Number(getComputedStyle(n).opacity);
-        const r = el.getBoundingClientRect();
-        const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-        const onTop = !!hit && (hit === el || el.contains(hit));
-        const inView = r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth;
-        return { name: el.getAttribute("aria-label") || el.textContent?.trim() || el.className, op, onTop, inView };
-      })
-      .filter((c) => c.op < 0.99 || !c.onTop || !c.inView),
-  );
-  expect(bad).toEqual([]);
+  // Polled: right after the boot screen the bar is still fading in for a moment.
+  await expect
+    .poll(() =>
+      controls.evaluateAll((els) =>
+        els
+          .map((el) => {
+            let op = 1;
+            for (let n: Element | null = el; n; n = n.parentElement) op *= Number(getComputedStyle(n).opacity);
+            const r = el.getBoundingClientRect();
+            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            const onTop = !!hit && (hit === el || el.contains(hit));
+            const inView = r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth;
+            return { name: el.getAttribute("aria-label") || el.textContent?.trim() || el.className, op, onTop, inView };
+          })
+          .filter((c) => c.op < 0.99 || !c.onTop || !c.inView),
+      ),
+    )
+    .toEqual([]);
 }
 
 async function scrollDownAndBack(page: Page) {
