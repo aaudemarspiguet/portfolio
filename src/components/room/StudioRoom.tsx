@@ -531,11 +531,19 @@ export default function StudioRoom({
       };
     }
 
+    // Where the canvas sits in the stage. On iPhones it starts above the stage (it runs under
+    // Safari's bars), so canvas positions are shifted by this before placing anything in the stage.
+    function canvasInStage() {
+      const c = canvas!.getBoundingClientRect();
+      const st = stage!.getBoundingClientRect();
+      return { x: c.left - st.left, y: c.top - st.top, w: c.width, h: c.height };
+    }
+
     function screenMapping() {
       const { mesh, dims } = heroTarget();
       camera.updateMatrixWorld();
       mesh.updateMatrixWorld();
-      const r = canvas!.getBoundingClientRect();
+      const r = canvasInStage();
       const xs: number[] = [];
       const ys: number[] = [];
       [
@@ -547,8 +555,8 @@ export default function StudioRoom({
         const v = new THREE.Vector3((cx * dims.w) / 2, (cy * dims.h) / 2, 0);
         mesh.localToWorld(v);
         v.project(camera);
-        xs.push(((v.x + 1) / 2) * r.width);
-        ys.push(((1 - v.y) / 2) * r.height);
+        xs.push(r.x + ((v.x + 1) / 2) * r.w);
+        ys.push(r.y + ((1 - v.y) / 2) * r.h);
       });
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
@@ -1386,8 +1394,8 @@ export default function StudioRoom({
     function projectObj(obj: THREE.Object3D) {
       obj.getWorldPosition(tmpV);
       tmpV.project(camera);
-      const r = canvas!.getBoundingClientRect();
-      return { x: ((tmpV.x + 1) / 2) * r.width, y: ((1 - tmpV.y) / 2) * r.height };
+      const r = canvasInStage();
+      return { x: r.x + ((tmpV.x + 1) / 2) * r.w, y: r.y + ((1 - tmpV.y) / 2) * r.h };
     }
 
     function showTag(o: InteractiveObj, x?: number, y?: number) {
@@ -1476,7 +1484,8 @@ export default function StudioRoom({
         if (!o) return;
         held = true;
         if (holdTagTimer) clearTimeout(holdTagTimer);
-        const r = canvas!.getBoundingClientRect();
+        // The tag lives in the stage, so place it from the stage's corner, not the canvas's.
+        const r = stage!.getBoundingClientRect();
         // Lifted clear of the fingertip, which would cover a label placed right at the touch.
         showTag(o, x - r.left, y - r.top - 36);
       }, HOLD_MS);
@@ -1579,7 +1588,7 @@ export default function StudioRoom({
       hovered = hitObj;
       canvas!.style.cursor = hovered ? "pointer" : "default";
       dot?.classList.toggle("is-hot", Boolean(hovered));
-      const r = canvas!.getBoundingClientRect();
+      const r = stage!.getBoundingClientRect();
       if (hovered) showTag(hovered, e.clientX - r.left, e.clientY - r.top);
       else hideTag();
     }
