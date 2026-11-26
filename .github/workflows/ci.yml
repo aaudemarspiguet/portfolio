@@ -11,8 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # No display name: main's branch protection requires a check called "check" (lint, types,
+  # unit tests, build).
   check:
-    name: Lint, types, unit tests, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
