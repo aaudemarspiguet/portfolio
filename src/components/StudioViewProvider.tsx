@@ -81,6 +81,11 @@ type StudioViewContextValue = {
   switchView: () => void;
   /** Runs a room move the toggle asked for before the room had finished building. */
   runPendingRoomAction: () => void;
+  /**
+   * The toggle pressed on another page lands you home in the other view, at `section` (Projects for
+   * All projects, the case study's section for a case study). Called as home shows again.
+   */
+  arriveInView: (next: StudioView, section: RoomNavKey | null) => void;
   navigateInRoom: (key: RoomNavKey) => boolean;
   goBackToScreen: () => void;
 };
@@ -108,6 +113,10 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
   const roomCurrentRef = useRef<RoomNavKey | null>(null);
   const plainSectionRef = useRef<PlainSectionKey | null>(null);
   const switchingRef = useRef(false);
+  // Picked in the nav while the room flies back to plain view: where plain view lands instead of
+  // where the room was. `null` means the top (Home).
+  const leavingToRef = useRef<{ section: RoomNavKey | null } | null>(null);
+  const leavingRef = useRef(false);
   const pendingRoomActionRef = useRef<((h: RoomHandlers) => void) | null>(null);
 
   const setRoomCurrent = useCallback((key: RoomNavKey | null) => {
@@ -128,7 +137,10 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
         if (section) {
           setPendingSection(section);
           const el = document.getElementById(section);
-          if (el) {
+          // Coming from the room, plain view is still hidden until React renders it, and a hidden
+          // section can't be scrolled to. Then the pending section is left for HomeStudio, which
+          // scrolls once plain view shows.
+          if (el && el.getClientRects().length) {
             el.scrollIntoView({ behavior: "auto", block: "start" });
             setPendingSection(null);
           }
@@ -218,9 +230,22 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
     }
 
     switchingRef.current = true;
-    const section = roomCurrentRef.current;
+    leavingRef.current = true;
+    leavingToRef.current = null;
+    // Read now: leaving the room clears where it was.
+    const fromSection = roomCurrentRef.current;
     const root = document.documentElement;
+    let watchdog = 0;
+    let landed = false;
     const toPlain = () => {
+      // Runs once, whether the ride finished or the watchdog gave up on it.
+      if (landed) return;
+      landed = true;
+      window.clearTimeout(watchdog);
+      const picked = leavingToRef.current;
+      const section = picked ? picked.section : fromSection;
+      leavingRef.current = false;
+      leavingToRef.current = null;
       // Held out of sight until the cards start rising, so they never flash in place first.
       root.dataset.switch = section ? "in" : "in-below";
       setView("plain", section);
@@ -231,6 +256,9 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
         switchingRef.current = false;
       });
     };
+    // The ride back takes about 1.4s. If anything ever stops it from finishing, plain view still
+    // comes up, so the toggle can't be left dead.
+    watchdog = window.setTimeout(toPlain, 4000);
     const h = roomHandlersRef.current;
     if (h) h.backToScreen(toPlain);
     else toPlain();
@@ -244,12 +272,37 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
     act(h);
   }, []);
 
+  const arriveInView = useCallback(
+    (next: StudioView, section: RoomNavKey | null) => {
+      const target = webglFailed && next === "room" ? "plain" : next;
+      setView(target, target === "plain" ? section : null);
+      if (target !== "room" || !section) return;
+      const act = (h: RoomHandlers) => h.nav(section);
+      const h = roomHandlersRef.current;
+      // The room usually rebuilds after another page (its context comes back), so the move waits
+      // for it to be ready, like a toggle pressed before the room was built.
+      if (h) afterPaint(() => act(h));
+      else pendingRoomActionRef.current = act;
+    },
+    [setView, webglFailed],
+  );
+
+  // A section or Home picked while the toggle flies the room back to plain view: plain view
+  // lands there instead of flying the camera somewhere else mid-ride.
   const navigateInRoom = useCallback((key: RoomNavKey) => {
+    if (leavingRef.current) {
+      leavingToRef.current = { section: key };
+      return true;
+    }
     if (!roomHandlersRef.current) return false;
     return roomHandlersRef.current.nav(key);
   }, []);
 
   const goBackToScreen = useCallback(() => {
+    if (leavingRef.current) {
+      leavingToRef.current = { section: null };
+      return;
+    }
     roomHandlersRef.current?.backToScreen();
   }, []);
 
@@ -267,6 +320,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
       registerRoomHandlers,
       switchView,
       runPendingRoomAction,
+      arriveInView,
       navigateInRoom,
       goBackToScreen,
     }),
@@ -283,6 +337,7 @@ export function StudioViewProvider({ children }: { children: ReactNode }) {
       registerRoomHandlers,
       switchView,
       runPendingRoomAction,
+      arriveInView,
       navigateInRoom,
       goBackToScreen,
     ],

@@ -193,7 +193,8 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
           {/* The system diagram needs the full width, so it breaks out of the reading column. */}
           <div className="ln-wrap ln-case__wide">
             <figure className="ln-figure">
-              <div className="ln-surface ln-arch__scroll">
+              {/* Focusable so keyboard users can scroll the wide diagram sideways too. */}
+              <div className="ln-surface ln-arch__scroll" tabIndex={0} role="region" aria-labelledby="arch-caption">
                 <Architecture arch={arch} labelId="arch-caption" />
               </div>
               <figcaption id="arch-caption">

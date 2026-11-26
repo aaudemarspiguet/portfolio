@@ -144,12 +144,14 @@ export function HomeStudio({
     progressRef.current = Math.max(progressRef.current, ratio);
   }, []);
 
-  // Scroll to a requested section after switching into plain view.
+  // Scroll to a requested section after switching into plain view. A jump, not the page's smooth
+  // scroll: the page is still out of sight while the cards get ready to rise, and a smooth scroll
+  // stopped short of the section.
   useEffect(() => {
     if (view !== "plain" || !pendingSection) return;
     const el = document.getElementById(pendingSection);
     if (el) {
-      el.scrollIntoView({ behavior: "auto", block: "start" });
+      el.scrollIntoView({ behavior: "instant", block: "start" });
       clearPendingSection();
     }
   }, [view, pendingSection, clearPendingSection]);

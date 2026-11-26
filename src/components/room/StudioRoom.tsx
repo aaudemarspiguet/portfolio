@@ -22,6 +22,7 @@ import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
+import { isParked, parkContext, restoreParked } from "@/lib/glContext";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -163,6 +164,10 @@ export default function StudioRoom({
   const [benchText, setBenchText] = useState<string | null>(null);
   const [trackIndex, setTrackIndex] = useState(0);
   const [deckPlaying, setDeckPlaying] = useState(false);
+  // Bumped when a parked WebGL context comes back, so the room's setup runs again on it.
+  const [glGen, setGlGen] = useState(0);
+  // A new canvas gets a new context. Used when the old one won't come back (below).
+  const [canvasKey, setCanvasKey] = useState(0);
   const isFinePointer = useSyncExternalStore(subscribeFinePointer, getFinePointerSnapshot, () => false);
 
   const peekRef = useRef<PeekState>(peek);
@@ -219,6 +224,20 @@ export default function StudioRoom({
     const hero = heroRef.current;
     const heroScreenEl = heroScreenRef.current;
     if (!canvas || !stage || !hero || !heroScreenEl) return;
+    // Back on the home page after another route: the canvas is the same one, and its context was
+    // handed back when the room stopped. Bring it back first; three.js can't start on a lost one.
+    if (isParked(canvas)) {
+      return restoreParked(
+        canvas,
+        () => setGlGen((g) => g + 1),
+        // A slow or busy GPU may not hand it back in time, or at all. That isn't a broken room:
+        // start again on a fresh canvas. Only a fresh canvas that can't start marks it broken.
+        () => {
+          setCanvasKey((k) => k + 1);
+          setGlGen((g) => g + 1);
+        },
+      );
+    }
     // The hero is shared with plain view, where it's the page's first block and the room is asleep.
     const inPlain = () => document.documentElement.dataset.view === "plain";
 
@@ -509,12 +528,17 @@ export default function StudioRoom({
       camera.lookAt(cam.look);
     }
 
+    let returning: (() => void)[] | null = null;
     function moveTo(
       t: { pos: THREE.Vector3; look: THREE.Vector3 },
       ms: number,
       done?: () => void,
       step?: (e: number, k: number) => void,
     ) {
+      // The ride back to the start screen ends by handing over to whatever asked for it (plain
+      // view, the terminal). A new move would drop that hand-over and strand the start screen half
+      // way, so nothing replaces it.
+      if (returning) return;
       if (reduced || !ms) {
         setCam(t);
         renderOnce();
@@ -913,6 +937,11 @@ export default function StudioRoom({
     }
 
     function backToScreen(after?: () => void) {
+      // Already on the way back: run this one's hand-over too when the ride ends.
+      if (returning) {
+        if (typeof after === "function") returning.push(after);
+        return;
+      }
       callbacksRef.current.onClosePeekState();
       hideTag();
       if (!entered) {
@@ -926,6 +955,8 @@ export default function StudioRoom({
       // tucks the tour away; entering the room again picks it up at the next step.
       pauseTour();
       const finish = () => {
+        const queued = returning ?? [];
+        returning = null;
         entered = false;
         setEnteredState(false);
         hero?.removeAttribute("data-gone");
@@ -933,6 +964,7 @@ export default function StudioRoom({
         clearHeroStyle();
         heroScreenEl?.focus({ preventScroll: true });
         if (typeof after === "function") after();
+        queued.forEach((fn) => fn());
       };
       if (reduced) {
         moveTo(closeUp(), 0, finish);
@@ -948,6 +980,7 @@ export default function StudioRoom({
       moveTo(closeUp(), 1400, finish, (_e, k) => {
         placeHero(screenMapping(), 1 - smoothstep(0.65, 1, k), smoothstep(0.2, 0.6, k));
       });
+      returning = [];
     }
 
     function openCase(project: HomeProject, swapDir?: 1 | -1) {
@@ -2007,10 +2040,18 @@ export default function StudioRoom({
       dimMat.dispose();
       dimQuad.geometry.dispose();
       renderer.dispose();
-      // Hand the WebGL context back now, not whenever the garbage collector gets to it.
-      renderer.forceContextLoss();
+      // Hand the WebGL context back now, not whenever the garbage collector gets to it. It's parked
+      // rather than thrown away: when Next only hides the home page (Activity), the canvas stays
+      // and the next setup asks for this context back (lib/glContext).
+      parkContext(canvas, renderer.getContext());
+      // The room starts over at the screen next time, so nothing here may say it's still inside,
+      // touring, playing or showing a peek.
+      setEnteredState(false);
+      setTour(null);
+      setDeckPlaying(false);
+      callbacksRef.current.onClosePeekState();
     };
-  }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
+  }, [projects, stageRef, heroRef, heroScreenRef, registerActions, glGen]);
 
   // Tell the phone bar what the room is doing.
   useEffect(() => {
@@ -2038,6 +2079,7 @@ export default function StudioRoom({
   return (
     <>
       <canvas
+        key={canvasKey}
         ref={canvasRef}
         id="scene"
         className={enteredState ? "ln-stage__canvas is-entered" : "ln-stage__canvas"}
