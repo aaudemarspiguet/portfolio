@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type MouseEvent } from "react";
 import { site } from "@/content/site";
 import { initGlobalSfx } from "@/lib/sfx";
 import { GitHubIcon, LinkedInIcon } from "./icons";
@@ -38,12 +38,33 @@ export function NavBar({ workSlugs }: { workSlugs: string[] }) {
   const caseStudySlug = pathname.startsWith("/work/") ? pathname.slice("/work/".length) : null;
   const current = useCurrentKey(pathname, caseStudySlug, workSlugs);
   const router = useRouter();
-  const { view, webglFailed, setView, navigateInRoom, switchView } = useStudioView();
+  const { view, webglFailed, setView, navigateInRoom, switchView, arriveInView } = useStudioView();
 
   const href = (hash: string) => (onHome ? hash : `/${hash}`);
-  const canSwitchView = onHome && !webglFailed;
-  // The toggle zooms between the screen and the room and keeps you in the same section.
-  const toggleView = switchView;
+  // The toggle floats on every page, like the rest of the bar. It's only left out when the room
+  // can't be drawn at all, since then there is no other view to switch to.
+  const canSwitchView = !webglFailed;
+  // Pressed on another page: where home should open, in the other view.
+  const pendingSwitch = useRef<{ view: "room" | "plain"; section: RoomNavKey | null } | null>(null);
+
+  // Before home is painted, so it shows up in the new view and never flashes the old one.
+  useLayoutEffect(() => {
+    if (!onHome || !pendingSwitch.current) return;
+    const { view: next, section } = pendingSwitch.current;
+    pendingSwitch.current = null;
+    arriveInView(next, section);
+  }, [onHome, arriveInView]);
+
+  // On home the toggle zooms between the screen and the room and keeps you in the same section.
+  // Elsewhere it takes you home in the other view, at the section this page belongs to.
+  function toggleView() {
+    if (onHome) {
+      switchView();
+      return;
+    }
+    pendingSwitch.current = { view: view === "room" ? "plain" : "room", section: current };
+    router.push("/", { scroll: false });
+  }
 
   // Click sounds and the saved appearance are set up once, here, for every screen size.
   useEffect(() => initGlobalSfx(), []);

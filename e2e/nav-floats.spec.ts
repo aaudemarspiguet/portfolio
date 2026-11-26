@@ -52,6 +52,7 @@ for (const scheme of ["light", "dark"] as const) {
       test(`${path} keeps the bar while scrolling`, async ({ page }) => {
         await page.goto(path);
         await bootDone(page);
+        await expectToggleUsable(page);
         await scrollDownAndBack(page);
       });
     }
@@ -83,6 +84,54 @@ test("there and back: All projects, a case study, then the back button twice", a
   await page.goBack();
   await expect(page).toHaveURL(/\/$|\/#/);
   await page.waitForTimeout(1000);
+  await expectBarLive(page);
+  await expectToggleUsable(page);
+});
+
+/** Where the section's top sits on screen, in plain view. */
+const sectionTop = (page: Page, id: string) =>
+  page.evaluate((id) => document.getElementById(id)!.getBoundingClientRect().top, id);
+
+/** The nav item marked as the one you're in (Projects, Experience, About), or "" for none. */
+const currentNav = (page: Page) =>
+  page.evaluate(() => {
+    const el = [...document.querySelectorAll(".ln-header [aria-current='true'], .ln-mbar__title")].find(
+      (n) => (n as HTMLElement).offsetParent !== null,
+    );
+    return el?.textContent?.trim() ?? "";
+  });
+
+test("the toggle on All projects takes you home in the other view, at Projects", async ({ page }) => {
+  // Plain view first, then the page's own link to All projects (no reload).
+  await openSite(page);
+  await switchView(page);
+  expect(await page.evaluate(() => document.documentElement.dataset.view)).toBe("plain");
+  await page.evaluate(() => document.getElementById("work")!.scrollIntoView({ behavior: "instant" }));
+  await press(page, 'a[href="/projects"]:visible');
+  await expect(page).toHaveURL(/\/projects$/);
+  await expectToggleUsable(page);
+
+  // Plain to room: home, in the room, flying to the projects.
+  await press(page, ".ln-viewswitch:visible");
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.view)).toBe("room");
+  await expect.poll(() => currentNav(page), { timeout: 20_000 }).toContain("Projects");
+  await expectToggleUsable(page);
+});
+
+test("the toggle on a case study takes you home in the other view, at its section", async ({ page }) => {
+  // Opened straight from a link, in the room (the site opens in the room).
+  await openSite(page, "/work/saw");
+  await expectToggleUsable(page);
+  await expect(page.locator(".ln-viewswitch:visible")).toHaveAttribute("data-view", "room");
+
+  // Room to plain: home, in plain view, scrolled to Projects. Home hasn't been shown in this visit
+  // yet, so its boot screen runs first, as it does for the brand link.
+  await press(page, ".ln-viewswitch:visible");
+  await expect(page).toHaveURL(/\/$/);
+  await bootDone(page);
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.view)).toBe("plain");
+  await expect.poll(() => sectionTop(page, "work").then((t) => Math.abs(t) < 120), { timeout: 10_000 }).toBe(true);
   await expectBarLive(page);
   await expectToggleUsable(page);
 });
