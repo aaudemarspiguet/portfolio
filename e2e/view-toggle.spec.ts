@@ -50,7 +50,7 @@ test("toggle survives a case study opened from inside the room", async ({ page }
   await expectRoomDrawn(page);
   // The room starts over at its screen; going in again works.
   await goSection(page, "About");
-  await expect(page.locator(".ln-peek:not([hidden]), .ln-gsheet").first()).toBeVisible();
+  await expect(page.locator(".ln-gsheet, .ln-peek:not([hidden]):not(.ln-peek--sheet)").first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

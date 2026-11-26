@@ -31,14 +31,18 @@ export async function press(page: Page, selector: string) {
 export async function expectToggleUsable(page: Page) {
   const toggle = viewToggle(page);
   await expect(toggle).toHaveCount(1);
-  const ok = await toggle.evaluate((b) => {
-    let op = 1;
-    for (let el: Element | null = b; el; el = el.parentElement) op *= Number(getComputedStyle(el).opacity);
-    const r = b.getBoundingClientRect();
-    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-    return { op, onTop: !!hit && (hit === b || b.contains(hit)), inView: r.top >= 0 && r.bottom <= innerHeight };
-  });
-  expect(ok).toEqual({ op: 1, onTop: true, inView: true });
+  // Polled, so a bar still fading in after the boot screen gets a moment to finish.
+  await expect
+    .poll(() =>
+      toggle.evaluate((b) => {
+        let op = 1;
+        for (let el: Element | null = b; el; el = el.parentElement) op *= Number(getComputedStyle(el).opacity);
+        const r = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        return { shown: op > 0.99, onTop: !!hit && (hit === b || b.contains(hit)), inView: r.top >= 0 && r.bottom <= innerHeight };
+      }),
+    )
+    .toEqual({ shown: true, onTop: true, inView: true });
 }
 
 /** Presses the toggle and waits for the view to change. */

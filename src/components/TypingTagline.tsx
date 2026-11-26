@@ -133,7 +133,10 @@ export function TypingTagline({
   const visible = reduced ? lines[0] : full.slice(0, chars);
 
   return (
-    <div ref={rootRef} className={className ? `${className} ln-typing` : "ln-typing"} aria-label={lines[0]}>
+    <div ref={rootRef} className={className ? `${className} ln-typing` : "ln-typing"}>
+      {/* An aria-label on a plain div is ignored, so screen readers heard nothing here. They get the
+          first line as text instead of the typing. */}
+      <span className="ln-sr-only">{lines[0]}</span>
       <span aria-hidden="true" className="ln-typing__line">
         <span className="ln-typing__prompt">{TERMINAL_PROMPT}</span>
         <span className="ln-typing__cmd">{visible}</span>
