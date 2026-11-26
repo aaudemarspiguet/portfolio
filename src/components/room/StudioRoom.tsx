@@ -23,6 +23,7 @@ import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
 import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
 import { isParked, parkContext, restoreParked } from "@/lib/glContext";
+import { perfFlagsDiffer, readPerfFlags } from "@/lib/perfFlags";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -119,6 +120,15 @@ function subscribeFinePointer(onChange: () => void) {
   return () => mq?.removeEventListener?.("change", onChange);
 }
 
+function subscribeHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+function getDebugSnapshot() {
+  return readPerfFlags(window.location.hash).debug;
+}
+
 function getFinePointerSnapshot() {
   return window.matchMedia?.("(pointer: fine)").matches ?? false;
 }
@@ -156,12 +166,14 @@ export default function StudioRoom({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
+  const debugRef = useRef<HTMLDivElement>(null);
+  // #debug and friends (lib/perfFlags). Client only; the readout is never server-rendered.
+  const showDebug = useSyncExternalStore(subscribeHash, getDebugSnapshot, () => false);
   const dotRef = useRef<HTMLDivElement>(null);
 
   const [enteredState, setEnteredState] = useState(false);
   const [tour, setTour] = useState<{ step: number; portrait: boolean } | null>(null);
   const [keyObjects, setKeyObjects] = useState<InteractiveObj[]>([]);
-  const [benchText, setBenchText] = useState<string | null>(null);
   const [trackIndex, setTrackIndex] = useState(0);
   const [deckPlaying, setDeckPlaying] = useState(false);
   // Bumped when a parked WebGL context comes back, so the room's setup runs again on it.
@@ -208,6 +220,22 @@ export default function StudioRoom({
   const syncDeckRef = useRef<((nextTrack: number, shouldPlay: boolean) => void) | null>(null);
   const stopInstrumentsRef = useRef<(() => void) | null>(null);
 
+  // The speed-test switches live in the hash. Some only apply when the room starts, so changing
+  // them reloads the page; #noglass turns off the blur behind the glass controls.
+  useEffect(() => {
+    const flags = readPerfFlags(window.location.hash);
+    const root = document.documentElement;
+    if (flags.noglass) root.dataset.noglass = "";
+    const onHash = () => {
+      if (perfFlagsDiffer(flags, readPerfFlags(window.location.hash))) window.location.reload();
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      delete root.dataset.noglass;
+    };
+  }, []);
+
   useEffect(() => {
     if (isFinePointer) document.documentElement.classList.add("ln-dotcursor");
     else document.documentElement.classList.remove("ln-dotcursor");
@@ -240,24 +268,22 @@ export default function StudioRoom({
     hero.style.transition = "";
     hero.style.pointerEvents = "";
 
+    const flags = readPerfFlags(window.location.hash);
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: !flags.noaa, powerPreference: "high-performance" });
     } catch {
       callbacksRef.current.onWebglFailed();
       return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const benchMode = urlParams.get("bench") === "1";
-    const dprOverride = urlParams.get("dpr");
     const isCoarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
-    const maxDpr = dprOverride ? Number(dprOverride) || 2 : isCoarse ? 1.5 : 2;
+    const maxDpr = flags.dpr ?? (isCoarse ? 1.5 : 2);
     const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
 
     renderer.setPixelRatio(dpr);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = !flags.noshadow;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = false;
 
@@ -467,6 +493,8 @@ export default function StudioRoom({
     let heroBox: { w: number; h: number; stageH: number } | null = null;
 
     const look = { yaw: 0, pitch: 0, dragYaw: 0, dragPitch: 0, resting: false };
+    // When a finger or trackpad last moved the view; while it's moving, the view follows it closely.
+    let lastNudge = -Infinity;
 
     // Zoom narrows the lens instead of moving the camera, so it can never push through a wall.
     // It only applies while resting in the room; any fly-in eases it back to 1.
@@ -484,6 +512,8 @@ export default function StudioRoom({
       renderOnce();
     }
     const Y_AXIS = new THREE.Vector3(0, 1, 0);
+    const lookOff = new THREE.Vector3();
+    const lookSide = new THREE.Vector3();
 
     function layoutHero() {
       if (!stage || !heroScreenEl) return;
@@ -1444,7 +1474,8 @@ export default function StudioRoom({
 
     function hideTag() {
       const tagEl = tagRef.current;
-      if (tagEl) tagEl.hidden = true;
+      // Called on every drag move, so only touch the DOM when the tag is actually showing.
+      if (tagEl && !tagEl.hidden) tagEl.hidden = true;
     }
 
     showTagForObjRef.current = (o) => {
@@ -1477,6 +1508,7 @@ export default function StudioRoom({
       const k = 1 / zoom.cur;
       look.dragYaw = clamp(look.dragYaw - dx * 0.0022 * k, -lim, lim);
       look.dragPitch = clamp(look.dragPitch - dy * 0.0016 * k, -0.12, 0.14);
+      lastNudge = performance.now();
       hideTag();
     }
 
@@ -1777,9 +1809,25 @@ export default function StudioRoom({
     let rafId = 0;
     let lastT = 0;
     let lastDraw = 0;
-    let benchFrames = 0;
-    let benchWindowStart = performance.now();
-    let benchFrameMsSum = 0;
+    // #debug readout: counted over half-second windows, written straight to the DOM (no re-render).
+    const stats = { t0: performance.now(), draws: 0, gaps: 0, gapSum: 0, gapMax: 0, cpu: 0, drewLast: false, calls: 0, tris: 0 };
+    const debugSize = new THREE.Vector2();
+    function writeStats(now: number) {
+      const el = debugRef.current;
+      const span = now - stats.t0;
+      if (!el || span < 500) return;
+      const fps = Math.round((stats.draws * 1000) / span);
+      const gap = stats.gaps ? stats.gapSum / stats.gaps : 0;
+      const info = renderer.info;
+      renderer.getDrawingBufferSize(debugSize);
+      el.textContent = [
+        `${fps} fps · frame ${gap ? gap.toFixed(1) : "-"} ms (worst ${stats.gapMax ? stats.gapMax.toFixed(0) : "-"}) · js ${stats.draws ? (stats.cpu / stats.draws).toFixed(1) : "-"} ms`,
+        `${stats.calls} calls · ${(stats.tris / 1000).toFixed(1)}k tris · ${info.programs?.length ?? 0} shaders · ${info.memory.textures} tex · ${shadowRedraws} shadow redraws`,
+        `dpr ${dpr} · ${debugSize.x}×${debugSize.y} · aa ${flags.noaa ? "off" : "on"} · shadows ${flags.noshadow ? "off" : "on"} · glass ${flags.noglass ? "off" : "on"}`,
+      ].join("\n");
+      stats.t0 = now;
+      stats.draws = stats.gaps = stats.gapSum = stats.gapMax = stats.cpu = 0;
+    }
 
     function frame(now: number) {
       rafId = requestAnimationFrame(frame);
@@ -1887,10 +1935,15 @@ export default function StudioRoom({
         const dyw = look.dragYaw - look.yaw;
         const dpt = look.dragPitch - look.pitch;
         if (Math.abs(dyw) + Math.abs(dpt) > 1e-4 || needsFrame) {
-          look.yaw += dyw * 0.08;
-          look.pitch += dpt * 0.08;
-          const off = new THREE.Vector3().subVectors(WIDE.pos, WIDE.look).applyAxisAngle(Y_AXIS, look.yaw);
-          const side = new THREE.Vector3().crossVectors(Y_AXIS, off).normalize();
+          // Eased by time, not by frame, so a slow frame doesn't make the view lag further behind.
+          // While the finger is moving it follows within about 50ms; after it lifts (and for the
+          // tour's turns) it settles over about 200ms, the old feel at 60fps.
+          const rate = now - lastNudge < 120 ? 20 : 5;
+          const ease = reduced ? 1 : 1 - Math.exp(-rate * dt);
+          look.yaw += dyw * ease;
+          look.pitch += dpt * ease;
+          const off = lookOff.subVectors(WIDE.pos, WIDE.look).applyAxisAngle(Y_AXIS, look.yaw);
+          const side = lookSide.crossVectors(Y_AXIS, off).normalize();
           off.applyAxisAngle(side, -look.pitch);
           if (isPortrait) {
             // Phones turn the head instead of orbiting the back wall, so the side walls
@@ -1927,8 +1980,19 @@ export default function StudioRoom({
         animating = true;
       }
 
-      if (animating || needsFrame || (ambient && now - lastDraw > 32)) {
-        const tRender0 = benchMode ? performance.now() : 0;
+      const drawing = animating || needsFrame || (ambient && now - lastDraw > 32);
+      if (flags.debug) {
+        // Time between back-to-back drawn frames: what dragging actually feels like.
+        if (drawing && stats.drewLast) {
+          const gap = now - lastDraw;
+          stats.gaps++;
+          stats.gapSum += gap;
+          stats.gapMax = Math.max(stats.gapMax, gap);
+        }
+        stats.drewLast = drawing;
+      }
+      if (drawing) {
+        const tRender0 = flags.debug ? performance.now() : 0;
         if (shadowDirty) {
           renderer.shadowMap.needsUpdate = true;
           shadowDirty = false;
@@ -1937,21 +2001,16 @@ export default function StudioRoom({
         renderer.render(scene, camera);
         needsFrame = false;
         lastDraw = now;
-        drawFocus();
-
-        if (benchMode) {
-          benchFrames++;
-          benchFrameMsSum += performance.now() - tRender0;
-          if (now - benchWindowStart >= 1000) {
-            const fps = Math.round((benchFrames * 1000) / (now - benchWindowStart));
-            const avgMs = (benchFrameMsSum / benchFrames).toFixed(1);
-            setBenchText(`${fps} fps · ${avgMs}ms · dpr ${dpr} · sh ${shadowRedraws}`);
-            benchFrames = 0;
-            benchFrameMsSum = 0;
-            benchWindowStart = now;
-          }
+        if (flags.debug) {
+          // Read before the tour's mask passes, which would add their own calls.
+          stats.cpu += performance.now() - tRender0;
+          stats.draws++;
+          stats.calls = renderer.info.render.calls;
+          stats.tris = renderer.info.render.triangles;
         }
+        drawFocus();
       }
+      if (flags.debug) writeStats(now);
 
     }
 
@@ -2124,10 +2183,11 @@ export default function StudioRoom({
             ›
           </button>
         </div>
-        {benchText && <span className="ln-bench">{benchText}</span>}
       </div>
 
       <div ref={tagRef} className="ln-tag" hidden />
+
+      {showDebug && <div ref={debugRef} className="ln-perf" aria-hidden="true" />}
 
       {tour && (
         <div className="ln-tour" role="region" aria-label="Room tour">

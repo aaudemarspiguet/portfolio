@@ -13,6 +13,7 @@ import {
   createSynthBandTexture,
   createThrowTexture,
 } from "./textures";
+import { mergeStaticMeshes, objectsIn } from "./mergeStatic";
 
 export type CanvasMeshEntry = {
   group: THREE.Group;
@@ -1176,7 +1177,7 @@ export function buildRoomScene(
 
   updateNeonTexture();
 
-  return {
+  const refs: RoomSceneRefs = {
     SCR,
     screen,
     screenMat,
@@ -1217,6 +1218,9 @@ export function buildRoomScene(
     canvasMeshes,
     updateNeonTexture,
   };
+  // Everything the room code animates, clicks or restyles is in refs, so it's kept as built.
+  mergeStaticMeshes(scene, objectsIn(refs));
+  return refs;
 }
 
 export function disposeRoomScene(scene: THREE.Scene) {

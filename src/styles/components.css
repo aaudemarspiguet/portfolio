@@ -393,18 +393,6 @@ html[data-view="plain"] #hero .ln-room-hero__screen {
 @media (prefers-reduced-motion: reduce) {
   .ln-deck__dot.is-spinning { animation: none; }
 }
-.ln-bench {
-  margin-left: auto;
-  padding: 4px 9px;
-  border-radius: var(--radius-control);
-  background: rgba(13, 13, 16, 0.78);
-  color: #e6edf3;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
-  font: 500 10px var(--font-mono);
-  letter-spacing: 0;
-  white-space: nowrap;
-  pointer-events: none;
-}
 .ln-tag {
   position: absolute;
   z-index: 6;
@@ -418,6 +406,32 @@ html[data-view="plain"] #hero .ln-room-hero__screen {
   letter-spacing: 0;
   pointer-events: none;
 }
+/* #debug speed readout (lib/perfFlags): fixed under the top bar, never in the way of a tap. */
+.ln-perf {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 72px);
+  left: 50%;
+  z-index: 60;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 2 * var(--space-4, 16px));
+  padding: 6px 10px;
+  border-radius: var(--radius-control);
+  background: rgba(13, 13, 16, 0.82);
+  color: #e6edf3;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  font: 500 10px/1.5 var(--font-mono);
+  letter-spacing: 0;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+/* #noglass: drop the blur behind glass controls, to measure what it costs on a phone. */
+html[data-noglass] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 .ln-keys {
   position: absolute;
   left: 14px;
@@ -2365,8 +2379,7 @@ html[data-boot="revealing"] .ln-mbar {
   }
 
   /* Back, Tour and the deck live in the bar's menus now. */
-  .ln-stage__bar > :not(.ln-bench) { display: none; }
-  .ln-stage__bar:not(:has(.ln-bench)) { display: none; }
+  .ln-stage__bar { display: none; }
 
   /* The tour note sits just under the bar. */
   .ln-tour { top: calc(60px + env(safe-area-inset-top, 0px)); }

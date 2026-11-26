@@ -7,7 +7,7 @@ import { toggleSfx, useSfxEnabled } from "@/lib/sfx";
 import { GlassMenu, type MenuItem } from "./glass/GlassMenu";
 import { CodeIcon, CopyIcon, GitHubIcon, LinkedInIcon, MoonIcon, SpeakerIcon, SunIcon, VinylIcon, WalkIcon } from "./icons";
 import { RecordSheet } from "./room/RecordSheet";
-import { RECORD_TRACKS } from "./room/roomData";
+import { RECORD_TRACKS } from "./room/tracks";
 import { roomCommand, useRoomBus } from "./room/roomBus";
 import { useStudioView } from "./StudioViewProvider";
 import { toggleTheme, useTheme } from "./ThemeToggle";
