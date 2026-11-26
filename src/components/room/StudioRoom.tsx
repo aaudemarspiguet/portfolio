@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import * as THREE from "three";
 import type { HomeProject } from "@/content/project-types";
 import {
@@ -154,6 +154,8 @@ export default function StudioRoom({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
+  // Puts the iPhone runway in place (see resize below); called the moment the room view shows.
+  const holdRunwayRef = useRef<(() => void) | null>(null);
   const dotRef = useRef<HTMLDivElement>(null);
 
   const [enteredState, setEnteredState] = useState(false);
@@ -1760,6 +1762,10 @@ export default function StudioRoom({
       if (!runwayRaf) runwayRaf = requestAnimationFrame(() => { runwayRaf = 0; holdRunway(); });
     };
     window.addEventListener("scroll", onRunwayScroll, { passive: true });
+    holdRunwayRef.current = () => {
+      setBars();
+      holdRunway();
+    };
     // iOS can report the old window height in the first resize after a rotation, so measure again
     // once the rotation has settled.
     let orientTimer = 0;
@@ -1985,6 +1991,7 @@ export default function StudioRoom({
       ro?.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onRunwayScroll);
+      holdRunwayRef.current = null;
       cancelAnimationFrame(runwayRaf);
       window.screen.orientation?.removeEventListener("change", onOrientation);
       clearTimeout(orientTimer);
@@ -2034,6 +2041,13 @@ export default function StudioRoom({
       renderer.forceContextLoss();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
+
+  // Switching from plain view lands at the top of the page, which on iPhones puts the stage a runway
+  // below the screen's top. Scroll to it before the first paint, so the start screen sits exactly
+  // where the plain hero was and the switch stays seamless.
+  useLayoutEffect(() => {
+    if (view === "room") holdRunwayRef.current?.();
+  }, [view]);
 
   // Tell the phone bar what the room is doing.
   useEffect(() => {
