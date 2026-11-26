@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { bootDone, switchView } from "./helpers";
+import { bootDone, settled, switchView } from "./helpers";
 
 // axe-core on every page, both themes. Fails on serious and critical problems.
 const pages = ["/", "/projects", "/work/find-the-outfit", "/work/saw"];
@@ -13,7 +13,8 @@ for (const scheme of ["light", "dark"] as const) {
         await page.goto(path);
         await bootDone(page);
         if (path === "/") await switchView(page); // plain view: the page people read
-        await page.waitForTimeout(800);
+        // Checked once everything has faded in; mid-fade text reads as low contrast.
+        await settled(page);
         let axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
         // Known and waiting on a design call: in dark mode the blue buttons are white on #0a84ff,
         // 3.6:1 where small text needs 4.5:1. Remove this once the colour is settled.

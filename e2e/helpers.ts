@@ -45,6 +45,26 @@ export async function expectToggleUsable(page: Page) {
     .toEqual({ shown: true, onTop: true, inView: true });
 }
 
+/**
+ * Waits until nothing on the page is mid-animation: the boot reveal, the room-to-plain switch and
+ * the cards rising in (each card starts 70ms after the last, so a long page takes well over a
+ * second, and longer on CI's software graphics). Endless loops like the typing cursor don't count.
+ */
+export async function settled(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const root = document.documentElement;
+      if (root.dataset.boot || root.dataset.switch) return false;
+      return document.getAnimations().every((a) => {
+        const t = a.effect?.getComputedTiming();
+        return a.playState !== "running" || !t || t.iterations === Infinity;
+      });
+    },
+    null,
+    { timeout: 15_000 },
+  );
+}
+
 /** Presses the toggle and waits for the view to change. */
 export async function switchView(page: Page) {
   const before = await view(page);
