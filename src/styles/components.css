@@ -2254,6 +2254,22 @@ html[data-boot="revealing"] .ln-mbar {
     left: 0;
     height: calc(100% + 2 * var(--bars, 0px));
   }
+  /* The start screen is the plain page, so it covers the whole phone, under both of Safari's bars
+     too: its paper runs --bars past its top and bottom. On the ride into the room the overhang
+     shrinks with it (--hero-ext, set by StudioRoom), so the whole screen folds into the desk phone,
+     and it grows back on the way out. Without --bars (Android, desktop) there's no overhang. */
+  .ln-room-hero::before,
+  .ln-room-hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: calc(var(--bars, 0px) * var(--hero-ext, 1));
+    background: var(--paper);
+    pointer-events: none;
+  }
+  .ln-room-hero::before { bottom: 100%; }
+  .ln-room-hero::after { top: 100%; }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }
   /* The boot lock screen fills the phone too, so it hands straight over to the room. */

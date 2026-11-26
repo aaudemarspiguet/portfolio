@@ -585,12 +585,16 @@ export default function StudioRoom({
       hero.style.transformOrigin = "0 0";
       hero.style.transform = `translate(${(m.tx * amount).toFixed(2)}px,${(m.ty * amount).toFixed(2)}px) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
       hero.style.opacity = String(opacity);
+      // On iPhones the start screen's paper runs on under Safari's bars (phone CSS); that overhang
+      // shrinks away as the screen rides into the desk phone, and grows back on the way out.
+      hero.style.setProperty("--hero-ext", (1 - amount).toFixed(4));
     }
 
     function clearHeroStyle() {
       if (!hero) return;
       hero.style.transform = "";
       hero.style.opacity = "";
+      hero.style.removeProperty("--hero-ext");
       hero.style.transition = "";
       hero.style.pointerEvents = "";
     }
