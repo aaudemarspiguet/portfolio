@@ -5,6 +5,7 @@ import {
   Component,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -14,6 +15,7 @@ import type { Role } from "@/content/site";
 import { HeroIntro, type HeroData } from "./HeroIntro";
 import { useStudioView, type PlainSectionKey, type RoomNavKey } from "./StudioViewProvider";
 import { BootScreen } from "./BootScreen";
+import { holdRunway, setBars } from "@/lib/phoneBars";
 import type { RoomActions } from "./room/StudioRoom";
 import { RoomPeeks, type PeekState } from "./room/RoomPeeks";
 
@@ -180,6 +182,17 @@ export function HomeStudio({
       window.removeEventListener("resize", onScroll);
     };
   }, [view, setPlainSection]);
+
+  // There are two heroes: plain view's, and the room's start screen, which lines up with it exactly so
+  // the switch reads as one page. On iPhones the room's stage sits a runway (--bars) down the page,
+  // so the page has to be scrolled to it in the same frame the room shows, or the start screen paints
+  // a bar's height lower. The room itself may not exist yet (it's built on the first switch), so
+  // this lives here, beside the stage, and runs before the first paint.
+  useLayoutEffect(() => {
+    if (view !== "room") return;
+    setBars();
+    holdRunway(stageRef.current);
+  }, [view]);
 
   const bootReady = view === "room" ? roomReady || webglFailed : hydrated;
 

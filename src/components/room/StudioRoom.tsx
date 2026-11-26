@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import * as THREE from "three";
 import type { HomeProject } from "@/content/project-types";
 import {
@@ -21,6 +21,7 @@ import { TypedLine } from "./TypedLine";
 import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
+import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -154,8 +155,6 @@ export default function StudioRoom({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
-  // Puts the iPhone runway in place (see resize below); called the moment the room view shows.
-  const holdRunwayRef = useRef<(() => void) | null>(null);
   const dotRef = useRef<HTMLDivElement>(null);
 
   const [enteredState, setEnteredState] = useState(false);
@@ -1677,39 +1676,9 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
-    // Phones: iOS 26 Safari keeps the viewport between its status bar and toolbar and reports no
-    // safe-area insets, so measure how much screen the bars take (--bars, the screen's height less
-    // the viewport's). The phone CSS gives the stage that much page above and below and runs the
-    // canvas under both bars; keeping the page scrolled down by it puts the stage exactly in the
-    // viewport, with real room above it under the status bar and below it under the toolbar.
-    // Only where the browser draws the page under its own bars once it's scrolled: iOS WebKit (every
-    // iPhone browser uses it) on a phone-width touch screen. Android Chrome and desktop have solid
-    // bars, so there --bars stays unset and the stage is a plain 100svh, exactly as on main.
-    const phoneMq = window.matchMedia("(max-width: 640px) and (pointer: coarse)");
-    const underBars = typeof CSS !== "undefined" && CSS.supports("-webkit-touch-callout", "none");
-    const barsOn = () => underBars && phoneMq.matches;
-    function setBars() {
-      const html = document.documentElement;
-      if (!barsOn()) {
-        html.style.removeProperty("--bars");
-        return;
-      }
-      // iOS keeps screen.width and height in portrait, so pick the side that matches the window.
-      const portrait = window.innerHeight >= window.innerWidth;
-      const screenH = portrait
-        ? Math.max(window.screen.width, window.screen.height)
-        : Math.min(window.screen.width, window.screen.height);
-      // A sanity cap, as a share of the screen, so a stale reading mid-rotation can't add a huge gap.
-      const bars = Math.min(screenH * 0.35, Math.max(0, Math.round(screenH - window.innerHeight)));
-      html.style.setProperty("--bars", `${bars}px`);
-    }
-    function holdRunway() {
-      if (!stage || !barsOn()) return;
-      const r = stage.getBoundingClientRect();
-      if (!r.height) return;
-      const runway = Math.round(r.top + window.scrollY);
-      if (runway > 0 && Math.abs(window.scrollY - runway) > 0.5) window.scrollTo(0, runway);
-    }
+    // iPhones: the stage runs under Safari's bars by --bars, and the page is held scrolled to it
+    // (see lib/phoneBars).
+    const holdRunway = () => holdStageRunway(stage);
 
     function resize() {
       if (!stage || !canvas) return;
@@ -1762,10 +1731,6 @@ export default function StudioRoom({
       if (!runwayRaf) runwayRaf = requestAnimationFrame(() => { runwayRaf = 0; holdRunway(); });
     };
     window.addEventListener("scroll", onRunwayScroll, { passive: true });
-    holdRunwayRef.current = () => {
-      setBars();
-      holdRunway();
-    };
     // iOS can report the old window height in the first resize after a rotation, so measure again
     // once the rotation has settled.
     let orientTimer = 0;
@@ -1991,7 +1956,6 @@ export default function StudioRoom({
       ro?.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onRunwayScroll);
-      holdRunwayRef.current = null;
       cancelAnimationFrame(runwayRaf);
       window.screen.orientation?.removeEventListener("change", onOrientation);
       clearTimeout(orientTimer);
@@ -2041,13 +2005,6 @@ export default function StudioRoom({
       renderer.forceContextLoss();
     };
   }, [projects, stageRef, heroRef, heroScreenRef, registerActions]);
-
-  // Switching from plain view lands at the top of the page, which on iPhones puts the stage a runway
-  // below the screen's top. Scroll to it before the first paint, so the start screen sits exactly
-  // where the plain hero was and the switch stays seamless.
-  useLayoutEffect(() => {
-    if (view === "room") holdRunwayRef.current?.();
-  }, [view]);
 
   // Tell the phone bar what the room is doing.
   useEffect(() => {

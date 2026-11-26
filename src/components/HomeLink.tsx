@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from "react";
 import { useStudioView } from "./StudioViewProvider";
+import { barsOn, holdRunway } from "@/lib/phoneBars";
 
 /**
  * Home keeps the view you're in: in the room it flies back to the hero screen, in plain view it
@@ -11,7 +12,9 @@ import { useStudioView } from "./StudioViewProvider";
  */
 function returnHome(inRoom: boolean, goBackToScreen: () => void, instant = false) {
   if (inRoom) {
-    window.scrollTo(0, 0);
+    // On iPhones the room's top is a runway down the page; jumping to 0 would drop it a bar's height.
+    if (barsOn()) holdRunway(document.getElementById("room"));
+    else window.scrollTo(0, 0);
     goBackToScreen();
     return;
   }
