@@ -7,7 +7,8 @@ export type Theme = "light" | "dark";
 const STORAGE_KEY = "theme";
 
 // Follows system prefers-color-scheme by default unless the visitor explicitly saved a choice.
-const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);})()`;
+// Also points the browser's theme colour (Safari's bars) at the site's own theme, not the phone's.
+const themeScript = `(function(){var t;try{t=localStorage.getItem("${STORAGE_KEY}")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);function s(){var c=getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();if(c)document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}s();document.addEventListener("DOMContentLoaded",s);})()`;
 
 // Runs in <head> before first paint: saved choice, otherwise system preference.
 // On client renders the script is inert (text/plain), so React doesn't warn.
@@ -19,6 +20,14 @@ export function ThemeScript() {
       dangerouslySetInnerHTML={{ __html: themeScript }}
     />
   );
+}
+
+// The layout's theme-color tags follow the phone's light/dark setting, but the site has its own
+// toggle. Point them at the page colour of the theme actually showing, so Safari's bars match it.
+function syncThemeColor() {
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+  if (!color) return;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", color));
 }
 
 function readTheme(): Theme {
@@ -35,6 +44,7 @@ function subscribe(onChange: () => void) {
   const onMedia = () => {
     if (!savedTheme()) {
       document.documentElement.setAttribute("data-theme", mq.matches ? "dark" : "light");
+      syncThemeColor();
       onChange();
     }
   };
@@ -56,6 +66,7 @@ function savedTheme(): Theme | null {
 
 export function setTheme(theme: Theme) {
   document.documentElement.setAttribute("data-theme", theme);
+  syncThemeColor();
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {}
@@ -74,5 +85,6 @@ export function useApplySavedTheme() {
   useLayoutEffect(() => {
     const fallback: Theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", savedTheme() ?? fallback);
+    syncThemeColor();
   }, []);
 }
