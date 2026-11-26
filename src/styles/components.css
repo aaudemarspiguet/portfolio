@@ -83,9 +83,42 @@ body::before {
 .ln-link { color: var(--link); text-decoration: none; font-weight: 500; }
 .ln-link:hover { color: var(--link-hover); }
 
-/* Pre-hydration saved-view guards so saved "plain" never flashes the room stage. */
-html[data-view="plain"] #room { display: none; }
+/* Pre-hydration saved-view guard so saved "room" never flashes the plain page. */
 html[data-view="room"] #plain { display: none; }
+
+/* One hero for both views. It lives in the room's stage; in plain view the stage folds down to just
+   the hero, laid out as the page's first block (132px down, like every page's first block), and
+   the room around it sleeps. Switching views only changes what's around the hero, never the hero,
+   so there's nothing to line up and nothing that can jump. The ids win over every stage rule. */
+html[data-view="plain"] #room {
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+html[data-view="plain"] #room > :not(#hero) { display: none !important; }
+html[data-view="plain"] #hero {
+  position: relative;
+  inset: auto;
+  display: block;
+  container-type: normal;
+  background: transparent;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+html[data-view="plain"] #hero .ln-room-hero__screen {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  padding: 132px 0 8px;
+  background: transparent;
+}
 
 /* Buttons & pills */
 .ln-btn {
@@ -774,7 +807,6 @@ html[data-boot="revealing"] .ln-mbar {
   z-index: 1;
 }
 
-.ln-plainhero h1,
 .ln-room-hero h1 {
   margin: 0;
   font-size: clamp(52px, 9vw, 120px);
@@ -788,7 +820,6 @@ html[data-boot="revealing"] .ln-mbar {
   letter-spacing: 0;
   color: var(--ink-muted);
 }
-.ln-plainhero__lede,
 .ln-room-hero__lede {
   margin: 0;
   width: min(600px, 100%);
@@ -1120,18 +1151,6 @@ html[data-boot="revealing"] .ln-mbar {
 .ln-cursordot.is-hot { width: 16px; height: 16px; margin: -8px 0 0 -8px; }
 
 /* Plain view homepage & About view */
-.ln-plainhero {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 18px;
-  padding-block: 132px 8px;
-}
-.ln-plainhero > * {
-  position: relative;
-  z-index: 1;
-}
 
 .ln-section-head {
   display: flex;
@@ -2166,7 +2185,7 @@ html[data-boot="revealing"] .ln-mbar {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: calc(8px + env(safe-area-inset-top, 0px)) var(--gut-r) 0 var(--gut-l);
+    padding: calc(var(--mbar-top) + env(safe-area-inset-top, 0px)) var(--gut-r) 0 var(--gut-l);
     pointer-events: none;
   }
   .ln-mbar > * { pointer-events: auto; }
@@ -2219,8 +2238,66 @@ html[data-boot="revealing"] .ln-mbar {
   }
   :root[data-theme] .ln-stage,
   :root .ln-stage { background: var(--paper); }
+  /* Edge to edge, the way plain view does it. iOS 26 Safari keeps the page's viewport between its
+     status bar and toolbar (on an iPhone 17, 714px of an 874px screen) and reports no safe-area
+     insets for either, so the only way to put the room under them is the way a scrolled page gets
+     there: real page content above and below the viewport, and the page scrolled off the top.
+     --bars is the screen's height less the viewport's, measured in StudioRoom. In room view the
+     stage gets that much page above and below it, the canvas runs that far past both its edges,
+     and StudioRoom keeps the page scrolled down by it so the stage fills the viewport exactly.
+     The root is not overflow:hidden: with it locked, Safari painted plain bands under its bars even
+     with the room there and the page scrolled, so the root stays scrollable like plain view's.
+     Dragging the room or the hero doesn't move the page (touch-action below), and StudioRoom
+     scrolls back if anything else does. Body stays unclipped, because clipping it cut the canvas
+     off at the viewport's bottom. The camera stays framed to the stage, so the extra rows only
+     continue the picture. */
+  html[data-view="room"]:has(#room) { overscroll-behavior: none; }
+  .ln-room-hero,
+  .ln-stage__canvas { touch-action: none; }
+  /* Safari tints the status bar with whatever fixed element touches the viewport's top edge, and
+     the phone bar's full-width header did, transparent, so Safari filled in the page's background
+     colour there instead of showing the room. In room view the bar's own top spacing (--mbar-top)
+     moves from padding inside the header to the header's offset, so the pills don't move and the
+     top edge is the room's. It's the bar's spacing, the same on every phone, not a measurement. */
+  html[data-view="room"]:has(#room) .ln-header { top: var(--mbar-top); }
+  html[data-view="room"]:has(#room) .ln-mbar { padding-top: env(safe-area-inset-top, 0px); }
+  html[data-view="room"]:has(#room) body::before { display: none; }
+  .ln-stage {
+    overflow: visible;
+    margin-top: var(--bars, 0px);
+    margin-bottom: var(--bars, 0px);
+  }
+  .ln-stage__canvas {
+    position: absolute;
+    top: calc(-1 * var(--bars, 0px));
+    left: 0;
+    height: calc(100% + 2 * var(--bars, 0px));
+  }
+  /* The start screen is the plain page, so it covers the whole phone, under both of Safari's bars
+     too: its paper runs --bars past its top and bottom. On the ride into the room the overhang
+     shrinks with it (--hero-ext, set by StudioRoom), so the whole screen folds into the desk phone,
+     and it grows back on the way out. Without --bars (Android, desktop) there's no overhang. */
+  .ln-room-hero::before,
+  .ln-room-hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: calc(var(--bars, 0px) * var(--hero-ext, 1));
+    background: var(--paper);
+    pointer-events: none;
+  }
+  .ln-room-hero::before { bottom: 100%; }
+  .ln-room-hero::after { top: 100%; }
   /* On phones the stage starts at the top of the page, under the bar, so the full 132px. */
   .ln-room-hero__screen { padding: 132px var(--gut-r) 8px var(--gut-l); }
+  /* Plain view keeps the same runway above the hero (paper, under the status bar) and rests scrolled
+     to it, so the hero is at the same place on the page and on screen in both views, and switching
+     never scrolls (lib/phoneBars). It scrolls with the page like any first block. */
+  html[data-view="plain"] #room { margin-top: var(--bars, 0px); }
+  html[data-view="plain"] #hero { touch-action: auto; }
+  html[data-view="plain"] #hero::before,
+  html[data-view="plain"] #hero::after { display: none; }
   /* The boot lock screen fills the phone too, so it hands straight over to the room. */
   .ln-boot__stage {
     height: 100lvh;

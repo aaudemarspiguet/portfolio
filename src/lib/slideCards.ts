@@ -3,7 +3,7 @@
 // up out of a line mask. Only the blocks on screen move, so the stagger stays short wherever you are.
 
 const BLOCKS = [
-  ".ln-plainhero > *",
+  "#hero .ln-room-hero__screen > *",
   ".ln-section-head",
   ".ln-piece",
   ".ln-list__row",
@@ -26,7 +26,7 @@ function onScreenBlocks(root: HTMLElement, skipHero = false) {
   const h = window.innerHeight;
   const out: HTMLElement[] = [];
   for (const el of root.querySelectorAll<HTMLElement>(BLOCKS)) {
-    if (skipHero && el.closest(".ln-plainhero")) continue;
+    if (skipHero && el.closest("#hero")) continue;
     const r = el.getBoundingClientRect();
     if (r.height === 0 || r.bottom <= 0 || r.top >= h) continue;
     out.push(el);

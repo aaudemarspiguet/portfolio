@@ -116,6 +116,8 @@
   --tour-inset: 6px;
   --radius-tour: calc(var(--radius-btn) + var(--tour-inset)); /* 18px: the tour note around its buttons */
 
+  --mbar-top: 8px;                      /* phones: space between the top of the screen and the bar's pills */
+
   /* Layout: 1120px column with 16px gutters so nav pill and stage edges align exactly. */
   --layout-max: 1120px;
   --layout-measure: 640px;

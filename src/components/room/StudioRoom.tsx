@@ -21,6 +21,7 @@ import { TypedLine } from "./TypedLine";
 import { publishRoom, registerRoomCommands } from "./roomBus";
 import { drawHeroToCanvas, drawIdleScreen } from "./textures";
 import { msToNextMinute } from "@/lib/clock";
+import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -218,6 +219,8 @@ export default function StudioRoom({
     const hero = heroRef.current;
     const heroScreenEl = heroScreenRef.current;
     if (!canvas || !stage || !hero || !heroScreenEl) return;
+    // The hero is shared with plain view, where it's the page's first block and the room is asleep.
+    const inPlain = () => document.documentElement.dataset.view === "plain";
 
     hero.removeAttribute("data-gone");
     hero.style.transform = "";
@@ -333,7 +336,8 @@ export default function StudioRoom({
       renderOnce();
     }
     function redrawHero() {
-      if (!heroScreenEl || hero?.style.transform) return;
+      // In plain view the hero is laid out as the page's first block, not the screen, so wait.
+      if (!heroScreenEl || hero?.style.transform || inPlain()) return;
       const target = heroTarget();
       const nextTex = drawHeroToCanvas(heroScreenEl, target.dims.w / target.dims.h);
       if (!nextTex) return;
@@ -531,11 +535,19 @@ export default function StudioRoom({
       };
     }
 
+    // Where the canvas sits in the stage. On iPhones it starts above the stage (it runs under
+    // Safari's bars), so canvas positions are shifted by this before placing anything in the stage.
+    function canvasInStage() {
+      const c = canvas!.getBoundingClientRect();
+      const st = stage!.getBoundingClientRect();
+      return { x: c.left - st.left, y: c.top - st.top, w: c.width, h: c.height };
+    }
+
     function screenMapping() {
       const { mesh, dims } = heroTarget();
       camera.updateMatrixWorld();
       mesh.updateMatrixWorld();
-      const r = canvas!.getBoundingClientRect();
+      const r = canvasInStage();
       const xs: number[] = [];
       const ys: number[] = [];
       [
@@ -547,8 +559,8 @@ export default function StudioRoom({
         const v = new THREE.Vector3((cx * dims.w) / 2, (cy * dims.h) / 2, 0);
         mesh.localToWorld(v);
         v.project(camera);
-        xs.push(((v.x + 1) / 2) * r.width);
-        ys.push(((1 - v.y) / 2) * r.height);
+        xs.push(r.x + ((v.x + 1) / 2) * r.w);
+        ys.push(r.y + ((1 - v.y) / 2) * r.h);
       });
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
@@ -577,12 +589,16 @@ export default function StudioRoom({
       hero.style.transformOrigin = "0 0";
       hero.style.transform = `translate(${(m.tx * amount).toFixed(2)}px,${(m.ty * amount).toFixed(2)}px) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
       hero.style.opacity = String(opacity);
+      // On iPhones the start screen's paper runs on under Safari's bars (phone CSS); that overhang
+      // shrinks away as the screen rides into the desk phone, and grows back on the way out.
+      hero.style.setProperty("--hero-ext", (1 - amount).toFixed(4));
     }
 
     function clearHeroStyle() {
       if (!hero) return;
       hero.style.transform = "";
       hero.style.opacity = "";
+      hero.style.removeProperty("--hero-ext");
       hero.style.transition = "";
       hero.style.pointerEvents = "";
     }
@@ -1386,8 +1402,8 @@ export default function StudioRoom({
     function projectObj(obj: THREE.Object3D) {
       obj.getWorldPosition(tmpV);
       tmpV.project(camera);
-      const r = canvas!.getBoundingClientRect();
-      return { x: ((tmpV.x + 1) / 2) * r.width, y: ((1 - tmpV.y) / 2) * r.height };
+      const r = canvasInStage();
+      return { x: r.x + ((tmpV.x + 1) / 2) * r.w, y: r.y + ((1 - tmpV.y) / 2) * r.h };
     }
 
     function showTag(o: InteractiveObj, x?: number, y?: number) {
@@ -1476,7 +1492,8 @@ export default function StudioRoom({
         if (!o) return;
         held = true;
         if (holdTagTimer) clearTimeout(holdTagTimer);
-        const r = canvas!.getBoundingClientRect();
+        // The tag lives in the stage, so place it from the stage's corner, not the canvas's.
+        const r = stage!.getBoundingClientRect();
         // Lifted clear of the fingertip, which would cover a label placed right at the touch.
         showTag(o, x - r.left, y - r.top - 36);
       }, HOLD_MS);
@@ -1579,7 +1596,7 @@ export default function StudioRoom({
       hovered = hitObj;
       canvas!.style.cursor = hovered ? "pointer" : "default";
       dot?.classList.toggle("is-hot", Boolean(hovered));
-      const r = canvas!.getBoundingClientRect();
+      const r = stage!.getBoundingClientRect();
       if (hovered) showTag(hovered, e.clientX - r.left, e.clientY - r.top);
       else hideTag();
     }
@@ -1618,6 +1635,7 @@ export default function StudioRoom({
 
     /* Hero wheel & swipe to enter */
     function onHeroWheel(e: WheelEvent) {
+      if (inPlain()) return;
       if (!entered && e.deltaY > 0 && heroScreenEl!.scrollTop === 0) {
         e.preventDefault();
         enterRoom();
@@ -1628,6 +1646,7 @@ export default function StudioRoom({
       heroTouchY = e.touches[0].clientY;
     }
     function onHeroTouchMove(e: TouchEvent) {
+      if (inPlain()) return;
       if (!entered && heroTouchY !== null && heroTouchY - e.touches[0].clientY > 40) {
         heroTouchY = null;
         enterRoom();
@@ -1662,14 +1681,28 @@ export default function StudioRoom({
     document.addEventListener("keydown", onHeroKey);
 
     /* Resize & IntersectionObserver */
+    // iPhones: the stage runs under Safari's bars by --bars, and the page is held scrolled to it
+    // (see lib/phoneBars).
+    const holdRunway = () => holdStageRunway(stage);
+
     function resize() {
-      if (!stage || !canvas) return;
+      // The stage folds down to the hero in plain view; switching back resizes it again.
+      if (!stage || !canvas || inPlain()) return;
+      setBars();
+      holdRunway();
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
       const aspect = r.width / r.height;
-      renderer.setSize(r.width, r.height, false);
+      // On phones the canvas runs past the stage, under Safari's toolbar. Size the buffer to the
+      // canvas and frame the camera to the stage, so the extra rows only continue the picture.
+      const canvasH = Math.max(r.height, canvas.getBoundingClientRect().height);
+      renderer.setSize(r.width, canvasH, false);
       sizeFocusMask();
       camera.aspect = aspect;
+      // The canvas starts above the stage by the same amount it runs past it below.
+      const above = Math.max(0, r.top - canvas.getBoundingClientRect().top);
+      if (canvasH > r.height + 1) camera.setViewOffset(r.width, r.height, 0, -above, r.width, canvasH);
+      else camera.clearViewOffset();
       baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
       applyFov();
       WIDE.pos.z = aspect < 1 ? 4.6 : aspect < 1.4 ? 4.9 : 4.1;
@@ -1698,6 +1731,21 @@ export default function StudioRoom({
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     ro?.observe(stage);
     window.addEventListener("resize", resize);
+    // Anything that scrolls the page to the top (a view switch, Home) puts the runway back on screen.
+    let runwayRaf = 0;
+    const onRunwayScroll = () => {
+      if (!runwayRaf) runwayRaf = requestAnimationFrame(() => { runwayRaf = 0; holdRunway(); });
+    };
+    window.addEventListener("scroll", onRunwayScroll, { passive: true });
+    // iOS can report the old window height in the first resize after a rotation, so measure again
+    // once the rotation has settled.
+    let orientTimer = 0;
+    const onOrientation = () => {
+      requestAnimationFrame(resize);
+      clearTimeout(orientTimer);
+      orientTimer = window.setTimeout(resize, 300);
+    };
+    window.screen.orientation?.addEventListener("change", onOrientation);
 
     /* Render loop */
     let rafId = 0;
@@ -1913,6 +1961,11 @@ export default function StudioRoom({
       io?.disconnect();
       ro?.disconnect();
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onRunwayScroll);
+      cancelAnimationFrame(runwayRaf);
+      window.screen.orientation?.removeEventListener("change", onOrientation);
+      clearTimeout(orientTimer);
+      document.documentElement.style.removeProperty("--bars");
       window.removeEventListener("blur", onWindowBlur);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("touchstart", onTouchStart);
