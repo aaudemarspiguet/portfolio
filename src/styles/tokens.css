@@ -20,6 +20,13 @@
   --glass-ring: rgba(0, 0, 0, 0.08);
   /* Sheets and modals: a clearer lens than a solid card, so the room shows through, blurred. */
   --glass-sheet: rgba(255, 255, 255, 0.66);
+  /* Things that sit on glass (sheets, peek cards, the bar): veils over the glass instead of solid paper,
+     so they take the glass's tint. A solid fill there reads as a slab, and a second backdrop-filter
+     can't see through the glass it sits in. */
+  --glass-fill: rgba(0, 0, 0, 0.06);       /* control tracks, chips, secondary buttons, hover */
+  --glass-fill-hover: rgba(0, 0, 0, 0.1);
+  --glass-thumb: rgba(255, 255, 255, 0.92); /* the selected segment, raised above the track */
+  --glass-card: rgba(255, 255, 255, 0.5);  /* cards, lists and tiles inside glass */
 
   --rule: rgba(29, 29, 31, 0.12);
   --rule-strong: #86868b;
@@ -160,8 +167,8 @@
     --link: #4da3ff;
     --link-hover: #7dbbff;
     --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
-    --fill-link: var(--link);
-    --fill-link-hover: var(--link-hover);
+    --fill-link: #0a84ff; /* white text needs a deeper blue than the link colour */
+    --fill-link-hover: #0077ed;
     --accent-tint: #3d120b;
     --panel: #0b0b0d;
     --fill-primary: #ececef;
@@ -171,6 +178,10 @@
     --glass-edge: rgba(255, 255, 255, 0.14);
     --glass-ring: rgba(255, 255, 255, 0.08);
     --glass-sheet: rgba(38, 38, 42, 0.56);
+    --glass-fill: rgba(255, 255, 255, 0.1);
+    --glass-fill-hover: rgba(255, 255, 255, 0.16);
+    --glass-thumb: rgba(255, 255, 255, 0.22);
+    --glass-card: rgba(255, 255, 255, 0.06);
     --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
     --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
     --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
@@ -198,8 +209,8 @@
   --link: #4da3ff;
   --link-hover: #7dbbff;
   --link-tint: color-mix(in srgb, var(--link) 12%, transparent);
-  --fill-link: var(--link);
-  --fill-link-hover: var(--link-hover);
+  --fill-link: #0a84ff; /* white text needs a deeper blue than the link colour */
+  --fill-link-hover: #0077ed;
   --accent-tint: #3d120b;
   --panel: #0b0b0d;
   --fill-primary: #ececef;
@@ -209,6 +220,10 @@
   --glass-edge: rgba(255, 255, 255, 0.14);
   --glass-ring: rgba(255, 255, 255, 0.08);
   --glass-sheet: rgba(38, 38, 42, 0.56);
+  --glass-fill: rgba(255, 255, 255, 0.1);
+  --glass-fill-hover: rgba(255, 255, 255, 0.16);
+  --glass-thumb: rgba(255, 255, 255, 0.22);
+  --glass-card: rgba(255, 255, 255, 0.06);
   --card-bg: linear-gradient(180deg, #212126 0%, #1a1a1e 100%);
   --ctrl-bg: linear-gradient(180deg, #26262b 0%, #1d1d21 100%);
   --ctrl-bg-hover: linear-gradient(180deg, #323238 0%, #26262b 100%);
