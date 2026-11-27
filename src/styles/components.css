@@ -222,7 +222,7 @@ html[data-view="plain"] #hero .ln-room-hero__screen {
   justify-self: start;
   font-family: var(--font-sans);
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--ink);
   text-decoration: none;
@@ -2272,8 +2272,6 @@ html[data-boot="revealing"] .ln-mbar {
     letter-spacing: -0.02em;
     cursor: pointer;
   }
-  /* The site name reads in regular weight, as in the desktop bar; section names stay semibold. */
-  .ln-mbar__title .ln-mbar__brand { font-weight: 400; }
   .ln-mbar__title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ln-mbar__title svg {
     flex: none;
