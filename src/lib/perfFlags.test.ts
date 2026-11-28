@@ -3,7 +3,16 @@ import { perfFlagsDiffer, readPerfFlags } from "./perfFlags";
 
 describe("readPerfFlags", () => {
   it("is all off with no hash", () => {
-    expect(readPerfFlags("")).toEqual({ debug: false, dpr: null, noaa: false, noshadow: false, noglass: false });
+    expect(readPerfFlags("")).toEqual({
+      debug: false,
+      dpr: null,
+      noaa: false,
+      noshadow: false,
+      noglass: false,
+      fov: null,
+      front: null,
+      camz: null,
+    });
   });
 
   it("reads combined switches in any order and separator", () => {
@@ -13,7 +22,17 @@ describe("readPerfFlags", () => {
       noaa: false,
       noshadow: true,
       noglass: true,
+      fov: null,
+      front: null,
+      camz: null,
     });
+  });
+
+  it("reads the wide-shot tuning switches, within sensible ranges", () => {
+    const f = readPerfFlags("#debug&fov=55&front=0.4&camz=3.8");
+    expect([f.fov, f.front, f.camz]).toEqual([55, 0.4, 3.8]);
+    expect(readPerfFlags("#fov=500&camz=-1&front=x")).toMatchObject({ fov: null, camz: null, front: null });
+    expect(perfFlagsDiffer(readPerfFlags("#camz=3"), readPerfFlags("#camz=3.5"))).toBe(true);
   });
 
   it("ignores a pixel ratio that isn't a sensible number", () => {
