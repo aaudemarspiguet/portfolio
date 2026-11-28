@@ -8,6 +8,12 @@
  *   #debug&noshadow        no shadows
  *   #debug&noglass         no blur behind the glass bars and buttons
  *
+ * And for tuning the room's wide shot on a phone (see lib/roomFrame):
+ *
+ *   #fov=55                lens, in vertical degrees, instead of the fitted one
+ *   #front=0.4             where the bottom of the frame meets the floor (z; furniture sits from 0.85 back)
+ *   #camz=3.8              where the camera stands (z), instead of the fitted distance
+ *
  * Any of them can be combined. Changing them reloads the page, since some only apply at startup.
  */
 export type PerfFlags = {
@@ -16,6 +22,9 @@ export type PerfFlags = {
   noaa: boolean;
   noshadow: boolean;
   noglass: boolean;
+  fov: number | null;
+  front: number | null;
+  camz: number | null;
 };
 
 export function readPerfFlags(hash: string): PerfFlags {
@@ -25,18 +34,25 @@ export function readPerfFlags(hash: string): PerfFlags {
     .map((p) => p.trim().toLowerCase())
     .filter(Boolean);
   const has = (k: string) => parts.includes(k);
-  const dprPart = parts.find((p) => p.startsWith("dpr="));
-  const dprNum = dprPart ? Number(dprPart.slice(4)) : NaN;
+  // A number switch like "dpr=1.5", kept only inside a sensible range.
+  const num = (k: string, min: number, max: number) => {
+    const part = parts.find((p) => p.startsWith(`${k}=`));
+    const n = part ? Number(part.slice(k.length + 1)) : NaN;
+    return Number.isFinite(n) && n >= min && n <= max ? n : null;
+  };
   return {
     debug: has("debug"),
-    dpr: Number.isFinite(dprNum) && dprNum >= 0.5 && dprNum <= 3 ? dprNum : null,
+    dpr: num("dpr", 0.5, 3),
     noaa: has("noaa"),
     noshadow: has("noshadow"),
     noglass: has("noglass"),
+    fov: num("fov", 20, 100),
+    front: num("front", -2.5, 3),
+    camz: num("camz", 1, 8),
   };
 }
 
 /** True when two flag sets would set the room up differently (so a hash change needs a reload). */
 export function perfFlagsDiffer(a: PerfFlags, b: PerfFlags) {
-  return a.debug !== b.debug || a.dpr !== b.dpr || a.noaa !== b.noaa || a.noshadow !== b.noshadow || a.noglass !== b.noglass;
+  return (Object.keys(a) as (keyof PerfFlags)[]).some((k) => a[k] !== b[k]);
 }

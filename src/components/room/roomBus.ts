@@ -11,6 +11,8 @@ export type RoomBusState = {
   touring: boolean;
   trackIndex: number;
   playing: boolean;
+  /** Looking around by tilting the phone: offered only on touch screens with a motion sensor. */
+  tilt: "unavailable" | "off" | "on";
 };
 
 export type RoomCommands = {
@@ -20,9 +22,11 @@ export type RoomCommands = {
   showDeck: () => void;
   /** Flies back out to the whole room after `showDeck`. */
   leaveDeck: () => void;
+  /** Turns tilt-to-look on or off. Must run inside the tap, since iPhones ask for motion access. */
+  toggleTilt: () => void;
 };
 
-const INITIAL: RoomBusState = { mounted: false, touring: false, trackIndex: 0, playing: false };
+const INITIAL: RoomBusState = { mounted: false, touring: false, trackIndex: 0, playing: false, tilt: "unavailable" };
 
 let state: RoomBusState = INITIAL;
 let commands: RoomCommands | null = null;
@@ -34,7 +38,8 @@ export function publishRoom(next: Partial<RoomBusState>) {
     merged.mounted === state.mounted &&
     merged.touring === state.touring &&
     merged.trackIndex === state.trackIndex &&
-    merged.playing === state.playing
+    merged.playing === state.playing &&
+    merged.tilt === state.tilt
   ) {
     return;
   }
@@ -51,6 +56,7 @@ export const roomCommand: RoomCommands = {
   deck: (track, play) => commands?.deck(track, play),
   showDeck: () => commands?.showDeck(),
   leaveDeck: () => commands?.leaveDeck(),
+  toggleTilt: () => commands?.toggleTilt(),
 };
 
 function subscribe(cb: () => void) {

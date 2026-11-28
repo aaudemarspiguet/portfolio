@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { site } from "@/content/site";
 import { toggleSfx, useSfxEnabled } from "@/lib/sfx";
 import { GlassMenu, type MenuItem } from "./glass/GlassMenu";
-import { CodeIcon, CopyIcon, GitHubIcon, LinkedInIcon, MoonIcon, SpeakerIcon, SunIcon, VinylIcon, WalkIcon } from "./icons";
+import { CodeIcon, CopyIcon, GitHubIcon, LinkedInIcon, MoonIcon, SpeakerIcon, SunIcon, TiltIcon, VinylIcon, WalkIcon } from "./icons";
 import { RecordSheet } from "./room/RecordSheet";
 import { RECORD_TRACKS } from "./room/tracks";
 import { roomCommand, useRoomBus } from "./room/roomBus";
@@ -23,8 +23,8 @@ function tourSeen() {
 }
 
 /**
- * The ⋯ button and its menu, the same on phones and desktop: in the room, the tour and the record
- * player; everywhere, sound, appearance and the email. Phones also list the outside links, which
+ * The ⋯ button and its menu, the same on phones and desktop: in the room, the tour, the record
+ * player and (on phones) tilt to look around; everywhere, sound, appearance and the email. Phones also list the outside links, which
  * desktop keeps visible in the nav.
  */
 export function MoreMenu({ buttonClassName, withLinks }: { buttonClassName: string; withLinks: boolean }) {
@@ -71,6 +71,18 @@ export function MoreMenu({ buttonClassName, withLinks }: { buttonClassName: stri
             sub: `${track.title} · ${room.playing ? "playing" : "paused"}`,
             onSelect: () => setRecordOpen(true),
           },
+          // Phones with a motion sensor: look around the room by moving the phone. Off until asked,
+          // since iPhones ask for motion access first.
+          ...(room.tilt !== "unavailable"
+            ? ([
+                {
+                  label: "Tilt to Look Around",
+                  icon: <TiltIcon />,
+                  checked: room.tilt === "on",
+                  onSelect: roomCommand.toggleTilt,
+                },
+              ] satisfies MenuItem[])
+            : []),
           { kind: "separator" },
         ] satisfies MenuItem[])
       : []),

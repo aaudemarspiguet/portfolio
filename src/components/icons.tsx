@@ -91,6 +91,15 @@ export function WalkIcon() {
   );
 }
 
+export function TiltIcon() {
+  return (
+    <Line>
+      <rect x="8.5" y="4" width="7" height="16" rx="1.8" transform="rotate(-14 12 12)" />
+      <path d="M3.6 9.2a9 9 0 0 0 0 5.6M20.4 9.2a9 9 0 0 1 0 5.6" />
+    </Line>
+  );
+}
+
 export function GitHubIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="ln-fillicon">

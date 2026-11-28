@@ -24,6 +24,8 @@ import { msToNextMinute } from "@/lib/clock";
 import { holdRunway as holdStageRunway, setBars } from "@/lib/phoneBars";
 import { isParked, parkContext, restoreParked } from "@/lib/glContext";
 import { perfFlagsDiffer, readPerfFlags } from "@/lib/perfFlags";
+import { fitWideShot, floorEdge } from "@/lib/roomFrame";
+import { deviceLookDir, levelReach, FLAT, tiltOffsets } from "@/lib/tiltLook";
 
 export type RoomActions = {
   enterRoom: () => void;
@@ -522,6 +524,96 @@ export default function StudioRoom({
     const lookOff = new THREE.Vector3();
     const lookSide = new THREE.Vector3();
 
+    // Phones slide along the open front of the room as they turn, toward where they look. So a drag
+    // moves through the room, as the orbit does on wide screens (near things pass faster than the
+    // back wall), and still brings the side walls (couch, W, coat rack) into the narrow frame.
+    const SLIDE = 1.4;
+    const slideV = new THREE.Vector3();
+    function slideFor(yaw: number, out: THREE.Vector3) {
+      // Turning left (positive yaw) slides left; the full turn reaches SLIDE either side.
+      return out.set((-SLIDE * Math.sin(yaw)) / Math.sin(yawLimit()), 0, 0);
+    }
+
+    // Tilt to look around (phones with a motion sensor, off until asked): moving the phone turns the
+    // head on top of wherever the drag has put the camera (lib/tiltLook). It holds still during the
+    // tour, which turns the view itself, and recentres on the pose the phone is in whenever the view
+    // comes back to the wide shot, the tour ends, or the phone rotates.
+    const tiltAvailable =
+      isCoarse && !reduced && typeof window !== "undefined" && "DeviceOrientationEvent" in window;
+    const tilt = {
+      on: false,
+      ref: null as THREE.Vector3 | null,
+      want: { yaw: 0, pitch: 0 },
+      cur: { yaw: 0, pitch: 0 },
+      heard: false,
+    };
+    const tiltDir = new THREE.Vector3();
+    const tiltAxis = new THREE.Vector3();
+    let tiltCheck: ReturnType<typeof setTimeout> | null = null;
+    function screenAngle() {
+      const legacy = (window as { orientation?: number }).orientation;
+      return window.screen?.orientation?.angle ?? legacy ?? 0;
+    }
+    function onDeviceOrientation(e: DeviceOrientationEvent) {
+      if (e.alpha === null || e.beta === null || e.gamma === null) return;
+      tilt.heard = true;
+      deviceLookDir(e.alpha, e.beta, e.gamma, screenAngle(), tiltDir);
+      if (!tilt.ref) {
+        // Flat on a table there's no "ahead" yet: wait until the phone is lifted.
+        if (levelReach(tiltDir) <= FLAT) return;
+        tilt.ref = tiltDir.clone();
+      }
+      const next = tiltOffsets(tiltDir, tilt.ref, tilt.want.yaw);
+      tilt.want.yaw = next.yaw;
+      tilt.want.pitch = next.pitch;
+      renderOnce();
+    }
+    function recenterTilt(snap = false) {
+      tilt.ref = null;
+      tilt.want.yaw = tilt.want.pitch = 0;
+      if (snap) tilt.cur.yaw = tilt.cur.pitch = 0;
+      renderOnce();
+    }
+    function stopTilt(next: "off" | "unavailable" = "off") {
+      if (tiltCheck) clearTimeout(tiltCheck);
+      tiltCheck = null;
+      tilt.on = false;
+      window.removeEventListener("deviceorientation", onDeviceOrientation);
+      recenterTilt();
+      publishRoom({ tilt: next });
+    }
+    function startTilt() {
+      tilt.on = true;
+      tilt.heard = false;
+      recenterTilt();
+      window.addEventListener("deviceorientation", onDeviceOrientation);
+      publishRoom({ tilt: "on" });
+      // A phone without a working sensor never sends a reading: take the option away again.
+      if (tiltCheck) clearTimeout(tiltCheck);
+      tiltCheck = setTimeout(() => {
+        tiltCheck = null;
+        if (tilt.on && !tilt.heard) stopTilt("unavailable");
+      }, 1500);
+    }
+    function toggleTilt() {
+      if (!tiltAvailable) return;
+      if (tilt.on) {
+        stopTilt();
+        return;
+      }
+      // iPhones ask for motion access, and only from inside a tap, so this runs straight from it.
+      const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
+      if (typeof DOE.requestPermission === "function") {
+        DOE.requestPermission().then(
+          (answer) => (answer === "granted" ? startTilt() : stopTilt("unavailable")),
+          () => stopTilt("unavailable"),
+        );
+      } else {
+        startTilt();
+      }
+    }
+    publishRoom({ tilt: tiltAvailable ? "off" : "unavailable" });
+
     function layoutHero() {
       if (!stage || !heroScreenEl) return;
       const r = stage.getBoundingClientRect();
@@ -667,6 +759,7 @@ export default function StudioRoom({
           look.dragYaw = 0;
           look.dragPitch = 0;
           look.resting = true;
+          recenterTilt(true);
           after?.();
         },
         step ?? undefined,
@@ -843,12 +936,21 @@ export default function StudioRoom({
       if (meshes.length && look.resting) {
         centre.divideScalar(meshes.length);
         const base = new THREE.Vector3().subVectors(WIDE.look, WIDE.pos);
-        const to = new THREE.Vector3().subVectors(centre, WIDE.pos);
-        // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
-        let yaw = Math.atan2(to.x, to.z) - Math.atan2(base.x, base.z);
-        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+        const from = WIDE.pos.clone();
+        const to = new THREE.Vector3();
         const lim = yawLimit();
-        look.dragYaw = clamp(yaw, -lim, lim);
+        const yawFrom = (eye: THREE.Vector3) => {
+          to.subVectors(centre, eye);
+          // The room faces -z, where atan2 jumps between +π and -π, so wrap the difference.
+          const d = Math.atan2(to.x, to.z) - Math.atan2(base.x, base.z);
+          return clamp(Math.atan2(Math.sin(d), Math.cos(d)), -lim, lim);
+        };
+        let yaw = yawFrom(from);
+        // On phones the camera slides as it turns, so aim from where the turn will leave it.
+        if (isPortrait) {
+          for (let i = 0; i < 4; i++) yaw = yawFrom(from.copy(WIDE.pos).add(slideFor(yaw, slideV)));
+        }
+        look.dragYaw = yaw;
         look.dragPitch = 0;
       } else if (look.resting) {
         look.dragYaw = 0;
@@ -881,6 +983,7 @@ export default function StudioRoom({
       pausedStep = -1;
       clearFocus();
       setTour(null);
+      recenterTilt();
     }
 
     // Opening a project or heading back to the start mid-tour (steps two and three invite them)
@@ -1121,6 +1224,7 @@ export default function StudioRoom({
       deck: (track, play) => syncDeck(track, play),
       showDeck,
       leaveDeck,
+      toggleTilt,
     });
 
     registerActions({
@@ -1768,9 +1872,12 @@ export default function StudioRoom({
       const above = Math.max(0, r.top - canvas.getBoundingClientRect().top);
       if (canvasH > r.height + 1) camera.setViewOffset(r.width, r.height, 0, -above, r.width, canvasH);
       else camera.clearViewOffset();
-      baseFov = aspect < 1 ? 62 : aspect < 1.4 ? 54 : 50;
+      // Fitted to the room, not to a list of screens: the floor starts at the front of the
+      // furniture on any screen (lib/roomFrame). #fov, #front and #camz tune it on a phone.
+      const shot = fitWideShot(aspect, WIDE.pos.y, WIDE.look, { fov: flags.fov, z: flags.camz, front: flags.front });
+      baseFov = shot.fov;
       applyFov();
-      WIDE.pos.z = aspect < 1 ? 4.6 : aspect < 1.4 ? 4.9 : 4.1;
+      WIDE.pos.z = shot.z;
       if (entered && look.resting && !tween) {
         look.yaw += 1e-3;
       }
@@ -1806,6 +1913,8 @@ export default function StudioRoom({
     // once the rotation has settled.
     let orientTimer = 0;
     const onOrientation = () => {
+      // The pose the phone was centred on means nothing turned sideways.
+      if (tilt.on) recenterTilt();
       requestAnimationFrame(resize);
       clearTimeout(orientTimer);
       orientTimer = window.setTimeout(resize, 300);
@@ -1831,9 +1940,24 @@ export default function StudioRoom({
         `${fps} fps · frame ${gap ? gap.toFixed(1) : "-"} ms (worst ${stats.gapMax ? stats.gapMax.toFixed(0) : "-"}) · js ${stats.draws ? (stats.cpu / stats.draws).toFixed(1) : "-"} ms`,
         `${stats.calls} calls · ${(stats.tris / 1000).toFixed(1)}k tris · ${info.programs?.length ?? 0} shaders · ${info.memory.textures} tex · ${shadowRedraws} shadow redraws`,
         `dpr ${dpr} · ${debugSize.x}×${debugSize.y} · aa ${flags.noaa ? "off" : "on"} · shadows ${flags.noshadow ? "off" : "on"} · glass ${flags.noglass ? "off" : "on"}`,
+        cameraLine(),
       ].join("\n");
       stats.t0 = now;
       stats.draws = stats.gaps = stats.gapSum = stats.gapMax = stats.cpu = 0;
+    }
+
+    // Where the camera is, for tuning the wide shot on a phone (#fov, #front, #camz).
+    const deg = THREE.MathUtils.radToDeg;
+    function cameraLine() {
+      const p = camera.position;
+      const floor = floorEdge(baseFov, WIDE.pos.z, WIDE.pos.y, WIDE.look);
+      const tiltText = tilt.on
+        ? `tilt ${deg(tilt.cur.yaw).toFixed(0)}°/${deg(tilt.cur.pitch).toFixed(0)}°${tilt.ref ? "" : " (centring)"}`
+        : "tilt off";
+      return [
+        `cam ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)} · yaw ${deg(look.yaw).toFixed(0)}° pitch ${deg(look.pitch).toFixed(0)}°`,
+        `lens ${baseFov.toFixed(1)}°${zoom.cur > 1.001 ? ` (zoom ${zoom.cur.toFixed(2)}×)` : ""} · wide z ${WIDE.pos.z.toFixed(2)} · floor from z ${floor.toFixed(2)} · ${tiltText}`,
+      ].join("\n");
     }
 
     function frame(now: number) {
@@ -1941,7 +2065,11 @@ export default function StudioRoom({
       if (entered && look.resting && !tween) {
         const dyw = look.dragYaw - look.yaw;
         const dpt = look.dragPitch - look.pitch;
-        if (Math.abs(dyw) + Math.abs(dpt) > 1e-4 || needsFrame) {
+        // The tour turns the view itself, so tilt holds still (eases back) while it runs.
+        const tiltLive = tilt.on && tourStep < 0;
+        const dty = (tiltLive ? tilt.want.yaw : 0) - tilt.cur.yaw;
+        const dtp = (tiltLive ? tilt.want.pitch : 0) - tilt.cur.pitch;
+        if (Math.abs(dyw) + Math.abs(dpt) + Math.abs(dty) + Math.abs(dtp) > 1e-4 || needsFrame) {
           // Eased by time, not by frame, so a slow frame doesn't make the view lag further behind.
           // While the finger is moving it follows within about 50ms; after it lifts (and for the
           // tour's turns) it settles over about 200ms, the old feel at 60fps.
@@ -1949,17 +2077,29 @@ export default function StudioRoom({
           const ease = reduced ? 1 : 1 - Math.exp(-rate * dt);
           look.yaw += dyw * ease;
           look.pitch += dpt * ease;
+          // The sensor's readings jitter a little; a short ease (about 70ms) smooths them out.
+          const tease = reduced ? 1 : 1 - Math.exp(-14 * dt);
+          tilt.cur.yaw += dty * tease;
+          tilt.cur.pitch += dtp * tease;
           const off = lookOff.subVectors(WIDE.pos, WIDE.look).applyAxisAngle(Y_AXIS, look.yaw);
           const side = lookSide.crossVectors(Y_AXIS, off).normalize();
           off.applyAxisAngle(side, -look.pitch);
           if (isPortrait) {
             // Phones turn the head instead of orbiting the back wall, so the side walls
-            // (couch, W, coat rack) can come into view in the narrow frame.
-            cam.pos.copy(WIDE.pos);
-            cam.look.copy(WIDE.pos).sub(off);
+            // (couch, W, coat rack) can come into view in the narrow frame, and slide toward
+            // where they look, so the turn also moves through the room.
+            cam.pos.copy(WIDE.pos).add(slideFor(look.yaw, slideV));
+            cam.look.copy(cam.pos).sub(off);
           } else {
             cam.pos.copy(WIDE.look).add(off);
             cam.look.copy(WIDE.look);
+          }
+          if (tilt.cur.yaw || tilt.cur.pitch) {
+            // Tilt turns the head where the camera stands: left/up positive, as the drag's yaw.
+            const dir = tiltDir.subVectors(cam.look, cam.pos);
+            dir.applyAxisAngle(Y_AXIS, tilt.cur.yaw);
+            dir.applyAxisAngle(tiltAxis.crossVectors(dir, Y_AXIS).normalize(), tilt.cur.pitch);
+            cam.look.copy(cam.pos).add(dir);
           }
           camera.position.copy(cam.pos);
           camera.lookAt(cam.look);
@@ -2050,6 +2190,7 @@ export default function StudioRoom({
       document.removeEventListener("visibilitychange", onVisibility);
       registerActions(null);
       registerRoomCommands(null);
+      stopTilt("unavailable");
       io?.disconnect();
       ro?.disconnect();
       window.removeEventListener("resize", resize);
